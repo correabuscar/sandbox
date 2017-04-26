@@ -1,7 +1,7 @@
 extern crate phrases;
 
 use phrases::english::{greetings,farewells};
-use phrases::japanese;
+use phrases::japanese;//it's different than 'english' see its mod.rs
 
 fn main() {
     println!("Hello in English: {}", greetings::hello());
