@@ -1,0 +1,6 @@
+[package]
+name = "debugging_macros"
+version = "0.1.0"
+authors = ["xftroxgpx <xftroxgpx@gmail.com>"]
+
+[dependencies]
