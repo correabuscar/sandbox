@@ -16,4 +16,3 @@ fn main() {
     let b = 27;
     debug_assert!(a + b == 31, "a = {}, b = {}", a, b);
 }
-
