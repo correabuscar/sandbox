@@ -1,0 +1,4 @@
+Rustfmt failed at stdin:3: left behind trailing whitespace (sorry)
+Rustfmt failed at stdin:6: left behind trailing whitespace (sorry)
+
+https://github.com/rust-lang-nursery/rustfmt/issues/878#issuecomment-298176674
