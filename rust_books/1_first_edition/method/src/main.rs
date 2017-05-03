@@ -36,4 +36,5 @@ fn main() {
     println!("{}", Circle::area(&d));
     println!("{}", Circle::area2(d));
 //    println!("{}", d.area());//moved!
+    //let e = Circle { x: 0.0 };//missing fields
 }
