@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["xftroxgpx <xftroxgpx@gmail.com>"]
 
 [dependencies]
-#cursive = "0.2"
-#cursive = { git = "https://github.com/gyscos/Cursive" }
-cursive = { path = "/home/xftroxgpx/build/2nonpkgs/rust.stuff/Cursive" }
+cursive = "0.2"
+cursive = { git = "https://github.com/gyscos/Cursive" }
+#cursive = { path = "/home/xftroxgpx/build/2nonpkgs/rust.stuff/Cursive" }
 
