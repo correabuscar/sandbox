@@ -1,0 +1,5 @@
+* this .wofl file type is readable in vim with this plugin https://github.com/lukaszkorecki/workflowish.git
+
+* TODO:
+* default-features = false
+  \ see in: https://doc.crates.io/manifest.html
