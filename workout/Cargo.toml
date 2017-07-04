@@ -1,10 +1,10 @@
 [package]
 name = "workout"
 version = "0.1.0"
-authors = ["icanrealizeum <icanrealizeum@gmail.com>"]
+authors = ["xftroxgpx <xftroxgpx@gmail.com>"]
 
 [dependencies]
 #cursive = "0.2"
 #cursive = { git = "https://github.com/gyscos/Cursive" }
-cursive = { path = "/home/z/build/1nonpkgs/Cursive" }
+cursive = { path = "/home/xftroxgpx/build/2nonpkgs/rust.stuff/Cursive" }
 

@@ -6,7 +6,7 @@ Outdated code should be common.
 
 ## Authors
 
-Currently almost everything (all functions, files, text) in this repository are made by me @icanrealizeum and I've dedicated this repository to public domain.
+Currently almost everything (all functions, files, text) in this repository are made by me @xftroxgpx and I've dedicated this repository to public domain.
 
 This readme is originally from: https://github.com/davispuh/CLI-Console/blob/master/README.md
 

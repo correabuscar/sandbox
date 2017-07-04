@@ -4,7 +4,7 @@
 
 [package]
 
-name = "guessing_game"
+name = "guessing_game0"
 version = "0.0.1"
 authors = [ "Your name <you@example.com>" ]
 #Cargo gets this information from your environment. If it's not correct, go ahead and fix that.
