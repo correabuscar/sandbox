@@ -1,4 +1,4 @@
-# rustLearnage
+# rustLearnage [![Build Status](https://travis-ci.org/xftroxgpx/rustlearnage.svg?branch=master)](https://travis-ci.org/xftroxgpx/rustlearnage)
 this will help me learn rust and experiment here  
 Don't expect anything here to be consistent and up to date!  
 Outdated code should be common.  
