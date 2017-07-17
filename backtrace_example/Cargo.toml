@@ -1,0 +1,8 @@
+[package]
+name = "backtrace_example"
+version = "0.1.0"
+authors = ["xftroxgpx <xftroxgpx@gmail.com>"]
+
+[dependencies]
+backtrace = "0.3.2"
+
