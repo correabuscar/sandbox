@@ -1,6 +1,6 @@
 fn main() {
     println!("Hello, world!");
-    for x in range(0, 10) {
+    for x in 0..10 {
         print!("{} ", x);
     }
     println!("");
@@ -10,13 +10,13 @@ fn main() {
     }
     println!("");
 
-    for i in range(0,100)
+    for i in 0..100
 //    for i in 0u32..100 // https://github.com/rust-lang/rust/issues/21595
     {
       i as f32;
     }
 
-    let mut rang = range(0, 10);//bad if using binding name range here; https://github.com/rust-lang/rust/issues/21577
+    let mut rang = 0..10;//bad if using binding name range here; https://github.com/rust-lang/rust/issues/21577
     loop {
         match rang.next() {//next returns an Option<i32>, in this case, which will be Some(i32) when we have a value and None once we run out. 
             Some(x) => {
@@ -30,7 +30,7 @@ fn main() {
 
     let nums = vec![4, 2, 3];
     //wrong way:
-    for i in range(0, nums.len()) {
+    for i in 0..nums.len() {
         print!("{} ", nums[i]);
     }
     println!("");

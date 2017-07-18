@@ -23,7 +23,9 @@ fn main() -> () {
     }
     println!("");
     for i in -1..10 {//<-- press % on that paren in vim! bug, fixed: 
-//        if (i % 9 == 0) {//the type of this value must be known in this context
+        if i % 9 == 0 {//fixed: the type of this value must be known in this context
+            print_type_of(&i);
+        }
         print!("{} ",i);
         if i == 9 {//same error
             print_type_of(&i);
