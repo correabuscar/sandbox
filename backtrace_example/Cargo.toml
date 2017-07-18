@@ -5,4 +5,4 @@ authors = ["xftroxgpx <xftroxgpx@gmail.com>"]
 
 [dependencies]
 backtrace = "0.3.2"
-
+colored = "1.5"
