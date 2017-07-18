@@ -31,6 +31,9 @@
 #![deny(clippy)]  //this doesn't work (it should imply the below, but it doesn't, so the below is needed!)) well the readme was inconsistent!
 //#![deny(shadow_unrelated)]
 #![deny(clippy_pedantic)] //this includes the above.
+#![allow(print_stdout)] //https://github.com/Manishearth/rust-clippy/wiki#print_stdout
+#![allow(missing_docs_in_private_items)]
+#![warn(shadow_unrelated)] //else is error via #![deny(clippy_pedantic)] above
 
 fn main() {
     let x=10;
