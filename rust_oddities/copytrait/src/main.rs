@@ -10,6 +10,7 @@
 #![allow(many_single_char_names)]
 
 #![allow(use_debug)]
+#![allow(missing_docs_in_private_items)]
 
 #[derive(Debug)]
 struct Moo{

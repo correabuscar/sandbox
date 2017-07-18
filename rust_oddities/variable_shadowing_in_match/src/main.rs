@@ -23,6 +23,10 @@
 #![deny(clippy)]
 #![deny(clippy_pedantic)]
 
+#![allow(use_debug)]
+#![allow(print_stdout)]
+#![allow(missing_docs_in_private_items)]
+
 
 use std::env;
 //use std::ffi::OsString;
