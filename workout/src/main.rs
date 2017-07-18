@@ -1,5 +1,7 @@
 extern crate cursive;
-use cursive::prelude::*;
+
+use cursive::Cursive;
+use cursive::views::{Dialog, TextView};
 
 fn main() {
 	println!("Hello, world!");
@@ -8,7 +10,7 @@ fn main() {
 	let mut siv = Cursive::new();
 
 	// Creates a dialog with a single "Quit" button
-	siv.add_layer(Dialog::new(TextView::new("Hello Dialog!"))
+	siv.add_layer(Dialog::around(TextView::new("Hello Dialog!"))
 				  .title("Cursive")
 				  .button("Quit", |s| s.quit()));
 

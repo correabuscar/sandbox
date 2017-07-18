@@ -9,8 +9,8 @@ fn main() {
     {                         //  |
         let f = Foo { x: y }; // ---+ f goes into scope 'can use &y too here'
 //        let f = Foo { x: &y }; // ---+ f goes into scope 'can use &y too here' - same effect
-        x = &f.x;             //  | | error here; but works with just 'y'
-//        x = y;
+        //x = &f.x;             //  | | error here; but works with just 'y'
+        x = y;
     }                         // ---+ f goes out of scope
                               //  |
     println!("{}", x);        //  |
