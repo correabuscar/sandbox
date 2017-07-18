@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 echo '!! Building...'
 cargo build --verbose --all
 echo '!! Testing...'
