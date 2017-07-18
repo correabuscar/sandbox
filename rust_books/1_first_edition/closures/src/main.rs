@@ -1,26 +1,27 @@
 fn main() {
     println!("Hello, world!");
-    let add_one = |&: x| { 1 + x };
+    let add_one = &move |x| { 1 + x };//& is unnecessary, move is doing copy which is against the default of reference
     println!("The sum of 5 plus 1 is {}.", add_one(5));
 
     fn  fnadd_one      (x: i32) -> i32 { 1 + x };
     println!("The sum of 5 plus 1 is {}.", fnadd_one(5));
 
-    let mut x: i32 = 5;
-    let printer = |&:| { println!("x is: {}", x); };
+    let x: i32 = 5;
+    let printer = || { println!("x is: {}", x); };
     printer(); // prints "x is: 5"
 
     //    x = 6; // error: cannot assign to `x` because it is borrowed
 
-    fn twice<F: Fn(i32) -> i32>(x: i32, f: F) -> i32 {
+    //works without &F, but just testing
+    fn twice<F: Fn(i32) -> i32>(x: i32, f: &F) -> i32 {
         f(x) + f(x)
     }
-    let square = |&: x: i32| { x * x };
+    let square = &|x: i32| { x * x };
     println!("{}",twice(5, square)); // evaluates to 50
-    println!("{}",twice(5, |x: i32| { x * x })); // evaluates to 50
+    println!("{}",twice(5, &|x: i32| { x * x })); // evaluates to 50
 
     fn fnsquare(x: i32) -> i32 { x * x };
-    println!("{}",twice(5, fnsquare)); // evaluates to 50
+    println!("{}",twice(5, &fnsquare)); // evaluates to 50
 
     //next: a fn that takes 2 closures
     //You might ask yourself: why do we need to introduce two type parameters F and G here?
@@ -33,7 +34,7 @@ fn main() {
             g(f(x))
         }
     println!("{}", compose(5,
-            |&: n: i32| { n + 42 },
-            |&: n: i32| { n * 2 })); // evaluates to 94
+            &move | n: i32| { n + 42 },
+            &move | n: i32| { n * 2 })); // evaluates to 94
 }
 
