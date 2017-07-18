@@ -10,8 +10,8 @@ fn main() {
     let z=env::var_os("RUST_BACKTRACE");
     let q=OsString::from("1");
     println!("val={}", match z {
-        Some(OsString::from("1")) => 2, //odd error when using this (not knowing): src/main.rs:11:14: 11:33 error: no associated item named `from` found for type `std::ffi::os_str::OsString` in the current scope
-//        Some(q) => 2, //works
+//        Some(OsString::from("1")) => 2, //odd error when using this (not knowing): src/main.rs:11:14: 11:33 error: no associated item named `from` found for type `std::ffi::os_str::OsString` in the current scope;  fixed in 1.20 as: not a tuple variant or struct
+        Some(_) => 2, //works
         None => 1,
     })
 
