@@ -46,6 +46,7 @@ fn main() {
             Ordering::Greater => println!("Too big!"),
             Ordering::Equal => {
                 println!("You win!");
+                assert_eq!(guess.cmp(&secret_number), secret_number.cmp(&guess));
                 //return;
                 break;
             },
