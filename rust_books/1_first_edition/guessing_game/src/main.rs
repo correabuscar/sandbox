@@ -19,6 +19,9 @@ fn main() {
             .ok()
             .expect("Failed to read line");
 
+        print!("!");
+        print!("{}",guess);//this does contain that eol '\n', unless you Ctrl+D twice(in Linux) instead of Enter! (in Windows Ctrl+Z might be it?)
+        print!("!");
 //        let guess: u8 = guess.trim().parse().expect("not a number!");
         let guess: u8 = match guess.trim().parse() {
             Ok(num) => num,
