@@ -12,6 +12,8 @@ fn main() {
 
 //    println!("The secret number is: {}", secret_number);
 
+    assert_eq!(Ordering::Less, 1.cmp(&2));
+
     loop {
         println!("Please input your guess.");
         let mut guess=String::new();
@@ -23,6 +25,11 @@ fn main() {
         print!("{}",guess);//this does contain that eol '\n', unless you Ctrl+D twice(in Linux) instead of Enter! (in Windows Ctrl+Z might be it?)
         print!("!");
 //        let guess: u8 = guess.trim().parse().expect("not a number!");
+        if guess.is_empty() {//ctrl+d once
+            println!("Ok, we're out!");
+            break;
+        }
+
         let guess: u8 = match guess.trim().parse() {
             Ok(num) => num,
             Err(_) => continue,
