@@ -1,0 +1,1371 @@
+RUST_BACKTRACE=full
+RUST_LOG=debug
+!! LD_LIBRARY_PATH=/home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib:/home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib:/home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib:
+!! executing '/home/xftroxgpx/.cargo/bin/cargo' with args: 'run -v --'
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/backtrace_example/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/glium/tutorial-05/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/insanity/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/montyhall/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/overflow_at_runtime/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/passcode_riddle/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/3_34_macros/debugging_macros/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/adder/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/arrays/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/closures/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/diverges/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/enum/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/for/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/guards/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/guessing_game/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/hello_world/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/if/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/iterators/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/lifetimes/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/lifetimes2/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/loop/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/match/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/method/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/method2/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/mutable/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/ordering/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/ownership/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/patterns/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/phrases/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/pointer/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references2/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references3/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/scope/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/strings/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/struct/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/struct2/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/traits/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/tuple/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/while/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/2_second_edition/ch04-04-slices/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/3_both/guessing_game/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/3_both/hello_cargo/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/4_std/debug_assert/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/bug43197/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/copytrait/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/destructuredassignwolet/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/match_nonvar/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/re-let/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct2/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct3/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/variable_shadowing_in_match/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_reference/stringliterals/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/get_type/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/iter/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/loop_deconstr/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/take1percent/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/writeln/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/14.3/drop/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/2_primitives/2_2_tuples/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/2_primitives/2_3_slices/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/3_custom_types/3_1_structs/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/3_custom_types/3_2_enums/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/samename/rand/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/workout/Cargo.toml
+DEBUG:cargo::core::workspace: find_members - /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/glium/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/3_34_macros/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/2_second_edition/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/3_both/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/3_both/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/4_std/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_reference/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/14.3/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/2_primitives/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/2_primitives/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/3_custom_types/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/3_custom_types/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/samename/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - trying /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::workspace: find_root - found a root checking exclusion
+DEBUG:cargo::core::workspace: find_root - found!
+DEBUG:cargo::core::workspace: find_root - is root /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/Cargo.toml
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/backtrace_example
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/backtrace_example
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/glium/tutorial-05
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/glium/tutorial-05
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/insanity
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/insanity
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/montyhall
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/montyhall
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/overflow_at_runtime
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/overflow_at_runtime
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/passcode_riddle
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/passcode_riddle
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/3_34_macros/debugging_macros
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/3_34_macros/debugging_macros
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/adder
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/adder
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/arrays
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/arrays
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/closures
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/closures
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/diverges
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/diverges
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/enum
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/enum
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/for
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/for
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/guards
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/guards
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/guessing_game
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/guessing_game
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/hello_world
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/hello_world
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/if
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/if
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/iterators
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/iterators
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/lifetimes
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/lifetimes
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/lifetimes2
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/lifetimes2
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/loop
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/loop
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/match
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/match
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/method
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/method
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/method2
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/method2
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/mutable
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/mutable
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/ordering
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/ordering
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/ownership
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/ownership
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/patterns
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/patterns
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/phrases
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/phrases
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/pointer
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/pointer
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references2
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references2
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references3
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references3
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/scope
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/scope
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/strings
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/strings
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/struct
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/struct
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/struct2
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/struct2
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/traits
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/traits
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/tuple
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/tuple
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/while
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/while
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/2_second_edition/ch04-04-slices
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/2_second_edition/ch04-04-slices
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/3_both/guessing_game
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/3_both/guessing_game
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/3_both/hello_cargo
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/3_both/hello_cargo
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/4_std/debug_assert
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/4_std/debug_assert
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/bug43197
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/bug43197
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/copytrait
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/copytrait
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/destructuredassignwolet
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/destructuredassignwolet
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/match_nonvar
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/match_nonvar
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/re-let
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/re-let
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct2
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct2
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct3
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct3
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/variable_shadowing_in_match
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/variable_shadowing_in_match
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_reference/stringliterals
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_reference/stringliterals
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/get_type
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/get_type
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/iter
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/iter
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/loop_deconstr
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/loop_deconstr
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/take1percent
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/take1percent
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/writeln
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/writeln
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/14.3/drop
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/14.3/drop
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/2_primitives/2_2_tuples
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/2_primitives/2_2_tuples
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/2_primitives/2_3_slices
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/2_primitives/2_3_slices
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/3_custom_types/3_1_structs
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/3_custom_types/3_1_structs
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/3_custom_types/3_2_enums
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/3_custom_types/3_2_enums
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/samename/rand
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/samename/rand
+DEBUG:cargo::core::registry: load/missing  file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/workout
+DEBUG:cargo::sources::config: loading: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/workout
+DEBUG:cargo::core::resolver: initial activation: backtrace_example v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/backtrace_example)
+DEBUG:cargo::core::registry: load/missing  registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::sources::config: loading: registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: initial activation: tutorial-05 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/glium/tutorial-05)
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: initial activation: insanity v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/insanity)
+DEBUG:cargo::core::resolver: initial activation: montyhall v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/montyhall)
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: initial activation: overflow_at_runtime v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/overflow_at_runtime)
+DEBUG:cargo::core::resolver: initial activation: passcode_riddle v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/passcode_riddle)
+DEBUG:cargo::core::resolver: initial activation: debugging_macros v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/3_34_macros/debugging_macros)
+DEBUG:cargo::core::resolver: initial activation: adder v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/adder)
+DEBUG:cargo::core::resolver: initial activation: arrays v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/arrays)
+DEBUG:cargo::core::resolver: initial activation: closures v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/closures)
+DEBUG:cargo::core::resolver: initial activation: diverges v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/diverges)
+DEBUG:cargo::core::resolver: initial activation: enum v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/enum)
+DEBUG:cargo::core::resolver: initial activation: for v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/for)
+DEBUG:cargo::core::resolver: initial activation: guards v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/guards)
+DEBUG:cargo::core::resolver: initial activation: guessing_game0 v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/guessing_game)
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: initial activation: hello_world v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/hello_world)
+DEBUG:cargo::core::resolver: initial activation: if v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/if)
+DEBUG:cargo::core::resolver: initial activation: iterators v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/iterators)
+DEBUG:cargo::core::resolver: initial activation: lifetimes v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/lifetimes)
+DEBUG:cargo::core::resolver: initial activation: lifetimes2 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/lifetimes2)
+DEBUG:cargo::core::resolver: initial activation: loop v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/loop)
+DEBUG:cargo::core::resolver: initial activation: match v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/match)
+DEBUG:cargo::core::resolver: initial activation: method v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/method)
+DEBUG:cargo::core::resolver: initial activation: method2 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/method2)
+DEBUG:cargo::core::resolver: initial activation: mutable v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/mutable)
+DEBUG:cargo::core::resolver: initial activation: ordering v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/ordering)
+DEBUG:cargo::core::resolver: initial activation: ownership v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/ownership)
+DEBUG:cargo::core::resolver: initial activation: patterns v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/patterns)
+DEBUG:cargo::core::resolver: initial activation: phrases v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/phrases)
+DEBUG:cargo::core::resolver: initial activation: pointer v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/pointer)
+DEBUG:cargo::core::resolver: initial activation: references v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references)
+DEBUG:cargo::core::resolver: initial activation: references2 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references2)
+DEBUG:cargo::core::resolver: initial activation: references3 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references3)
+DEBUG:cargo::core::resolver: initial activation: scope v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/scope)
+DEBUG:cargo::core::resolver: initial activation: strings v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/strings)
+DEBUG:cargo::core::resolver: initial activation: struct v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/struct)
+DEBUG:cargo::core::resolver: initial activation: struct2 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/struct2)
+DEBUG:cargo::core::resolver: initial activation: traits v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/traits)
+DEBUG:cargo::core::resolver: initial activation: tuple v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/tuple)
+DEBUG:cargo::core::resolver: initial activation: while v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/while)
+DEBUG:cargo::core::resolver: initial activation: ch04-04-slices v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/2_second_edition/ch04-04-slices)
+DEBUG:cargo::core::resolver: initial activation: guessing_game v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/3_both/guessing_game)
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: initial activation: hello_cargo v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/3_both/hello_cargo)
+DEBUG:cargo::core::resolver: initial activation: debug_assert v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/4_std/debug_assert)
+DEBUG:cargo::core::resolver: initial activation: bug43197 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/bug43197)
+DEBUG:cargo::core::resolver: initial activation: copytrait v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/copytrait)
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: initial activation: destructuredassignwolet v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/destructuredassignwolet)
+DEBUG:cargo::core::resolver: initial activation: match_nonvar v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/match_nonvar)
+DEBUG:cargo::core::resolver: initial activation: re-let v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/re-let)
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: initial activation: refstruct v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct)
+DEBUG:cargo::core::resolver: initial activation: refstruct2 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct2)
+DEBUG:cargo::core::resolver: initial activation: refstruct3 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct3)
+DEBUG:cargo::core::resolver: initial activation: match0 v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/variable_shadowing_in_match)
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: initial activation: stringliterals v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_reference/stringliterals)
+DEBUG:cargo::core::resolver: initial activation: get_type v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/get_type)
+DEBUG:cargo::core::resolver: initial activation: iter v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/iter)
+DEBUG:cargo::core::resolver: initial activation: loop_deconstr v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/loop_deconstr)
+DEBUG:cargo::core::resolver: initial activation: take1percent v0.0.1 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/take1percent)
+DEBUG:cargo::core::resolver: initial activation: writeln v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/writeln)
+DEBUG:cargo::core::resolver: initial activation: drop v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/14.3/drop)
+DEBUG:cargo::core::resolver: initial activation: 2_2_tuples v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/2_primitives/2_2_tuples)
+DEBUG:cargo::core::resolver: initial activation: 2_3_slices v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/2_primitives/2_3_slices)
+DEBUG:cargo::core::resolver: initial activation: 3_1_structs v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/3_custom_types/3_1_structs)
+DEBUG:cargo::core::resolver: initial activation: 3_2_enums v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/3_custom_types/3_2_enums)
+DEBUG:cargo::core::resolver: initial activation: rand v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/samename/rand)
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: initial activation: workout v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/workout)
+DEBUG:cargo::core::registry: load/missing  https://github.com/gyscos/Cursive#c281f93a
+DEBUG:cargo::sources::config: loading: https://github.com/gyscos/Cursive#c281f93a
+INFO:cargo::sources::git::utils: update submodules for: "/home/xftroxgpx/.cargo/git/checkouts/cursive-fa9a0f4802024d18/c281f93/"
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if rand v0.3.16 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if rand v0.3.16 is already activated
+DEBUG:cargo::core::resolver: checking if clippy v0.0.146 is already activated
+DEBUG:cargo::core::resolver: checking if serde v1.0.11 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if serde v1.0.11 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if serde_derive v1.0.11 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if synom v0.11.3 is already activated
+DEBUG:cargo::core::resolver: checking if clippy v0.0.146 is already activated
+DEBUG:cargo::core::resolver: checking if rand v0.3.16 is already activated
+DEBUG:cargo::core::resolver: checking if num-traits v0.1.40 is already activated
+DEBUG:cargo::core::resolver: checking if unicode-xid v0.0.4 is already activated
+DEBUG:cargo::core::resolver: checking if lazy_static v0.2.8 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if syn v0.11.11 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if quote v0.3.15 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if num-traits v0.1.40 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if rand v0.3.16 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if synom v0.11.3 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if unicode-xid v0.0.4 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if num-traits v0.1.40 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if num-integer v0.1.35 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if num-traits v0.1.40 is already activated
+DEBUG:cargo::core::resolver: checking if rustc-serialize v0.3.24 is already activated
+DEBUG:cargo::core::resolver: checking if num-integer v0.1.35 is already activated
+DEBUG:cargo::core::resolver: checking if cfg-if v0.1.2 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if num-bigint v0.1.40 is already activated
+DEBUG:cargo::core::resolver: checking if num-traits v0.1.40 is already activated
+DEBUG:cargo::core::resolver: checking if lazy_static v0.2.8 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if lazy_static v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if serde v1.0.11 is already activated
+DEBUG:cargo::core::resolver: checking if toml v0.4.4 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if kernel32-sys v0.2.2 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if winapi-build v0.1.1 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if shared_library v0.1.7 is already activated
+DEBUG:cargo::core::resolver: checking if lazy_static v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if gcc v0.3.51 is already activated
+DEBUG:cargo::core::resolver: checking if lazy_static v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if gl_generator v0.5.5 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if num-integer v0.1.35 is already activated
+DEBUG:cargo::core::resolver: checking if objc v0.2.2 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if backtrace-sys v0.1.12 is already activated
+DEBUG:cargo::core::resolver: checking if bitflags v0.9.1 is already activated
+DEBUG:cargo::core::resolver: checking if kernel32-sys v0.2.2 is already activated
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if rustc-demangle v0.1.4 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if rustc-serialize v0.3.24 is already activated
+DEBUG:cargo::core::resolver: checking if dbghelp-sys v0.2.0 is already activated
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if num-traits v0.1.40 is already activated
+DEBUG:cargo::core::resolver: checking if winapi-build v0.1.1 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if bitflags v0.9.1 is already activated
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if winapi-build v0.1.1 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if core-graphics v0.8.2 is already activated
+DEBUG:cargo::core::resolver: checking if bitflags v0.9.1 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if objc v0.2.2 is already activated
+DEBUG:cargo::core::resolver: checking if gdi32-sys v0.1.1 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if shell32-sys v0.1.1 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if dwmapi-sys v0.1.0 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if kernel32-sys v0.2.2 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if user32-sys v0.1.2 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if winapi-build v0.1.1 is already activated
+DEBUG:cargo::core::resolver: checking if lazy_static v0.2.8 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if gl_generator v0.5.5 is already activated
+DEBUG:cargo::core::resolver: checking if android_glue v0.2.3 is already activated
+DEBUG:cargo::core::resolver: checking if pkg-config v0.3.9 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if pkg-config v0.3.9 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if x11-dl v2.14.0 is already activated
+DEBUG:cargo::core::resolver: checking if tempfile v2.1.6 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if shared_library v0.1.7 is already activated
+DEBUG:cargo::core::resolver: checking if rand v0.3.16 is already activated
+DEBUG:cargo::core::resolver: checking if wayland-client v0.9.9 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if wayland-client v0.9.9 is already activated
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if objc v0.2.2 is already activated
+DEBUG:cargo::core::resolver: checking if kernel32-sys v0.2.2 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if lazy_static v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if wayland-sys v0.9.9 is already activated
+DEBUG:cargo::core::resolver: checking if bitflags v0.7.0 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if bitflags v0.7.0 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if wayland-scanner v0.9.9 is already activated
+DEBUG:cargo::core::resolver: checking if bitflags v0.7.0 is already activated
+DEBUG:cargo::core::resolver: checking if lazy_static v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if objc v0.2.2 is already activated
+DEBUG:cargo::core::resolver: checking if lazy_static v0.2.8 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if cocoa v0.9.2 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if core-graphics v0.8.2 is already activated
+DEBUG:cargo::core::resolver: checking if kernel32-sys v0.2.2 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if bitflags v0.7.0 is already activated
+DEBUG:cargo::core::resolver: checking if phf_shared v0.7.21 is already activated
+DEBUG:cargo::core::resolver: checking if phf_shared v0.7.21 is already activated
+DEBUG:cargo::core::resolver: checking if kernel32-sys v0.2.2 is already activated
+DEBUG:cargo::core::resolver: checking if core-foundation v0.4.2 is already activated
+DEBUG:cargo::core::resolver: checking if rand v0.3.16 is already activated
+DEBUG:cargo::core::resolver: checking if num-traits v0.1.40 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::resolver: checking if dlib v0.3.1 is already activated
+DEBUG:cargo::core::resolver: checking if wayland-client v0.9.9 is already activated
+DEBUG:cargo::core::resolver: checking if itoa v0.3.1 is already activated
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if dtoa v0.4.1 is already activated
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::registry: load/match    registry https://github.com/rust-lang/crates.io-index
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if winapi v0.2.8 is already activated
+DEBUG:cargo::core::resolver: checking if kernel32-sys v0.2.2 is already activated
+DEBUG:cargo::core::resolver: checking if libc v0.2.28 is already activated
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/backtrace_example
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/glium/tutorial-05
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/insanity
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/montyhall
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/overflow_at_runtime
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/passcode_riddle
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/3_34_macros/debugging_macros
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/adder
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/arrays
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/closures
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/diverges
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/enum
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/for
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/guards
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/guessing_game
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/hello_world
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/if
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/iterators
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/lifetimes
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/lifetimes2
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/loop
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/match
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/method
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/method2
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/mutable
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/ordering
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/ownership
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/patterns
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/phrases
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/pointer
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references2
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/references3
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/scope
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/strings
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/struct
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/struct2
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/traits
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/tuple
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/while
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/2_second_edition/ch04-04-slices
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/3_both/guessing_game
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/3_both/hello_cargo
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/4_std/debug_assert
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/bug43197
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/copytrait
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/destructuredassignwolet
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/match_nonvar
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/re-let
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct2
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/refstruct3
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_oddities/variable_shadowing_in_match
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_reference/stringliterals
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/get_type
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/iter
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/loop_deconstr
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/take1percent
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_sandbox/writeln
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/14.3/drop
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/2_primitives/2_2_tuples
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/2_primitives/2_3_slices
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/3_custom_types/3_1_structs
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rustbyexample/3_custom_types/3_2_enums
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/samename/rand
+DEBUG:cargo::core::registry: load/locked   file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/workout
+DEBUG:cargo::core::resolver: initial activation: bug43197 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/bug43197)
+DEBUG:cargo::ops::cargo_rustc::context: probe_target_info: crate_types={"bin", "rlib"}
+DEBUG:cargo::ops::cargo_rustc::fingerprint: fingerprint at: /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/.fingerprint/bug43197-1550fd98cf432f14/bin-bug43197-1550fd98cf432f14
+INFO:cargo::ops::cargo_rustc::fingerprint: stale: /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/bug43197/src/main.rs -- 1501388743.601177123s vs 1501388727.908374408s
+INFO:cargo::ops::cargo_rustc::fingerprint: fingerprint error for bug43197 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/bug43197): mtime based components have changed: previously Some(FileTime { seconds: 1501388727, nanos: 908374408 }) now None, paths are "/home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/.fingerprint/bug43197-1550fd98cf432f14/dep-bin-bug43197-1550fd98cf432f14" and "/home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/.fingerprint/bug43197-1550fd98cf432f14/dep-bin-bug43197-1550fd98cf432f14"
+INFO:cargo::ops::cargo_rustc::fingerprint:   cause: mtime based components have changed: previously Some(FileTime { seconds: 1501388727, nanos: 908374408 }) now None, paths are "/home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/.fingerprint/bug43197-1550fd98cf432f14/dep-bin-bug43197-1550fd98cf432f14" and "/home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/.fingerprint/bug43197-1550fd98cf432f14/dep-bin-bug43197-1550fd98cf432f14"
+INFO:cargo::ops::cargo_rustc::context: Target filenames: [("/home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps/bug43197-1550fd98cf432f14", Some("/home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/bug43197"), false)]
+INFO:cargo::ops::cargo_rustc::job_queue: start: bug43197 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/bug43197) => Target(bin: bug43197)/Profile(build) => Host
+   Compiling bug43197 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/bug43197)
+     Running `rustc --crate-name bug43197 src/main.rs --crate-type bin --emit=dep-info,link -C debuginfo=2 -C metadata=1550fd98cf432f14 -C extra-filename=-1550fd98cf432f14 --out-dir /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps -L dependency=/home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps`
+INFO:rustc_metadata::creader: resolving crate `extern crate std as std`
+INFO:rustc_metadata::creader: falling back to a load
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd-bea72aea09c9701c.rlib
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd_unicode-2387f846011a875b.rlib
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd-bea72aea09c9701c.so
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd-bea72aea09c9701c.rlib
+INFO:rustc_metadata::locator: reading "libstd-bea72aea09c9701c.rlib" => Duration { secs: 0, nanos: 167688 }
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd_unicode-2387f846011a875b.rlib
+INFO:rustc_metadata::locator: reading "libstd_unicode-2387f846011a875b.rlib" => Duration { secs: 0, nanos: 33733 }
+INFO:rustc_metadata::locator: Rejecting via crate name
+INFO:rustc_metadata::locator: metadata mismatch
+INFO:rustc_metadata::creader: register crate `extern crate std as std`
+INFO:rustc_metadata::creader: resolving crate `extern crate core as core`
+INFO:rustc_metadata::creader: falling back to a load
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-bb8f01661cb61234.rlib
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-bb8f01661cb61234.rlib
+INFO:rustc_metadata::locator: reading "libcore-bb8f01661cb61234.rlib" => Duration { secs: 0, nanos: 31289 }
+INFO:rustc_metadata::creader: register crate `extern crate core as core`
+INFO:rustc_metadata::creader: resolving crate `extern crate rand as rand`
+INFO:rustc_metadata::creader: falling back to a load
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps/librand-6e46ead8dc6afd6c.rlib
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps/librand-2a88438d2d8f3f33.rlib
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps/librand-3187e87e6e2d59a1.rlib
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/librand-916657218c3f5cd2.rlib
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps/librand-6e46ead8dc6afd6c.rlib
+INFO:rustc_metadata::locator: reading "librand-6e46ead8dc6afd6c.rlib" => Duration { secs: 0, nanos: 64044 }
+INFO:rustc_metadata::locator: Rejecting via hash: expected 484407f009e6f45e got f7cf5795fc3798c0
+INFO:rustc_metadata::locator: metadata mismatch
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/librand-916657218c3f5cd2.rlib
+INFO:rustc_metadata::locator: reading "librand-916657218c3f5cd2.rlib" => Duration { secs: 0, nanos: 25911 }
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps/librand-3187e87e6e2d59a1.rlib
+INFO:rustc_metadata::locator: reading "librand-3187e87e6e2d59a1.rlib" => Duration { secs: 0, nanos: 17111 }
+INFO:rustc_metadata::locator: Rejecting via hash: expected 484407f009e6f45e got 3f572e3c6b8eafa2
+INFO:rustc_metadata::locator: metadata mismatch
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps/librand-2a88438d2d8f3f33.rlib
+INFO:rustc_metadata::locator: reading "librand-2a88438d2d8f3f33.rlib" => Duration { secs: 0, nanos: 23466 }
+INFO:rustc_metadata::locator: Rejecting via hash: expected 484407f009e6f45e got fd4ce3d56c458edc
+INFO:rustc_metadata::locator: metadata mismatch
+INFO:rustc_metadata::creader: register crate `extern crate rand as rand`
+INFO:rustc_metadata::creader: resolving crate `extern crate core as core`
+INFO:rustc_metadata::creader: resolving crate `extern crate alloc as alloc`
+INFO:rustc_metadata::creader: falling back to a load
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc_jemalloc-698bb48bce401f9e.rlib
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc_system-5956fb8f1cf61742.rlib
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc-db4c8aaf2205a776.rlib
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc-db4c8aaf2205a776.rlib
+INFO:rustc_metadata::locator: reading "liballoc-db4c8aaf2205a776.rlib" => Duration { secs: 0, nanos: 29333 }
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc_jemalloc-698bb48bce401f9e.rlib
+INFO:rustc_metadata::locator: reading "liballoc_jemalloc-698bb48bce401f9e.rlib" => Duration { secs: 0, nanos: 154489 }
+INFO:rustc_metadata::locator: Rejecting via crate name
+INFO:rustc_metadata::locator: metadata mismatch
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc_system-5956fb8f1cf61742.rlib
+INFO:rustc_metadata::locator: reading "liballoc_system-5956fb8f1cf61742.rlib" => Duration { secs: 0, nanos: 23956 }
+INFO:rustc_metadata::locator: Rejecting via crate name
+INFO:rustc_metadata::locator: metadata mismatch
+INFO:rustc_metadata::creader: register crate `extern crate alloc as alloc`
+INFO:rustc_metadata::creader: resolving crate `extern crate core as core`
+INFO:rustc_metadata::creader: resolving crate `extern crate std_unicode as std_unicode`
+INFO:rustc_metadata::creader: falling back to a load
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd_unicode-2387f846011a875b.rlib
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd_unicode-2387f846011a875b.rlib
+INFO:rustc_metadata::locator: reading "libstd_unicode-2387f846011a875b.rlib" => Duration { secs: 0, nanos: 24445 }
+INFO:rustc_metadata::creader: register crate `extern crate std_unicode as std_unicode`
+INFO:rustc_metadata::creader: resolving crate `extern crate core as core`
+INFO:rustc_metadata::creader: resolving crate `extern crate std_unicode as std_unicode`
+INFO:rustc_metadata::creader: resolving crate `extern crate alloc_system as alloc_system`
+INFO:rustc_metadata::creader: falling back to a load
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc_system-5956fb8f1cf61742.rlib
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc_system-5956fb8f1cf61742.rlib
+INFO:rustc_metadata::locator: reading "liballoc_system-5956fb8f1cf61742.rlib" => Duration { secs: 0, nanos: 96800 }
+INFO:rustc_metadata::creader: register crate `extern crate alloc_system as alloc_system`
+INFO:rustc_metadata::creader: resolving crate `extern crate core as core`
+INFO:rustc_metadata::creader: resolving crate `extern crate alloc as alloc`
+INFO:rustc_metadata::creader: resolving crate `extern crate std_unicode as std_unicode`
+INFO:rustc_metadata::creader: resolving crate `extern crate libc as libc`
+INFO:rustc_metadata::creader: falling back to a load
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps/liblibc-3b34c5abcbbce6a1.rlib
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liblibc-963504c5323ca77e.rlib
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liblibc-1c002ae99731e08c.rlib
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liblibc-1c002ae99731e08c.rlib
+INFO:rustc_metadata::locator: reading "liblibc-1c002ae99731e08c.rlib" => Duration { secs: 0, nanos: 23956 }
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liblibc-963504c5323ca77e.rlib
+INFO:rustc_metadata::locator: reading "liblibc-963504c5323ca77e.rlib" => Duration { secs: 0, nanos: 24934 }
+INFO:rustc_metadata::locator: Rejecting via hash: expected 953f4c39dc5c81b7 got a37a99311eaf4e4c
+INFO:rustc_metadata::locator: metadata mismatch
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps/liblibc-3b34c5abcbbce6a1.rlib
+INFO:rustc_metadata::locator: reading "liblibc-3b34c5abcbbce6a1.rlib" => Duration { secs: 0, nanos: 29334 }
+INFO:rustc_metadata::locator: Rejecting via hash: expected 953f4c39dc5c81b7 got b815f23ad49cde99
+INFO:rustc_metadata::locator: metadata mismatch
+INFO:rustc_metadata::creader: register crate `extern crate libc as libc`
+INFO:rustc_metadata::creader: resolving crate `extern crate core as core`
+INFO:rustc_metadata::creader: resolving crate `extern crate libc as libc`
+INFO:rustc_metadata::creader: resolving crate `extern crate unwind as unwind`
+INFO:rustc_metadata::creader: falling back to a load
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libunwind-59d556a2af393c7b.rlib
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libunwind-59d556a2af393c7b.rlib
+INFO:rustc_metadata::locator: reading "libunwind-59d556a2af393c7b.rlib" => Duration { secs: 0, nanos: 103155 }
+INFO:rustc_metadata::creader: register crate `extern crate unwind as unwind`
+INFO:rustc_metadata::creader: resolving crate `extern crate core as core`
+INFO:rustc_metadata::creader: resolving crate `extern crate libc as libc`
+INFO:rustc_metadata::creader: resolving crate `extern crate compiler_builtins as compiler_builtins`
+INFO:rustc_metadata::creader: falling back to a load
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcompiler_builtins-3e37f51cc4549c1c.rlib
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcompiler_builtins-3e37f51cc4549c1c.rlib
+INFO:rustc_metadata::locator: reading "libcompiler_builtins-3e37f51cc4549c1c.rlib" => Duration { secs: 0, nanos: 130045 }
+INFO:rustc_metadata::creader: register crate `extern crate compiler_builtins as compiler_builtins`
+INFO:rustc_metadata::creader: resolving crate `extern crate core as core`
+INFO:rustc_metadata::creader: resolving crate `extern crate alloc_jemalloc as alloc_jemalloc`
+INFO:rustc_metadata::creader: falling back to a load
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc_jemalloc-698bb48bce401f9e.rlib
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc_jemalloc-698bb48bce401f9e.rlib
+INFO:rustc_metadata::locator: reading "liballoc_jemalloc-698bb48bce401f9e.rlib" => Duration { secs: 0, nanos: 179422 }
+INFO:rustc_metadata::creader: register crate `extern crate alloc_jemalloc as alloc_jemalloc`
+INFO:rustc_metadata::creader: resolving crate `extern crate core as core`
+INFO:rustc_metadata::creader: resolving crate `extern crate alloc as alloc`
+INFO:rustc_metadata::creader: resolving crate `extern crate std_unicode as std_unicode`
+INFO:rustc_metadata::creader: resolving crate `extern crate alloc_system as alloc_system`
+INFO:rustc_metadata::creader: resolving crate `extern crate libc as libc`
+INFO:rustc_metadata::creader: resolving crate `extern crate panic_unwind as panic_unwind`
+INFO:rustc_metadata::creader: falling back to a load
+INFO:rustc_metadata::locator: lib candidate: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libpanic_unwind-e260b0bc0159787b.rlib
+INFO:rustc_metadata::locator: rlib reading metadata from: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libpanic_unwind-e260b0bc0159787b.rlib
+INFO:rustc_metadata::locator: reading "libpanic_unwind-e260b0bc0159787b.rlib" => Duration { secs: 0, nanos: 21022 }
+INFO:rustc_metadata::creader: register crate `extern crate panic_unwind as panic_unwind`
+INFO:rustc_metadata::creader: resolving crate `extern crate core as core`
+INFO:rustc_metadata::creader: resolving crate `extern crate alloc as alloc`
+INFO:rustc_metadata::creader: resolving crate `extern crate std_unicode as std_unicode`
+INFO:rustc_metadata::creader: resolving crate `extern crate libc as libc`
+INFO:rustc_metadata::creader: resolving crate `extern crate unwind as unwind`
+INFO:rustc_metadata::creader: resolving crate `extern crate alloc_jemalloc as alloc_jemalloc`
+INFO:rustc_metadata::creader: injecting a dep from 1 to 11
+INFO:rustc_metadata::creader: panic runtime not found -- loading panic_unwind
+INFO:rustc_metadata::creader: resolving crate `extern crate panic_unwind as panic_unwind`
+INFO:rustc_metadata::creader: injecting a dep from 1 to 11
+INFO:rustc_metadata::creader: resolved crates:
+INFO:rustc_metadata::creader:   name: panic_unwind
+INFO:rustc_metadata::creader:   cnum: 11
+INFO:rustc_metadata::creader:   hash: dfb69636d17ea792
+INFO:rustc_metadata::creader:   reqd: Implicit
+INFO:rustc_metadata::creader:    rlib: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libpanic_unwind-e260b0bc0159787b.rlib
+INFO:rustc_metadata::creader:   name: unwind
+INFO:rustc_metadata::creader:   cnum: 8
+INFO:rustc_metadata::creader:   hash: 739cffd1f0d5e40c
+INFO:rustc_metadata::creader:   reqd: Explicit
+INFO:rustc_metadata::creader:    rlib: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libunwind-59d556a2af393c7b.rlib
+INFO:rustc_metadata::creader:   name: std_unicode
+INFO:rustc_metadata::creader:   cnum: 5
+INFO:rustc_metadata::creader:   hash: e5bc3e88e6458052
+INFO:rustc_metadata::creader:   reqd: Explicit
+INFO:rustc_metadata::creader:    rlib: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd_unicode-2387f846011a875b.rlib
+INFO:rustc_metadata::creader:   name: core
+INFO:rustc_metadata::creader:   cnum: 2
+INFO:rustc_metadata::creader:   hash: 9b5072f0d9708c0a
+INFO:rustc_metadata::creader:   reqd: Explicit
+INFO:rustc_metadata::creader:    rlib: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-bb8f01661cb61234.rlib
+INFO:rustc_metadata::creader:   name: alloc_jemalloc
+INFO:rustc_metadata::creader:   cnum: 10
+INFO:rustc_metadata::creader:   hash: ee405db62f6879aa
+INFO:rustc_metadata::creader:   reqd: Implicit
+INFO:rustc_metadata::creader:    rlib: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc_jemalloc-698bb48bce401f9e.rlib
+INFO:rustc_metadata::creader:   name: libc
+INFO:rustc_metadata::creader:   cnum: 7
+INFO:rustc_metadata::creader:   hash: 953f4c39dc5c81b7
+INFO:rustc_metadata::creader:   reqd: Explicit
+INFO:rustc_metadata::creader:    rlib: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liblibc-1c002ae99731e08c.rlib
+INFO:rustc_metadata::creader:   name: alloc
+INFO:rustc_metadata::creader:   cnum: 4
+INFO:rustc_metadata::creader:   hash: e7ed329c1f35fbfc
+INFO:rustc_metadata::creader:   reqd: Explicit
+INFO:rustc_metadata::creader:    rlib: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc-db4c8aaf2205a776.rlib
+INFO:rustc_metadata::creader:   name: std
+INFO:rustc_metadata::creader:   cnum: 1
+INFO:rustc_metadata::creader:   hash: e9b8b4c4bcdc7fd7
+INFO:rustc_metadata::creader:   reqd: Explicit
+INFO:rustc_metadata::creader:   dylib: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd-bea72aea09c9701c.so
+INFO:rustc_metadata::creader:    rlib: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd-bea72aea09c9701c.rlib
+INFO:rustc_metadata::creader:   name: compiler_builtins
+INFO:rustc_metadata::creader:   cnum: 9
+INFO:rustc_metadata::creader:   hash: 8bfe4760424a5419
+INFO:rustc_metadata::creader:   reqd: Explicit
+INFO:rustc_metadata::creader:    rlib: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcompiler_builtins-3e37f51cc4549c1c.rlib
+INFO:rustc_metadata::creader:   name: alloc_system
+INFO:rustc_metadata::creader:   cnum: 6
+INFO:rustc_metadata::creader:   hash: 245e8ee2a5e63032
+INFO:rustc_metadata::creader:   reqd: Explicit
+INFO:rustc_metadata::creader:    rlib: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc_system-5956fb8f1cf61742.rlib
+INFO:rustc_metadata::creader:   name: rand
+INFO:rustc_metadata::creader:   cnum: 3
+INFO:rustc_metadata::creader:   hash: 484407f009e6f45e
+INFO:rustc_metadata::creader:   reqd: Explicit
+INFO:rustc_metadata::creader:    rlib: /home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/librand-916657218c3f5cd2.rlib
+warning: constant evaluation error: attempt to add with overflow. This will become a HARD ERROR in the future
+ --> src/main.rs:1:20
+  |
+1 | pub const X: i64 = 2+ std::i64::MAX;
+  |                    ^^^^^^^^^^^^^^^^
+  |
+  = note: #[warn(const_err)] on by default
+
+Pre-trans
+Ty interner             total           ty region  both
+    TyAdt             :    383 63.5%,  0.0%   0.0%  0.0%
+    TyArray           :      3  0.5%,  0.0%   0.0%  0.0%
+    TySlice           :     10  1.7%,  0.0%   0.0%  0.0%
+    TyRawPtr          :      4  0.7%,  0.0%   0.0%  0.0%
+    TyRef             :    155 25.7%,  0.2%   0.0%  0.0%
+    TyFnDef           :     13  2.2%,  0.2%   0.0%  0.0%
+    TyFnPtr           :      4  0.7%,  0.0%   0.0%  0.0%
+    TyDynamic         :      0  0.0%,  0.0%   0.0%  0.0%
+    TyClosure         :      0  0.0%,  0.0%   0.0%  0.0%
+    TyTuple           :      4  0.7%,  0.0%   0.0%  0.0%
+    TyParam           :     22  3.6%,  0.0%   0.0%  0.0%
+    TyInfer           :      4  0.7%,  0.7%   0.0%  0.0%
+    TyProjection      :      1  0.2%,  0.0%   0.0%  0.0%
+    TyAnon            :      0  0.0%,  0.0%   0.0%  0.0%
+                  total    603         1.0%   0.0%  0.0%
+Substs interner: #282
+Region interner: #212
+Stability interner: #2
+Layout interner: #0
+INFO:rustc_metadata::cstore: topological ordering: [CrateNum(2), CrateNum(5), CrateNum(4), CrateNum(7), CrateNum(8), CrateNum(11), CrateNum(6), CrateNum(10), CrateNum(3), CrateNum(9), CrateNum(1)]
+INFO:rustc_trans::back::link: LinkMeta { crate_hash: Svh { hash: 1010711391087598093 } }
+INFO:rustc::traits::trans: Cache miss: Binder(<i64 as std::fmt::Display>) => VtableImpl(impl_def_id=DefId { krate: CrateNum(2), node: DefIndex(17297) => core/4ba602c::fmt[0]::num[0]::{{impl}}[93] }, substs=Slice([]), nested=[])
+INFO:rustc_trans::base: trans_instance(std::fmt::ArgumentV1::new::<i64>)
+INFO:rustc_trans::base: trans_instance(std::fmt::Arguments::new_v1)
+INFO:rustc_trans::base: trans_instance(main)
+error[E0080]: constant evaluation error
+ --> src/main.rs:1:20
+  |
+1 | pub const X: i64 = 2+ std::i64::MAX;
+  |                    ^^^^^^^^^^^^^^^^ attempt to add with overflow
+
+error: internal compiler error: /checkout/src/librustc_trans/mir/constant.rs:396: _1 not initialized
+ --> src/main.rs:3:20
+  |
+3 |     println!("{}", X);
+  |                    ^
+
+note: the compiler unexpectedly panicked. this is a bug.
+
+note: we would appreciate a bug report: https://github.com/rust-lang/rust/blob/master/CONTRIBUTING.md#bug-reports
+
+note: rustc 1.21.0-nightly (126321e2e 2017-07-28) running on x86_64-unknown-linux-gnu
+
+note: run with `RUST_BACKTRACE=1` for a backtrace
+
+thread 'rustc' panicked at 'Box<Any>', /checkout/src/librustc_errors/lib.rs:438:8
+stack backtrace:
+   0:     0x7f1c4cb37d93 - std::sys::imp::backtrace::tracing::imp::unwind_backtrace::h02e355737f749be8
+                               at /checkout/src/libstd/sys/unix/backtrace/tracing/gcc_s.rs:49
+   1:     0x7f1c4cb32474 - std::sys_common::backtrace::_print::h297a888d79e9b9b5
+                               at /checkout/src/libstd/sys_common/backtrace.rs:71
+   2:     0x7f1c4cb45c13 - std::panicking::default_hook::{{closure}}::h5854f7d669e0f9f4
+                               at /checkout/src/libstd/sys_common/backtrace.rs:60
+                               at /checkout/src/libstd/panicking.rs:380
+   3:     0x7f1c4cb45908 - std::panicking::default_hook::hcc3f904fd6e0f790
+                               at /checkout/src/libstd/panicking.rs:390
+   4:     0x7f1c4cb46117 - std::panicking::rust_panic_with_hook::h96011941bf9b51f3
+                               at /checkout/src/libstd/panicking.rs:610
+   5:     0x7f1c4ba61d58 - std::panicking::begin_panic::h589c8992cc1fa6e2
+   6:     0x7f1c4ba8df28 - rustc::session::opt_span_bug_fmt::{{closure}}::hcef134a1dd7380ca
+   7:     0x7f1c4ba8dd87 - rustc::session::span_bug_fmt::heb3dbf5c4c5e0006
+   8:     0x7f1c4bb2d5e3 - rustc_trans::mir::constant::MirConstContext::const_lvalue::h1258486327810203
+   9:     0x7f1c4bb2e3dc - rustc_trans::mir::constant::MirConstContext::const_rvalue::h06a693dffdfe76eb
+  10:     0x7f1c4bb2be7c - rustc_trans::mir::constant::MirConstContext::trans::ha3ebc7779eecb6e8
+  11:     0x7f1c4bb31caf - rustc_trans::mir::constant::<impl rustc_trans::mir::MirContext<'a, 'tcx>>::trans_constant::h2a7f6978d6dc64c9
+  12:     0x7f1c4bb35491 - rustc_trans::mir::operand::<impl rustc_trans::mir::MirContext<'a, 'tcx>>::trans_operand::h0ace31b72d2a5ef9
+  13:     0x7f1c4bb36b74 - rustc_trans::mir::rvalue::<impl rustc_trans::mir::MirContext<'a, 'tcx>>::trans_rvalue_operand::ha1c0e77635dca33d
+  14:     0x7f1c4bb1fc03 - rustc_trans::mir::trans_mir::h3247de67c93a9c90
+  15:     0x7f1c4bb43423 - rustc_trans::trans_item::TransItem::define::h0b135515c5a9a0ad
+  16:     0x7f1c4bae7eed - rustc_trans::base::trans_crate::module_translation::hf150d96e665e12d8
+  17:     0x7f1c4bae1ffe - rustc_trans::base::trans_crate::h25eede8d1488df1f
+  18:     0x7f1c4cef2e82 - rustc_driver::driver::phase_4_translate_to_llvm::h411442e1cd449b66
+  19:     0x7f1c4cebfd0a - rustc_driver::driver::compile_input::{{closure}}::h47aba175c65f9199
+  20:     0x7f1c4cee263e - rustc_driver::driver::phase_3_run_analysis_passes::{{closure}}::h66157607b1c41fd0
+  21:     0x7f1c4ced3da3 - rustc_driver::driver::phase_3_run_analysis_passes::h82e6838df5e83f6c
+  22:     0x7f1c4cebe0a0 - rustc_driver::driver::compile_input::h3fbaedb32ba92681
+  23:     0x7f1c4cf03566 - rustc_driver::run_compiler::h6b1555ec3cafe4b3
+  24:     0x7f1c4ce1c497 - std::sys_common::backtrace::__rust_begin_short_backtrace::h59eaab61963fbee3
+  25:     0x7f1c4cb7565c - __rust_maybe_catch_panic
+                               at /checkout/src/libpanic_unwind/lib.rs:98
+  26:     0x7f1c4ce540f0 - <F as alloc::boxed::FnBox<A>>::call_box::h359f0bf893fb592b
+  27:     0x7f1c4cb44b0b - std::sys::imp::thread::Thread::new::thread_start::h27f280e62ddf1458
+                               at /checkout/src/liballoc/boxed.rs:692
+                               at /checkout/src/libstd/sys_common/thread.rs:21
+                               at /checkout/src/libstd/sys/unix/thread.rs:84
+  28:     0x7f1c47cdd048 - start_thread
+  29:     0x7f1c4c7fcf0e - clone
+  30:                0x0 - <unknown>
+
+INFO:cargo::ops::cargo_rustc::job_queue: end: bug43197 v0.1.0 (file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_bugstest/bug43197) => Target(bin: bug43197)/Profile(build) => Host
+DEBUG:cargo: exit_with_error; err=CliError { error: Some(CargoError(Msg("Could not compile `bug43197`."), State { next_error: Some(CargoError(Internal(ProcessErrorKind(ProcessError { desc: "process didn\'t exit successfully: `rustc --crate-name bug43197 src/main.rs --crate-type bin --emit=dep-info,link -C debuginfo=2 -C metadata=1550fd98cf432f14 -C extra-filename=-1550fd98cf432f14 --out-dir /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps -L dependency=/home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps` (exit code: 101)", exit: Some(ExitStatus(ExitStatus(25856))), output: None })), State { next_error: None, backtrace: Some(stack backtrace:
+   0:     0x55bd4c1d553c - backtrace::backtrace::trace::h4da2bb6e5421a413
+   1:     0x55bd4c1d5692 - backtrace::capture::Backtrace::new::h04ab583025ef6a97
+   2:     0x55bd4c1d462b - error_chain::make_backtrace::h198d86998b2721d8
+   3:     0x55bd4c1d4734 - <error_chain::State as core::default::Default>::default::h908faa1aa3bc129a
+   4:     0x55bd4bfdf789 - cargo::util::process_builder::ProcessBuilder::exec::h18625cd54343bb9c
+   5:     0x55bd4bf61820 - cargo::ops::cargo_rustc::Executor::exec::h06ba30fd68e60e38
+   6:     0x55bd4bf6c0a0 - cargo::ops::cargo_rustc::rustc::{{closure}}::hde97ac9ed3514a7d
+   7:     0x55bd4bf54f04 - <F as cargo::ops::cargo_rustc::job::FnBox<A, R>>::call_box::h7d79e5ea7fef9cf9
+   8:     0x55bd4bf52e69 - <F as cargo::ops::cargo_rustc::job::FnBox<A, R>>::call_box::h413fa04ad011f0bc
+   9:     0x55bd4bf52e69 - <F as cargo::ops::cargo_rustc::job::FnBox<A, R>>::call_box::h413fa04ad011f0bc
+  10:     0x55bd4bf5e075 - cargo::ops::cargo_rustc::job_queue::JobQueue::run::{{closure}}::h6a28c67e6c99e673
+  11:     0x55bd4bdd3a36 - <F as crossbeam::FnBox>::call_box::hb3bcfe228053cd9e
+  12:     0x55bd4bdd6812 - std::panicking::try::do_call::h66e2d88c23991529
+  13:     0x55bd4c3970ac - panic_unwind::__rust_maybe_catch_panic
+                        at /checkout/src/libpanic_unwind/lib.rs:98
+  14:     0x55bd4be239fb - <F as alloc::boxed::FnBox<A>>::call_box::h121236938529bc42
+  15:     0x55bd4c38ef6b - alloc::boxed::{{impl}}::call_once<(),()>
+                        at /checkout/src/liballoc/boxed.rs:692
+                         - std::sys_common::thread::start_thread
+                        at /checkout/src/libstd/sys_common/thread.rs:21
+                         - std::sys::imp::thread::{{impl}}::new::thread_start
+                        at /checkout/src/libstd/sys/unix/thread.rs:84
+  16:     0x7f744f463048 - start_thread
+  17:     0x7f744ef8cf0e - clone
+  18:                0x0 - <unknown>) })), backtrace: Some(stack backtrace:
+   0:     0x55bd4c1d553c - backtrace::backtrace::trace::h4da2bb6e5421a413
+   1:     0x55bd4c1d5692 - backtrace::capture::Backtrace::new::h04ab583025ef6a97
+   2:     0x55bd4c1d462b - error_chain::make_backtrace::h198d86998b2721d8
+   3:     0x55bd4c1d4734 - <error_chain::State as core::default::Default>::default::h908faa1aa3bc129a
+   4:     0x55bd4bfdf789 - cargo::util::process_builder::ProcessBuilder::exec::h18625cd54343bb9c
+   5:     0x55bd4bf61820 - cargo::ops::cargo_rustc::Executor::exec::h06ba30fd68e60e38
+   6:     0x55bd4bf6c0a0 - cargo::ops::cargo_rustc::rustc::{{closure}}::hde97ac9ed3514a7d
+   7:     0x55bd4bf54f04 - <F as cargo::ops::cargo_rustc::job::FnBox<A, R>>::call_box::h7d79e5ea7fef9cf9
+   8:     0x55bd4bf52e69 - <F as cargo::ops::cargo_rustc::job::FnBox<A, R>>::call_box::h413fa04ad011f0bc
+   9:     0x55bd4bf52e69 - <F as cargo::ops::cargo_rustc::job::FnBox<A, R>>::call_box::h413fa04ad011f0bc
+  10:     0x55bd4bf5e075 - cargo::ops::cargo_rustc::job_queue::JobQueue::run::{{closure}}::h6a28c67e6c99e673
+  11:     0x55bd4bdd3a36 - <F as crossbeam::FnBox>::call_box::hb3bcfe228053cd9e
+  12:     0x55bd4bdd6812 - std::panicking::try::do_call::h66e2d88c23991529
+  13:     0x55bd4c3970ac - panic_unwind::__rust_maybe_catch_panic
+                        at /checkout/src/libpanic_unwind/lib.rs:98
+  14:     0x55bd4be239fb - <F as alloc::boxed::FnBox<A>>::call_box::h121236938529bc42
+  15:     0x55bd4c38ef6b - alloc::boxed::{{impl}}::call_once<(),()>
+                        at /checkout/src/liballoc/boxed.rs:692
+                         - std::sys_common::thread::start_thread
+                        at /checkout/src/libstd/sys_common/thread.rs:21
+                         - std::sys::imp::thread::{{impl}}::new::thread_start
+                        at /checkout/src/libstd/sys/unix/thread.rs:84
+  16:     0x7f744f463048 - start_thread
+  17:     0x7f744ef8cf0e - clone
+  18:                0x0 - <unknown>) })), unknown: false, exit_code: 101 }
+error: Could not compile `bug43197`.
+
+Caused by:
+  process didn't exit successfully: `rustc --crate-name bug43197 src/main.rs --crate-type bin --emit=dep-info,link -C debuginfo=2 -C metadata=1550fd98cf432f14 -C extra-filename=-1550fd98cf432f14 --out-dir /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps -L dependency=/home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/target/debug/deps` (exit code: 101)
+
+real	0m2.782s
+user	0m2.563s
+sys	0m0.222s
