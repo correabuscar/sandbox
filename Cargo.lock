@@ -244,8 +244,8 @@ dependencies = [
 
 [[package]]
 name = "cursive"
-version = "0.6.1"
-source = "git+https://github.com/gyscos/Cursive#b021458352b539c5b00d3949609eef9ad44e7358"
+version = "0.6.3-pre"
+source = "git+https://github.com/gyscos/Cursive#134854e688089968fa15d5d489b0cd9560095a96"
 dependencies = [
  "ncurses 5.86.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "num 0.1.40 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1170,7 +1170,7 @@ dependencies = [
 name = "workout"
 version = "0.1.0"
 dependencies = [
- "cursive 0.6.1 (git+https://github.com/gyscos/Cursive)",
+ "cursive 0.6.3-pre (git+https://github.com/gyscos/Cursive)",
 ]
 
 [[package]]
@@ -1221,7 +1221,7 @@ dependencies = [
 "checksum core-foundation-sys 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "41115a6aa5d3e1e5ef98148373f25971d1fad53818553f216495f9e67e90a624"
 "checksum core-foundation-sys 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "8c956115b6e6a9f13c181c9b96880d04d6b96b7838576a1526b94088a3f27790"
 "checksum core-graphics 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9797d894882bbf37c0c1218a8d90333fae3c6b09d526534fd370aac2bc6efc21"
-"checksum cursive 0.6.1 (git+https://github.com/gyscos/Cursive)" = "<none>"
+"checksum cursive 0.6.3-pre (git+https://github.com/gyscos/Cursive)" = "<none>"
 "checksum custom_derive 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "ef8ae57c4978a2acd8b869ce6b9ca1dfe817bff704c220209fdef2c0b75a01b9"
 "checksum dbghelp-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "97590ba53bcb8ac28279161ca943a924d1fd4a8fb3fa63302591647c4fc5b850"
 "checksum dlib 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "148bce4ce1c36c4509f29cb54e62c2bd265551a9b00b38070fad551a851866ec"
