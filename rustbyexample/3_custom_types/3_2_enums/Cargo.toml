@@ -1,6 +1,6 @@
 [package]
 name = "3_2_enums"
 version = "0.1.0"
-authors = ["xftroxgpx <xftroxgpx@gmail.com>"]
+authors = [ "xftroxgpx <xftroxgpx@protonmail.com>" ]
 
 [dependencies]

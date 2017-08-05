@@ -1,7 +1,7 @@
 [package]
 name = "workout"
 version = "0.1.0"
-authors = ["xftroxgpx <xftroxgpx@gmail.com>"]
+authors = [ "xftroxgpx <xftroxgpx@protonmail.com>" ]
 
 [dependencies]
 #cursive = "0.2"

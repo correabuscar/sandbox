@@ -6,7 +6,7 @@
 
 name = "guessing_game0"
 version = "0.0.1"
-authors = [ "Your name <you@example.com>" ]
+authors = [ "xftroxgpx <xftroxgpx@protonmail.com>" ]
 #Cargo gets this information from your environment. If it's not correct, go ahead and fix that.
 #
 [dependencies]
