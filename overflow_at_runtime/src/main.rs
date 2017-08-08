@@ -3,6 +3,8 @@ use std::io;
 fn main() {
     let mut instr=String::new();
     println!("Hello, world!");
+    println!("{}", std::i8::MAX);
+    //println!("{}", -1 as u8);
     io::stdin().read_line(&mut instr)
         .ok()
         .expect("Failed to read line");
@@ -13,6 +15,6 @@ fn main() {
     };
 
 
-    println!("{}", std::i8::MAX+innum);
+    println!("{}", 2*innum);
 
 }
