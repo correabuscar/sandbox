@@ -6,7 +6,7 @@ extern crate filetime;
 
 // eg. /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/compiletime_env
 const PWD_AT_COMPILETIME: &'static str = env!("CARGO_MANIFEST_DIR");
-#[cfg(debug_assertions)]
+#[cfg(debug_assertions)] //thanks to Arnavion on irc
 const CARGO_MODE: &'static str = //this repetition is necessary
 "";
 #[cfg(not(debug_assertions))]

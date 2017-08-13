@@ -16,11 +16,12 @@ fn get_neighbours(x: usize, y: usize) -> HashSet<Position> {
     possible.insert((x + 1, y));
     possible.insert((x, y.wrapping_sub(1)));
     possible.insert((x, y + 1));
-    //works: return possible.drain().filter(is_valid_position).collect();
+    //works:
+    return possible.drain().filter(is_valid_position).collect();
     //fails:
-    possible.drain().filter(is_valid_position).collect()
+    //possible.drain().filter(is_valid_position).collect()
         //^error[E0597]: `possible` does not live long enough
-        //https://github.com/rust-lang/rust/issues/43837
+        //XXX: https://github.com/rust-lang/rust/issues/43837
 }
 
 fn main() {
