@@ -553,6 +553,10 @@ name = "loop_deconstr"
 version = "0.1.0"
 
 [[package]]
+name = "macra"
+version = "0.1.0"
+
+[[package]]
 name = "magenta"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

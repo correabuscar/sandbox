@@ -18,9 +18,11 @@ const CARGO_MODE: &'static str = //this repetition is necessary
 */
 
 //lol my first macro, without reading the docs for how to macro, but used: file:///home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/src/std/macros.rs.html#315
-//macro_rules! fflush { ($name:expr) => ({ $name.flush().ok().expect("Could not flush $name");}) }
+//macro_rules! fflush { ($name:expr) => ({ $name.flush().ok().expect(stringify!(Could not flush $name)); }) }
+//"Could not flush $name");}) }
+//FIXME: how to place $name into str; find a better way
 
-macro_rules! fflush { () => ({ std::io::stdout().flush().ok().expect("Could no  t flush $name"); }) }
+macro_rules! fflush { () => ({ std::io::stdout().flush().ok().expect(stringify!(Could not flush $name)); }) }
 
 fn main() {
 
