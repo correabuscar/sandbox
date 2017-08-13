@@ -1,5 +1,8 @@
-//use std::env;
+#[macro_use]
+extern crate log;
 extern crate filetime;
+
+//use std::env;
 
 // eg. /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/compiletime_env
 const PWD_AT_COMPILETIME: &'static str = env!("CARGO_MANIFEST_DIR");
@@ -24,7 +27,7 @@ fn main() {
     let exe_full_name=std::env::current_exe().unwrap();
     let metadata0 = std::fs::metadata(&exe_full_name).unwrap();
     let mtime0 = filetime::FileTime::from_last_modification_time(&metadata0);
-    //println!("{}", mtime0);
+    println!("old exe mtime={}", mtime0);
 
     let mut changed=false;
     for each in &sources {
@@ -34,7 +37,11 @@ fn main() {
             ).unwrap();
         let mtimex=filetime::FileTime::from_last_modification_time(&metadatax);
         if mtimex > mtime0 {
-            eprintln!("{:?} is newer than {:?}", each, exe_full_name);
+            /*//#[cfg(debug_assertions)] {
+            if cfg!(debug_assertions) {
+                eprintln!("{:?} is newer than {:?}", each, exe_full_name);
+            }*/
+            debug!("{:?} is newer than {:?}", each, exe_full_name);
             if !changed {changed=true}
         }
     }
@@ -45,21 +52,23 @@ fn main() {
             //FIXME: cargo command is assumed to be in PATH, instead of using CARGO env var.; perhaps
             //it's for the best? but should have a fallback!
             .current_dir(PWD_AT_COMPILETIME)
-            .args(&["build","--release"])
+            .args(&["build","-v","--release"]) //FIXME: replace with 'run' so we don't have to manually also run it below!
             .output()
             .expect("failed to execute process");
-        if !output.status.success() {
+        if output.status.success() {
+            println!("all good! {}", output.status);
+            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+        }else{
             println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
             println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
             println!("status: {}", output.status);
-        }else{
-            println!("all good!");
         }
         //prevent possible endless loop by making sure the timestamps for the old exe and new exe
         //are now different due to compilation placing the new exe in the same place!
         let metadata1 = std::fs::metadata(&exe_full_name).unwrap();
         let mtime1 = filetime::FileTime::from_last_modification_time(&metadata1);
-        assert!(mtime0 < mtime1, "old exe mtime isn't less than newly compiled exe mtime!");
+        assert!(mtime0 < mtime1, "old exe mtime {} isn't less than newly compiled exe mtime {}!", mtime0, mtime1);
         //now have to re-execute self
         let child=std::process::Command::new(exe_full_name)
             .args(std::env::args())
@@ -67,11 +76,10 @@ fn main() {
             .expect("failed to re-execute self after recompilation");
         //exit with the above exit code, to prevent executing the old program
         std::process::exit(child.code().unwrap());
-        #[allow(unreachable_code)]
-        println!("moo");
-        #[allow(unreachable_code)]
-        unreachable!();
+        #[allow(unreachable_code)] { //thanks to mbrubeck for the block idea!
+            unreachable!();
+        }
     }
 
-    println!("Exe fname is '{:?}'", exe_full_name);
+    println!("Exe fname is {:?}", exe_full_name);
 }
