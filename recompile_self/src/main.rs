@@ -6,11 +6,11 @@ extern crate filetime;
 
 // eg. /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/compiletime_env
 const PWD_AT_COMPILETIME: &'static str = env!("CARGO_MANIFEST_DIR");
-#[cfg(debug)]
-const MODE: &'static str = //this repetition is necessary
-"--debug";
-#[cfg(release)]
-const MODE: &'static str = //this repetition is necessary
+#[cfg(debug_assertions)]
+const CARGO_MODE: &'static str = //this repetition is necessary
+"";
+#[cfg(not(debug_assertions))]
+const CARGO_MODE: &'static str = //this repetition is necessary
 "--release";
 
 fn main() {
@@ -33,7 +33,7 @@ fn main() {
     let exe_full_name=std::env::current_exe().unwrap();
     let metadata0 = std::fs::metadata(&exe_full_name).unwrap();
     let mtime0 = filetime::FileTime::from_last_modification_time(&metadata0);
-    println!("old exe mtime={}", mtime0);
+    debug!("old exe mtime={}", mtime0);
 
     let mut changed=false;
     for each in &sources {
@@ -54,11 +54,15 @@ fn main() {
 
     if changed {
         print!("Recompiling executable due to source changed...");
+        let mut args=vec!["build","-v"]; //FIXME: replace with 'run' so we don't have to manually also run it below!
+        if !CARGO_MODE.is_empty() {
+            args.push(CARGO_MODE);
+        }
         let output=std::process::Command::new("cargo")
             //FIXME: cargo command is assumed to be in PATH, instead of using CARGO env var.; perhaps
             //it's for the best? but should have a fallback!
             .current_dir(PWD_AT_COMPILETIME)
-            .args(&["build","-v","--release"]) //FIXME: replace with 'run' so we don't have to manually also run it below!
+            .args(&args)
             .output()
             .expect("failed to execute process");
         if output.status.success() {
