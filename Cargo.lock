@@ -830,6 +830,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "recompile_self"
+version = "0.1.0"
+
+[[package]]
 name = "references"
 version = "0.1.0"
 
