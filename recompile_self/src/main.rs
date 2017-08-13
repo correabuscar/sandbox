@@ -2,16 +2,20 @@
 extern crate log;
 extern crate filetime;
 
+use std::io::Write; //XXX: needed for flush() to be seen in scope!
+
 //use std::env;
 
 // eg. /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/compiletime_env
 const PWD_AT_COMPILETIME: &'static str = env!("CARGO_MANIFEST_DIR");
+/*
 #[cfg(debug_assertions)] //thanks to Arnavion on irc
 const CARGO_MODE: &'static str = //this repetition is necessary
 "";
 #[cfg(not(debug_assertions))]
 const CARGO_MODE: &'static str = //this repetition is necessary
 "--release";
+*/
 
 fn main() {
 
@@ -54,10 +58,14 @@ fn main() {
 
     if changed {
         print!("Recompiling executable due to source changed...");
-        let mut args=vec!["build","-v"]; //FIXME: replace with 'run' so we don't have to manually also run it below!
-        if !CARGO_MODE.is_empty() {
+        std::io::stdout().flush().ok().expect("Could not flush stdout");
+        let args=vec!["build","-v",
+        #[cfg(not(debug_assertions))]
+        "--release"
+        ]; //FIXME: replace with 'run' so we don't have to manually also run it below!
+        /*if !CARGO_MODE.is_empty() {
             args.push(CARGO_MODE);
-        }
+        }*/
         let output=std::process::Command::new("cargo")
             //FIXME: cargo command is assumed to be in PATH, instead of using CARGO env var.; perhaps
             //it's for the best? but should have a fallback!
