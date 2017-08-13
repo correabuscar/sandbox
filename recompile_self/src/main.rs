@@ -21,7 +21,7 @@ fn main() {
           }*/
 
     //one compile time env:
-    println!("Hello, world! {}", PWD_AT_COMPILETIME);
+    println!("Hello, world! CARGO_MANIFEST_DIR={}", PWD_AT_COMPILETIME);
     //println!("{}", env!("CARGO_TARGET_DIR"));
     //println!("{}", env!("OUT_DIR"));
 
@@ -67,8 +67,6 @@ fn main() {
             .expect("failed to execute process");
         if output.status.success() {
             println!("all good! {}", output.status);
-            println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-            println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
         }else{
             println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
             println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
