@@ -184,6 +184,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "compiletime_env"
+version = "0.1.0"
+
+[[package]]
 name = "conv"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -853,6 +857,10 @@ version = "0.1.0"
 name = "regex-syntax"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "return_is_best"
+version = "0.1.0"
 
 [[package]]
 name = "rustc-demangle"
