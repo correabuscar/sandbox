@@ -1,4 +1,4 @@
-#[macro_use]
+#[macro_use] //doc: file:///home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/book/first-edition/macros.html#scoping-and-macro-importexport
 extern crate log;
 extern crate filetime;
 
