@@ -3,6 +3,7 @@
 fn main()
 {
   std::process::exit(1);
-  #[allow(unreachable_code)]
-  unreachable!(); //FIXME: goal:make this not friggin' warn!
+  #[allow(unreachable_code)] { //fix by mbrubeck from irc!
+  unreachable!(); //done: goal:make this not friggin' warn!
+  }
 }
