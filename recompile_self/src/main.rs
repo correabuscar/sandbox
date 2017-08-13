@@ -24,6 +24,7 @@ const CARGO_MODE: &'static str = //this repetition is necessary
 macro_rules! fflush {
     () => ({
         fflush!(stdout);
+        fflush!(stderr);
     });
     ($stdwhat:ident) => ({
         use std::io::Write; //XXX: needed for flush() to be seen in scope!
