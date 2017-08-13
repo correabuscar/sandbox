@@ -17,6 +17,11 @@ const CARGO_MODE: &'static str = //this repetition is necessary
 "--release";
 */
 
+//lol my first macro, without reading the docs for how to macro, but used: file:///home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/src/std/macros.rs.html#315
+//macro_rules! fflush { ($name:expr) => ({ $name.flush().ok().expect("Could not flush $name");}) }
+
+macro_rules! fflush { () => ({ std::io::stdout().flush().ok().expect("Could no  t flush $name"); }) }
+
 fn main() {
 
     //all envs at runtime
@@ -58,7 +63,9 @@ fn main() {
 
     if changed {
         print!("Recompiling executable due to source changed...");
-        std::io::stdout().flush().ok().expect("Could not flush stdout");
+        //std::io::stdout().flush().ok().expect("Could not flush stdout");
+        //fflush!(std::io::stdout());
+        fflush!();
         let args=vec!["build","-v",
         #[cfg(not(debug_assertions))]
         "--release"
