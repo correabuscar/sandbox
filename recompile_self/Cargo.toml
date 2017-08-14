@@ -5,4 +5,5 @@ authors = ["xftroxgpx <xftroxgpx@protonmail.com>"]
 
 [dependencies]
 filetime = "0.1"
-log = "0.3.8"
+log = "0.3"
+env_logger = "0.3"

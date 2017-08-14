@@ -1,5 +1,6 @@
 #[macro_use] //doc: file:///home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/book/first-edition/macros.html#scoping-and-macro-importexport
-extern crate log;
+extern crate log;// ^ #[macro_use] is for this!
+extern crate env_logger;
 extern crate filetime;
 
 
@@ -32,8 +33,17 @@ macro_rules! fflush {
     });
 }
 
-fn main() {
 
+fn main() {
+    // XXX: Executables should choose a logging framework and initialize it early in the runtime of
+    // the program. Logging frameworks will typically include a function to do this. Any log
+    // messages generated before the framework is initialized will be ignored.
+    // src:https://docs.rs/log/0.3.8/log/#in-executables
+    //
+    // Select env_logger, one possible logger implementation
+    // (see https://doc.rust-lang.org/log/env_logger/index.html)
+    env_logger::init().unwrap();//required to show log msgs! in executables! (not for libs tho!)
+    info!("Starting up...");
 
     // FIXME: find better way to detect main.rs and others
     let sources = [std::path::Path::new(&PWD_AT_COMPILETIME).join("src/main.rs")];
@@ -57,7 +67,7 @@ fn main() {
             if cfg!(debug_assertions) {
                 eprintln!("{:?} is newer than {:?}", each, exe_full_name);
             }*/
-            debug!("{:?} is newer than {:?}", each, exe_full_name);
+            info!("{:?} is newer than {:?}", each, exe_full_name);
             if !changed {changed=true}
         }
     }
@@ -85,11 +95,14 @@ fn main() {
             eprintln!("all good! {}", output.status);
         }else{
             eprintln!("failed! {}", output.status);
-            println!("!! stdout: {}", String::from_utf8_lossy(&output.stdout));
-            println!("!! stderr: {}", String::from_utf8_lossy(&output.stderr));
+            eprintln!("!! stdout: {}", String::from_utf8_lossy(&output.stdout));
+            eprintln!("!! stderr: {}", String::from_utf8_lossy(&output.stderr));
+            warn!("Exiting... with {}",output.status);
+            std::process::exit(output.status.code().unwrap());
         }
         //prevent possible endless loop by making sure the timestamps for the old exe and new exe
         //are now different due to compilation placing the new exe in the same place!
+        info!("Re-executing self after recompile succeeded");
         let metadata1 = std::fs::metadata(&exe_full_name).unwrap();
         let mtime1 = filetime::FileTime::from_last_modification_time(&metadata1);
         assert!(mtime0 < mtime1, "old exe mtime {} isn't less than newly compiled exe mtime {}!", mtime0, mtime1);
@@ -99,7 +112,9 @@ fn main() {
             .status()
             .expect("failed to re-execute self after recompilation");
         //exit with the above exit code, to prevent executing the old program
-        std::process::exit(child.code().unwrap());
+        let exit_code=child.code().unwrap();
+        warn!("Exiting... with {}", exit_code);
+        std::process::exit(exit_code);
         #[allow(unreachable_code)] { //thanks to mbrubeck for the block idea!
             unreachable!();
         }
