@@ -6,5 +6,14 @@ authors = [ "xftroxgpx <xftroxgpx@protonmail.com>" ]
 
 [[bin]]
 
-name = "hello_world"
+#XXX: can't use '.' in bin name! give some crate name error
+name = "hello-world_differentnamehere"
+#^ that alone yields a warning:
+#
+#warning: path `/home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/hello_world/src/main.rs` was erroneously implicitly accepted for binary `hello-world_differentnamehere`,
+#please set bin.path in Cargo.toml
+#
+#see: https://github.com/rust-lang/cargo/issues/4293#issuecomment-323600836
+#to get rid of the warning, also specify 'path', like so:
+path = "src/main.rs"
 
