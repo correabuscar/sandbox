@@ -493,6 +493,10 @@ name = "insanity"
 version = "0.1.0"
 
 [[package]]
+name = "into"
+version = "0.1.0"
+
+[[package]]
 name = "iter"
 version = "0.1.0"
 

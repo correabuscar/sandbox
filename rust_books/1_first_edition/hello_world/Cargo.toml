@@ -6,7 +6,7 @@ authors = [ "xftroxgpx <xftroxgpx@protonmail.com>" ]
 
 [[bin]]
 
-#XXX: can't use '.' in bin name! give some crate name error
+#XXX: can't use '.' in bin name! give some crate name error; https://github.com/rust-lang/cargo/issues/4418
 name = "hello-world_differentnamehere"
 #^ that alone yields a warning:
 #
