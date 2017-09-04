@@ -65,10 +65,12 @@ fn main() {
         }
 
         for y in 0..n {
+            let mut sumx=0;
             for x in 0..n {
                 print!("{:3} ",square[x][y]);
+                sumx+=square[x][y];
             }
-            println!();
+            println!(" T={}", sumx);
         }
     }
     println!("Normal exit");
