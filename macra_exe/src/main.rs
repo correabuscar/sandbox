@@ -1,3 +1,4 @@
+//XXX: this is obsolete, please use lib macraa
 #![feature(trace_macros)]
 #![feature(log_syntax)]
 //use std::io::Write; //XXX: needed for flush() to be seen in scope!

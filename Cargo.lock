@@ -561,7 +561,11 @@ name = "loop_deconstr"
 version = "0.1.0"
 
 [[package]]
-name = "macra"
+name = "macra_exe"
+version = "0.1.0"
+
+[[package]]
+name = "macraa"
 version = "0.1.0"
 
 [[package]]
@@ -584,6 +588,9 @@ dependencies = [
 [[package]]
 name = "magic_squares"
 version = "0.1.0"
+dependencies = [
+ "macraa 0.1.0",
+]
 
 [[package]]
 name = "malloc_buf"

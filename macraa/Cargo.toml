@@ -1,7 +1,6 @@
 [package]
-name = "magic_squares"
+name = "macraa"
 version = "0.1.0"
 authors = ["xftroxgpx <xftroxgpx@protonmail.com>"]
 
 [dependencies]
-macraa = { path = "../macraa" }

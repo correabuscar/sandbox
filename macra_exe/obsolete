@@ -1,0 +1,3 @@
+use lib macraa instead
+this remains to illustrate how it works inside a non-lib, w/o using a lib
+
