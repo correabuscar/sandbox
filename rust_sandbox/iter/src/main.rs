@@ -2,7 +2,9 @@
 //src: https://github.com/rustomax/rust-iterators#digging-deeper
 
 fn main() {
-    for j in 1...3 {
+ //   for j in 1...3 { //error: `...` syntax cannot be used in expressions
+    for j in 1..=3 { //  = help: Use `..` if you need an exclusive range (a < b)
+//  = help: or `..=` if you need an inclusive range (a <= b)
         for i in (1..11).map(|x| x +j) {
             print!("{} ", i);
         }
