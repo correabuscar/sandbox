@@ -10,7 +10,9 @@ extern crate filetime;
 // eg. /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/compiletime_env
 const PWD_AT_COMPILETIME: &'static str = env!("CARGO_MANIFEST_DIR");
 //const OUTPUT_EXE_AT_COMPILETIME: &'static str = env!("CARGO_PKG_NAME2"); //not seen if set by build.rs , kinda obvious, but still!
-const OUTPUT_EXE_AT_COMPILETIME: &'static str = env!("CARGO_PKG_NAME"); //FIXME: not yet known how to do this! if it's even possible
+const OPTION_OUTPUT_EXE_AT_COMPILETIME: Option<&'static str> = option_env!("CARGO_TARGET_BINFILE_FULLPATH");//CARGO_TARGET_BINFILE_FULLPATH");//CARGO_TARGET_DIR"); 
+//CARGO_PKG_NAME  seems to be fname(without path), unless overriden inside Cargo.toml!
+
 /*
 #[cfg(debug_assertions)] //thanks to Arnavion on irc
 const CARGO_MODE: &'static str = //this repetition is necessary
@@ -48,6 +50,12 @@ fn main() {
     env_logger::init().unwrap();//required to show log msgs! in executables! (not for libs tho!)   XXX: Note: execute like: RUST_LOG=debug ./$0  now you can see the debug!() messages too! (warn ones are shown also, but not by default! so you need to spec. a RUST_LOG=warn at least)
     info!("Starting up...");
 
+    let for_info_only_output_exe_at_compiletime: &'static str = OPTION_OUTPUT_EXE_AT_COMPILETIME.unwrap_or_else(|| { 
+        warn!("!! You are not using my modified cargo, ergo when using hardlinked binaries I won't be able to tell you which is the real exe fullpath filename after it got recompiled/updated! See: https://github.com/rust-lang/cargo/issues/2841#issuecomment-354932455 for the cargo patch or fname need_this_env_var.patch"); //to see this warning, run with: RUST_LOG=warn ./$0
+        return "";
+    }//closure
+    ); //assignment
+
     // FIXME: find better way to detect main.rs and others
     let sources = [std::path::Path::new(&PWD_AT_COMPILETIME).join("src/main.rs")];
     //TODO: use * glob to find all *.rs in src/ ! or something
@@ -56,7 +64,7 @@ fn main() {
     let exe_full_name=std::env::current_exe().unwrap();
     debug!("exe_full_name={:?}", exe_full_name);//TODO: try symlink to it, yep it doesn't see the symlink filename, it sees the target fname always! Although doc says "The path returned is not necessarily a "real path" of the executable as there may be intermediate symlinks.", ok checked: they clearly mean hardlinks! Yeah realpath doesn't make sense for hardlinks; Let's get this fixed https://github.com/rust-lang/rust/pull/46987
     debug!("exe args[0]={}", std::env::args().nth(0).expect("failed to get argv[0]"));
-    debug!("exe file name at compile time = {}", OUTPUT_EXE_AT_COMPILETIME);
+    debug!("exe file name at compile time = '{}' (if empty, you're missing patched cargo!)", for_info_only_output_exe_at_compiletime);
     let metadata0 = std::fs::metadata(&exe_full_name).unwrap();
     let mtime0 = filetime::FileTime::from_last_modification_time(&metadata0);
     debug!("old exe mtime={}", mtime0);
@@ -115,8 +123,11 @@ fn main() {
             //so, compile succeeded AND
             //mtime isn't updated?!
             //this can only mean one thing, so far, the exe is a hardlink!
-            println!("Hardlink detected selfexe='{:?}' You will have to update this manually! It is currently the outdated binary!",exe_full_name);
-            assert!(false);//FIXME: temp
+            println!("Hardlink detected selfexe={:?} You will have to update this manually! It is currently the outdated binary! The compiled/updated binary is: '{}'",exe_full_name, OPTION_OUTPUT_EXE_AT_COMPILETIME.unwrap_or("not available because you weren't using a patched cargo"));
+            //assert!(false);//FIXME: temp, it will crash at the next assert! below anyway
+            let exit_code=3;
+            warn!("Exiting... with {}", exit_code);
+            std::process::exit(exit_code); //TODO FIXME: only exist if cargo isn't patched! TODO: Re-assert mtime diff!
         }
         assert!(mtime0 < mtime1, "old exe mtime {} isn't less than newly compiled exe mtime {}! This means it's probably the same mtime if it's a hardlink! Otherwise some unexpected&unknown bug is at hand!", mtime0, mtime1);//FIXME: hitting this when running a hardlink to the exe!
         //now have to re-execute self
