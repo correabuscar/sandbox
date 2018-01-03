@@ -1,5 +1,6 @@
 #[macro_use] //doc: file:///home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/book/first-edition/macros.html#scoping-and-macro-importexport
 extern crate log;// ^ #[macro_use] is for this!
+
 extern crate env_logger;
 extern crate filetime;
 
@@ -8,6 +9,8 @@ extern crate filetime;
 
 // eg. /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/compiletime_env
 const PWD_AT_COMPILETIME: &'static str = env!("CARGO_MANIFEST_DIR");
+//const OUTPUT_EXE_AT_COMPILETIME: &'static str = env!("CARGO_PKG_NAME2"); //not seen if set by build.rs , kinda obvious, but still!
+const OUTPUT_EXE_AT_COMPILETIME: &'static str = env!("CARGO_PKG_NAME"); //FIXME: not yet known how to do this! if it's even possible
 /*
 #[cfg(debug_assertions)] //thanks to Arnavion on irc
 const CARGO_MODE: &'static str = //this repetition is necessary
@@ -42,7 +45,7 @@ fn main() {
     //
     // Select env_logger, one possible logger implementation
     // (see https://doc.rust-lang.org/log/env_logger/index.html)
-    env_logger::init().unwrap();//required to show log msgs! in executables! (not for libs tho!)
+    env_logger::init().unwrap();//required to show log msgs! in executables! (not for libs tho!)   XXX: Note: execute like: RUST_LOG=debug ./$0  now you can see the debug!() messages too! (warn ones are shown also, but not by default! so you need to spec. a RUST_LOG=warn at least)
     info!("Starting up...");
 
     // FIXME: find better way to detect main.rs and others
@@ -51,6 +54,9 @@ fn main() {
 
     // detect if source changed!
     let exe_full_name=std::env::current_exe().unwrap();
+    debug!("exe_full_name={:?}", exe_full_name);//TODO: try symlink to it, yep it doesn't see the symlink filename, it sees the target fname always! Although doc says "The path returned is not necessarily a "real path" of the executable as there may be intermediate symlinks.", ok checked: they clearly mean hardlinks! Yeah realpath doesn't make sense for hardlinks; Let's get this fixed https://github.com/rust-lang/rust/pull/46987
+    debug!("exe args[0]={}", std::env::args().nth(0).expect("failed to get argv[0]"));
+    debug!("exe file name at compile time = {}", OUTPUT_EXE_AT_COMPILETIME);
     let metadata0 = std::fs::metadata(&exe_full_name).unwrap();
     let mtime0 = filetime::FileTime::from_last_modification_time(&metadata0);
     debug!("old exe mtime={}", mtime0);
@@ -105,7 +111,14 @@ fn main() {
         info!("Re-executing self after recompile succeeded");
         let metadata1 = std::fs::metadata(&exe_full_name).unwrap();
         let mtime1 = filetime::FileTime::from_last_modification_time(&metadata1);
-        assert!(mtime0 < mtime1, "old exe mtime {} isn't less than newly compiled exe mtime {}!", mtime0, mtime1);
+        if mtime0 == mtime1 {
+            //so, compile succeeded AND
+            //mtime isn't updated?!
+            //this can only mean one thing, so far, the exe is a hardlink!
+            println!("Hardlink detected selfexe='{:?}' You will have to update this manually! It is currently the outdated binary!",exe_full_name);
+            assert!(false);//FIXME: temp
+        }
+        assert!(mtime0 < mtime1, "old exe mtime {} isn't less than newly compiled exe mtime {}! This means it's probably the same mtime if it's a hardlink! Otherwise some unexpected&unknown bug is at hand!", mtime0, mtime1);//FIXME: hitting this when running a hardlink to the exe!
         //now have to re-execute self
         let child=std::process::Command::new(exe_full_name)
             .args(std::env::args())

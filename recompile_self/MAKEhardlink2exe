@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rm hardlink
+ln ../target/debug/recompile_self hardlink
