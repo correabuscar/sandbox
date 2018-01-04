@@ -8,7 +8,7 @@ extern crate filetime;
 //use std::env;
 
 // eg. /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/compiletime_env
-const PWD_AT_COMPILETIME: &'static str = env!("CARGO_MANIFEST_DIR");
+const PROJECT_DIR_AT_COMPILETIME: &'static str = env!("CARGO_MANIFEST_DIR");
 //const OUTPUT_EXE_AT_COMPILETIME: &'static str = env!("CARGO_PKG_NAME2"); //not seen if set by build.rs , kinda obvious, but still!
 const OPTION_OUTPUT_EXE_AT_COMPILETIME: Option<&'static str> = option_env!("CARGO_TARGET_BINFILE_FULLPATH");//CARGO_TARGET_BINFILE_FULLPATH");//CARGO_TARGET_DIR"); 
 //CARGO_PKG_NAME  seems to be fname(without path), unless overriden inside Cargo.toml!
@@ -21,6 +21,8 @@ const CARGO_MODE: &'static str = //this repetition is necessary
 const CARGO_MODE: &'static str = //this repetition is necessary
 "--release";
 */
+const CARGO_MODE: &'static str = env!("CARGO_TARGET");
+//^ env var set by my build.rs
 
 //lol my first macro, without reading the docs for how to macro, but used: file:///home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/src/std/macros.rs.html#315
 //macro_rules! fflush { ($name:expr) => ({ $name.flush().ok().expect(stringify!(Could not flush $name)); }) }
@@ -57,11 +59,11 @@ fn main() {
     ); //assignment
 
     // FIXME: find better way to detect main.rs and others
-    let sources = [std::path::Path::new(&PWD_AT_COMPILETIME).join("src/main.rs")];
+    let sources = [std::path::Path::new(&PROJECT_DIR_AT_COMPILETIME).join("src/main.rs")];
     //TODO: use * glob to find all *.rs in src/ ! or something
 
     // detect if source changed!
-    let exe_full_name=std::env::current_exe().unwrap();
+    let exe_full_name=std::env::current_exe().expect("exe_full_name");
     debug!("exe_full_name={:?}", exe_full_name);//TODO: try symlink to it, yep it doesn't see the symlink filename, it sees the target fname always! Although doc says "The path returned is not necessarily a "real path" of the executable as there may be intermediate symlinks.", ok checked: they clearly mean hardlinks! Yeah realpath doesn't make sense for hardlinks; Let's get this fixed https://github.com/rust-lang/rust/pull/46987
     debug!("exe args[0]={}", std::env::args().nth(0).expect("failed to get argv[0]"));
     debug!("exe file name at compile time = '{}' (if empty, you're missing patched cargo!)", for_info_only_output_exe_at_compiletime);
@@ -72,7 +74,7 @@ fn main() {
     let mut changed=false;
     for each in &sources {
         let metadatax = std::fs::metadata(
-            std::path::Path::new(&PWD_AT_COMPILETIME)
+            std::path::Path::new(&PROJECT_DIR_AT_COMPILETIME)
             .join(each)
             ).unwrap();
         let mtimex=filetime::FileTime::from_last_modification_time(&metadatax);
@@ -95,13 +97,19 @@ fn main() {
         #[cfg(not(debug_assertions))]
         "--release"
         ]; //XXX: nvm: replace with 'run' so we don't have to manually also run it below! Actually NO, because then we have to show stdout/stderr from compilation too!
+        #[cfg(not(debug_assertions))] {
+            assert!(CARGO_MODE == "release");
+        }
+        #[cfg(debug_assertions)] {
+            assert!(CARGO_MODE == "debug");
+        }
         /*if !CARGO_MODE.is_empty() {
             args.push(CARGO_MODE);
         }*/
         let output=std::process::Command::new("cargo")
             //FIXME: cargo command is assumed to be in PATH, instead of using CARGO env var.; perhaps
             //it's for the best? but should have a fallback!
-            .current_dir(PWD_AT_COMPILETIME)
+            .current_dir(PROJECT_DIR_AT_COMPILETIME)
             .args(&args)
             .output()
             .expect("failed to execute process");
@@ -151,7 +159,7 @@ fn main() {
           }*/
 
     //one compile time env:
-    println!("Hello, world! CARGO_MANIFEST_DIR={}", PWD_AT_COMPILETIME);
+    println!("Hello, world! CARGO_MANIFEST_DIR={}", PROJECT_DIR_AT_COMPILETIME);
     //println!("{}", env!("CARGO_TARGET_DIR"));
     //println!("{}", env!("OUT_DIR"));
 }
