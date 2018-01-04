@@ -89,31 +89,34 @@ fn main() {
     }
 
     debug!("!! PROFILE aka CARGO_MODE='{}'",CARGO_MODE);
+    //these two blocks should detect inconsistencies or simply unhandled unexpected cases
+    //between my assumptions for the relationships between debug_assertions and realease/debug
+    //yes these two blocks will fail when release and -C debug-assertions or when debug and
+    //disabling debug-assertions (is there a way? should be in Cargo.toml the [profile.dev]
+    //section for example.)
+    #[cfg(not(debug_assertions))] {
+        if CARGO_MODE != "release" {
+            debug!("Note: You're in debug and you disabled debug-assertions!");
+        }
+    }
+    #[cfg(debug_assertions)] {
+        if CARGO_MODE != "debug" {
+            debug!("Note: You're in release and you enabled debug_assertions!");
+        }
+    }
+    //same thing but require the use of build.rs to set these profile_N things:
+    #[cfg(profile_release)] {
+        assert!(CARGO_MODE == "release");
+    }
+    #[cfg(profile_debug)] {
+        assert!(CARGO_MODE == "debug");
+    }
+
     if changed {
         eprint!("!! Recompiling executable due to source changed...");
         //std::io::stdout().flush().ok().expect("Could not flush stdout");
         //fflush!(std::io::stdout());
         fflush!();
-        //these two blocks should detect inconsistencies or simply unhandled unexpected cases
-        //between my assumptions for the relationships between debug_assertions and realease/debug
-        //yes these two blocks will fail when release and -C debug-assertions or when debug and
-        //disabling debug-assertions (is there a way? should be in Cargo.toml the [profile.dev]
-        //section for example.)
-        #[cfg(not(debug_assertions))] {
-            assert!(CARGO_MODE == "release","You're in debug and you disabled debug-assertions?!");
-            assert!(false);
-        }
-        #[cfg(debug_assertions)] {
-            assert!(CARGO_MODE == "debug","You're in release but you enabled debug_assertions?!");
-            assert!(false);
-        }
-        //same thing but require the use of build.rs to set these target_N things:
-        #[cfg(profile_release)] {
-            assert!(CARGO_MODE == "release");
-        }
-        #[cfg(profile_debug)] {
-            assert!(CARGO_MODE == "debug");
-        }
 
         let args=vec!["build","-v",
         //#[cfg(not(debug_assertions))] //this works too but XXX: not as reliable! because you can pass -C debug-assertions and still be release!
@@ -148,7 +151,9 @@ fn main() {
             //so, compile succeeded AND
             //mtime isn't updated?!
             //this can only mean one thing, so far, the exe is a hardlink!
-            eprintln!("Hardlink detected selfexe={:?} You will have to update this manually! It is currently the outdated binary! The compiled/updated binary is: '{}'",exe_full_name, OPTION_OUTPUT_EXE_AT_COMPILETIME.unwrap_or("not available because you weren't using a patched cargo"));
+            eprintln!("The file you just ran is now outdated selfexe={:?} The updated version is '{}' You will have to update this manually!",exe_full_name, OPTION_OUTPUT_EXE_AT_COMPILETIME.unwrap_or("not available because you weren't using a patched cargo"));
+            //TODO: can actually detect if hardlink(before recompiling it!) AND replace it when
+            //done!
             //assert!(false);//nvmFIXME: temp, it will crash at the next assert! below anyway
             let exit_code=3;
             warn!("Exiting... with {}", exit_code);
@@ -169,6 +174,7 @@ fn main() {
         }
     }
 
+    //the following is considered part of the main program, hence why  using println! not eprintln!
     println!("Exe fname is {:?}", exe_full_name);
     //all envs at runtime
     /*    for (key, value) in std::env::vars() {

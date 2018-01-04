@@ -3,12 +3,13 @@ fail() {
   echo "!! Failed!"
 }
 trap fail exit 
-set -ev
+set -ex
 time cargo build #aka debug
 time cargo build --release
 ./touch_source
+export RUST_LOG=debug
 ./run_exe_release
 ./run_exe_debug
-set +v
+set +x
 echo "Success"
 trap - exit
