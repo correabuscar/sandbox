@@ -2,6 +2,11 @@
 
 before="/tmp/edit_build_rs.rnd$RANDOM.before"
 after="/tmp/edit_build_rs.rnd$RANDOM.after"
+onexit() { #note: the exit code is preserved anyway
+  trap - exit sigint
+  rm -- "$before" "$after" 2>&1 >/dev/null
+}
+trap onexit exit sigint
 stat build.rs >  "$before"
 vim build.rs
 stat build.rs >  "$after"
