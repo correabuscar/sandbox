@@ -7,10 +7,12 @@ extern crate filetime;
 
 //use std::env;
 
+const BUILD_DATE: &'static str = env!("BUILD_DATE"); //set by build.rs
+const GIT_HASH: &'static str = env!("GIT_HASH"); //set by build.rs latest commit hash (ie. of HEAD)
 // eg. /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/compiletime_env
 const PROJECT_DIR_AT_COMPILETIME: &'static str = env!("CARGO_MANIFEST_DIR");
 //const OUTPUT_EXE_AT_COMPILETIME: &'static str = env!("CARGO_PKG_NAME2"); //not seen if set by build.rs , kinda obvious, but still!
-const OPTION_OUTPUT_EXE_AT_COMPILETIME: Option<&'static str> = option_env!("CARGO_TARGET_BINFILE_FULLPATH");//CARGO_TARGET_BINFILE_FULLPATH");//CARGO_TARGET_DIR"); 
+const OPTION_OUTPUT_EXE_AT_COMPILETIME: Option<&'static str> = option_env!("CARGO_TARGET_BINFILE_FULLPATH");
 //CARGO_PKG_NAME  seems to be fname(without path), unless overriden inside Cargo.toml!
 
 /*
@@ -185,4 +187,6 @@ fn main() {
     println!("Hello, world! CARGO_MANIFEST_DIR={}", PROJECT_DIR_AT_COMPILETIME);
     //println!("{}", env!("CARGO_TARGET_DIR"));
     //println!("{}", env!("OUT_DIR"));
+    println!("BUILD_DATE={}", BUILD_DATE);
+    println!("HEAD={}", GIT_HASH);
 }
