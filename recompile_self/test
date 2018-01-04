@@ -1,0 +1,14 @@
+#!/bin/bash
+fail() {
+  echo "!! Failed!"
+}
+trap fail exit 
+set -ev
+time cargo build #aka debug
+time cargo build --release
+./touch_source
+./run_exe_release
+./run_exe_debug
+set +v
+echo "Success"
+trap - exit

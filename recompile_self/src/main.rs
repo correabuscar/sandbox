@@ -21,7 +21,7 @@ const CARGO_MODE: &'static str = //this repetition is necessary
 const CARGO_MODE: &'static str = //this repetition is necessary
 "--release";
 */
-const CARGO_MODE: &'static str = env!("CARGO_TARGET");
+const CARGO_MODE: &'static str = env!("CARGO_PROFILE");
 //^ env var set by my build.rs
 
 //lol my first macro, without reading the docs for how to macro, but used: file:///home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/src/std/macros.rs.html#315
@@ -88,21 +88,38 @@ fn main() {
         }
     }
 
+    debug!("!! PROFILE aka CARGO_MODE='{}'",CARGO_MODE);
     if changed {
         eprint!("!! Recompiling executable due to source changed...");
         //std::io::stdout().flush().ok().expect("Could not flush stdout");
         //fflush!(std::io::stdout());
         fflush!();
-        let args=vec!["build","-v",
-        #[cfg(not(debug_assertions))]
-        "--release"
-        ]; //XXX: nvm: replace with 'run' so we don't have to manually also run it below! Actually NO, because then we have to show stdout/stderr from compilation too!
+        //these two blocks should detect inconsistencies or simply unhandled unexpected cases
+        //between my assumptions for the relationships between debug_assertions and realease/debug
+        //yes these two blocks will fail when release and -C debug-assertions or when debug and
+        //disabling debug-assertions (is there a way? should be in Cargo.toml the [profile.dev]
+        //section for example.)
         #[cfg(not(debug_assertions))] {
-            assert!(CARGO_MODE == "release");
+            assert!(CARGO_MODE == "release","You're in debug and you disabled debug-assertions?!");
+            assert!(false);
         }
         #[cfg(debug_assertions)] {
+            assert!(CARGO_MODE == "debug","You're in release but you enabled debug_assertions?!");
+            assert!(false);
+        }
+        //same thing but require the use of build.rs to set these target_N things:
+        #[cfg(profile_release)] {
+            assert!(CARGO_MODE == "release");
+        }
+        #[cfg(profile_debug)] {
             assert!(CARGO_MODE == "debug");
         }
+
+        let args=vec!["build","-v",
+        //#[cfg(not(debug_assertions))] //this works too but XXX: not as reliable! because you can pass -C debug-assertions and still be release!
+        #[cfg(profile_release)]  //note: implied applies only to next statement but can use {} block!(remember that {} is an expression!)
+        "--release"
+        ]; //XXX: nvm: replace with 'run' so we don't have to manually also run it below! Actually NO, because then we have to show stdout/stderr from compilation too!
         /*if !CARGO_MODE.is_empty() {
             args.push(CARGO_MODE);
         }*/
@@ -131,11 +148,11 @@ fn main() {
             //so, compile succeeded AND
             //mtime isn't updated?!
             //this can only mean one thing, so far, the exe is a hardlink!
-            println!("Hardlink detected selfexe={:?} You will have to update this manually! It is currently the outdated binary! The compiled/updated binary is: '{}'",exe_full_name, OPTION_OUTPUT_EXE_AT_COMPILETIME.unwrap_or("not available because you weren't using a patched cargo"));
-            //assert!(false);//FIXME: temp, it will crash at the next assert! below anyway
+            eprintln!("Hardlink detected selfexe={:?} You will have to update this manually! It is currently the outdated binary! The compiled/updated binary is: '{}'",exe_full_name, OPTION_OUTPUT_EXE_AT_COMPILETIME.unwrap_or("not available because you weren't using a patched cargo"));
+            //assert!(false);//nvmFIXME: temp, it will crash at the next assert! below anyway
             let exit_code=3;
             warn!("Exiting... with {}", exit_code);
-            std::process::exit(exit_code); //TODO FIXME: only exist if cargo isn't patched! TODO: Re-assert mtime diff!
+            std::process::exit(exit_code); //TODO FIXME: only exit if cargo isn't patched! TODO: Re-assert mtime diff!
         }
         assert!(mtime0 < mtime1, "old exe mtime {} isn't less than newly compiled exe mtime {}! This means it's probably the same mtime if it's a hardlink! Otherwise some unexpected&unknown bug is at hand!", mtime0, mtime1);//FIXME: hitting this when running a hardlink to the exe!
         //now have to re-execute self
