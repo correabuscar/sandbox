@@ -13,7 +13,8 @@ fn main() {
   println!("cargo:rustc-cfg=profile_{}",profile);
   println!("cargo:rustc-env=CARGO_PROFILE={}", profile);
   //^ indicates that the specified environment variable will be added to the environment which the compiler is run within. The value can be then retrieved by the env! macro in the compiled crate. This is useful for embedding additional metadata in crate's code, such as the hash of Git HEAD or the unique identifier of a continuous integration server.
-  println!("cargo:rerun-if-env-changed=A"); //if the environment variable's value changes the build script should be rerun. 
+//  println!("cargo:rerun-if-env-changed=A"); //if the environment variable's value changes the build script should be rerun. 
+  //FIXME: must not use cargo:rerun-if-env-changed or else build.rs won't run if only src/main.rs changed! see: https://github.com/rust-lang/cargo/issues/4901
 
   //the following code from https://github.com/mitnk/cicada/blob/5fac888ccc3cef0abc24e2d3bdf1655eddfdbc98/src/build.rs and slightly modified:
   extern crate time;
