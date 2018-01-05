@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#this currently fails!
+bd_before=`cargo run -vv 2>/dev/null|grep BUILD_DATE`
+#presumably BUILD_DATE is now current!
+sleep 1 #ensure at least 1 sec diff!
+touch src/main.rs #emulate modification
+bd_after=`cargo run -vv 2>/dev/null|grep BUILD_DATE`
+#FIXME: this should've updated BUILD_DATE by recompiling&running build.rs but it doesn't!
+#cargo 0.26.0
+#release: 0.26.0
+if test "$bd_before" == "$bd_after"; then
+  echo "!! Failed! BUILD_DATE was not updated!"
+  echo "$bd_before"
+  echo "$bd_after"
+else
+  echo "!! Success!"
+fi
