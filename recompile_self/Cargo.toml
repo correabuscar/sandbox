@@ -2,6 +2,7 @@
 name = "recompile_self"
 version = "0.1.0"
 authors = ["xftroxgpx <xftroxgpx@protonmail.com>"]
+exclude = [ "**/symlink_*", "**/hardlink_*" ]
 
 build = "build.rs"
 #^implied if not specified; aka the default!
