@@ -6,6 +6,10 @@ exclude = [ "**/symlink_*", "**/hardlink_*" ]
 
 build = "build.rs"
 #^implied if not specified; aka the default!
+publish = false
+#^The publish field can be used to prevent a package from being published to a package registry (like crates.io) by mistake.
+
+
 
 [dependencies]
 filetime = "0.1"

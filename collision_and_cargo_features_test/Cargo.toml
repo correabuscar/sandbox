@@ -1,0 +1,14 @@
+[package]
+name = "collision_and_cargo_features_test"
+version = "0.1.0"
+authors = ["xftroxgpx <xftroxgpx@protonmail.com>"]
+
+[dependencies]
+uuid = { version = "0.4", features = ["serde", #do i need serde here? copied from an example
+"v4"], optional = true }
+rand = { version = "0.4.2", optional = true }
+
+[features] #see docs https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
+default = ["rand_num"]  #can use "uuid" instead (even tho it's a package!)
+rand_num = ["rand"] #the rand_num feature, depends on the "rand" package!
+
