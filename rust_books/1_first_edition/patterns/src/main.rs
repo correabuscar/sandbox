@@ -107,6 +107,9 @@ fn main() {
         //Point { .., y: y } => println!("y is {}", y), // this won't work
     }
 
+    match origin {
+        Point { y:y1, .. } => println!("y is {}", y1),
+    }
 
     //If you want to match against a slice or array, you can use []:
 /*    let v = vec!["match_this", "1"];
@@ -116,6 +119,51 @@ FIXME:        ["match_this", second] => println!("The second element is {}", sec
     }*/
 
     let (x, y): (i32, i32) = (5, 6); //src: https://rust-lang.github.io/book/ch03-02-variable-bindings.html
+    println!("x={} y={}",x,y);
+
+    //src: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/book/first-edition/book/patterns.html#ignoring-bindings
+    //It’s worth noting that using _ never binds the value in the first place, which means that the value does not move:
 
 
+    let tuple: (u32, String) = (5, String::from("five"));
+
+    // Here, tuple is moved, because the String moved:
+    let (x, _s) = tuple;
+
+    // The next line would give "error: use of partially moved value: `tuple`".
+// println!("Tuple is: {:?}", tuple);
+// partially because x has the Copy trait and is copied instead of moved!
+
+// However,
+
+    let tuple = (5, String::from("five"));
+
+    // Here, tuple is _not_ moved, as the String was never moved, and u32 is Copy:
+    let (x, _) = tuple;
+
+    // That means this works:
+    println!("Tuple is: {:?}", tuple);
+
+    #[derive(Debug)]
+    struct Wrapped(u32);
+    let tuple2: (Wrapped, String) = (Wrapped(5), String::from("five"));
+    let (x,_) = tuple2;
+    //println!("Tuple2 is: {:?}", tuple2); //now it's use of partially moved value: `tuple2` because of Wrapped! and that's how you protect wtw from the Copy trait... assuming i don't want stale ints because they were copied when I expected a move.
+    let tuple3: ((u32), String) = ((5), String::from("five"));
+    let (x,_) = tuple3;
+    println!("Tuple3 is: {:?}", tuple3); //yeah this doesn't err, i guess (u32) inherits not only Debug but also Copy? and not sure atm if it's supposed to be equivalent to struct Wrapped(u32) but with some defaults (like Debug,Copy traits) already in.
+
+    // Here, the String created will be dropped immediately, as it’s not bound:
+    let _ = String::from("  hello  ").trim(); //nioce!
+
+    //let's test that! with the destructor:
+    #[derive(Debug)]
+    struct Echo(u32); //this is called: tupple struct, src: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/book/second-edition/book/ch06-01-defining-an-enum.html
+    impl Drop for Echo {
+        fn drop(&mut self) {
+            println!("Dropping {:?}", self);
+        }
+    }
+    let _ = Echo(5); //yep, totally works!
+    println!("After");
 }
