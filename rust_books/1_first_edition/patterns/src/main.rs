@@ -166,4 +166,7 @@ FIXME:        ["match_this", second] => println!("The second element is {}", sec
     }
     let _ = Echo(5); //yep, totally works!
     println!("After");
+    let a = Echo(6); //is this dropped
+    let a = 6; // after this line?
+    println!("After2");
 }
