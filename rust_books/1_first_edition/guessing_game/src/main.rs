@@ -32,7 +32,10 @@ fn main() {
 
         let guess: u8 = match guess.trim().parse() {
             Ok(num) => num,
-            Err(_) => continue,
+            Err(e) => {
+                println!("error: {}",e);
+                continue
+            },
         };
         //    let input_num = "5".parse::<u32>(); // input_num: Option<u32>
         //    let input_num: Option<u32> = "5".parse(); // input_num: Option<u32>
