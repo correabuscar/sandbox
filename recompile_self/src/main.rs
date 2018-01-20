@@ -72,13 +72,13 @@ fn main() {
     let mtime0 = filetime::FileTime::from_last_modification_time(&metadata0);
     debug!("old exe mtime={}", mtime0);
 
-    let mut changed=false;
+    let mut changed: bool =false;
     for each in &sources {
-        let metadatax = std::fs::metadata(
+        let metadatax: Metadata = std::fs::metadata( //uuu, this intellij idea rust plugin has way to specify type explicitly! loving this
             std::path::Path::new(&PROJECT_DIR_AT_COMPILETIME)
             .join(each)
             ).unwrap();
-        let mtimex=filetime::FileTime::from_last_modification_time(&metadatax);
+        let mtimex: FileTime =filetime::FileTime::from_last_modification_time(&metadatax);
         if mtimex > mtime0 {
             /*//#[cfg(debug_assertions)] {
             if cfg!(debug_assertions) {
