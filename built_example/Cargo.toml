@@ -1,0 +1,11 @@
+[package]
+name = "built_example"
+version = "0.1.0"
+authors = ["xftroxgpx <xftroxgpx@protonmail.com>"]
+
+[dependencies]
+
+#src: https://docs.rs/built/0.2.3/built/?search=
+[build-dependencies]
+#built = "0.2"
+built = { path = "builty" }

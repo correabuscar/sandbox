@@ -1,0 +1,3 @@
+show-stopper detected: stacktraces are useless due to error propagation
+
+https://play.rust-lang.org/?gist=937fcf44524183aa8d466c2e44c10a27&version=stable
