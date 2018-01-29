@@ -814,7 +814,7 @@ pub fn write_built_file() -> io::Result<()> {
 
 /// A shorthand for calling `write_built_file_with_opts()` with `CARGO_MANIFEST_DIR` ,
 /// `[OUT_DIR]/built.rs` and the provided `options`.
-pub fn write_built_file_with_opts2(options: &Options) -> io::Result<()> { //XXX: cannot use same name function, even tho they have different number of args - ie. function overloading!(and this isn't part of a struct)
+pub fn write_built_file_with_opts2(options: &Options) -> io::Result<()> { //XXX: cannot use same name function, even tho they have different number of args - ie. function overloading!(and this isn't part of a struct) https://github.com/lukaslueg/built/issues/12
     let src = env::var("CARGO_MANIFEST_DIR").unwrap();
     let dst = path::Path::new(&env::var("OUT_DIR").unwrap()).join("built.rs");
     write_built_file_with_opts(options, &src, &dst)?;
