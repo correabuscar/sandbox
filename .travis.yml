@@ -1,4 +1,5 @@
 #src: https://docs.travis-ci.com/user/languages/rust/
+#XXX: note travis for this repo is currently disabled!
 
 language: rust
 
