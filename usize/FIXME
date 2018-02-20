@@ -1,3 +1,5 @@
+it's issue: https://github.com/rust-lang/cargo/issues/3530
+
 cargo clean -v -p usize
 does not clean anything for the project 'usize'
 the debug folders are still there
