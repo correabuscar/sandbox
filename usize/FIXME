@@ -7,3 +7,8 @@ the debug folders are still there
 workaround:
 cargo clean
 
+------
+now, even though ./go and ./go_64bit produce the same executable, they are produced in different working dirs with different fingerprints depending on the args (the former has no args, the latter explicitly specifies the implied target of x86_64 ... )
+so ./c will clean only the exe produced by ./go , not the one produced by ./go_64bit or ./go_32bit
+cargo clean, cleans all - workspace global!
+
