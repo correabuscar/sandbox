@@ -27,7 +27,7 @@ fn main() {
     }; //Is this dropped...
     //assert_eq!(1, count);//error[E0502]: cannot borrow `count` as immutable because it is also borrowed as mutable
     assert_eq!(1, *_a.dropcount);//error[E0502]: cannot borrow `count` as immutable because it is also borrowed as mutable
-    let _a = 6; // ...after this line? nope  TODO: feature request Rust should drop the shadowed _a here;
+    let _a = 6; // ...after this line? nope  TODO: feature request Rust should drop the shadowed _a here;(that is, after the rhs is evaluated, just in case it's used in there) although, there might be good reason(s) to keep it until it goes out of scope hmm... like if something else is using it and then you shadow it (unsure how much sense this makes, atm - can't think)
     //assert_eq!(1, count);//error[E0502]: cannot borrow `count` as immutable because it is also borrowed as mutable
     {
         //assert_eq!(1, count);//error[E0502]: cannot borrow `count` as immutable because it is also borrowed as mutable
