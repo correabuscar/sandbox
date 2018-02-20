@@ -4,6 +4,7 @@
 #workaround issue: 29293 https://github.com/rust-lang/rust/issues/29293
 echo "RUST_BACKTRACE=$RUST_BACKTRACE"
 echo "RUST_LOG=$RUST_LOG"
+./prereq
 time cargo run -v --target x86_64-unknown-linux-gnu -- "$@"
 
 

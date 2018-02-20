@@ -1,0 +1,7 @@
+cargo clean -v -p usize
+does not clean anything for the project 'usize'
+the debug folders are still there
+
+workaround:
+cargo clean
+

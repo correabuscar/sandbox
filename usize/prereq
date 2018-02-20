@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rustup target list|grep -F 'i686-unknown-linux-gnu (installed)' || rustup target add i686-unknown-linux-gnu
+pacman -Qs lib32-gcc-libs || sudo pacman -S core/lib32-gcc-libs
