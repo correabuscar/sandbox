@@ -156,6 +156,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "ch03-03"
+version = "0.1.0"
+
+[[package]]
 name = "ch04-04-slices"
 version = "0.1.0"
 
