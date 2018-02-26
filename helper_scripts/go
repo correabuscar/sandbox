@@ -4,7 +4,9 @@
 #workaround issue: 29293 https://github.com/rust-lang/rust/issues/29293
 echo "RUST_BACKTRACE=$RUST_BACKTRACE"
 echo "RUST_LOG=$RUST_LOG"
-./prereq
+if test -x ./prereq; then
+  ./prereq
+fi
 time cargo run -v -- "$@"
 
 
