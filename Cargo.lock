@@ -858,6 +858,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "nll_equiv"
+version = "0.1.0"
+
+[[package]]
 name = "nll_scope1"
 version = "0.1.0"
 
