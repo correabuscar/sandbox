@@ -858,6 +858,10 @@ name = "method2"
 version = "0.1.0"
 
 [[package]]
+name = "mod_visibility"
+version = "0.1.0"
+
+[[package]]
 name = "montyhall"
 version = "0.1.0"
 dependencies = [
