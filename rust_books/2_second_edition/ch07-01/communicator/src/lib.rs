@@ -1,6 +1,9 @@
-#![allow(dead_code)]
+//#![allow(dead_code)]
+//^ The default state of all code in Rust is private: no one else is allowed to use the code. If you don’t use a private function within your program, because your program is the only code allowed to use that function, Rust will warn you that the function has gone unused.
+//After we specify that a function like client::connect is public, not only will our call to that function from our binary crate be allowed, but the warning that the function is unused will go away. Marking a function as public lets Rust know that the function will be used by code outside of our program. Rust considers the theoretical external usage that’s now possible as the function “being used.” Thus, when a function is marked public, Rust will not require that it be used in our program and will stop warning that the function is unused.
+//src: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/book/second-edition/book/ch07-02-controlling-visibility-with-pub.html
 
-mod client; //aka client.rs
+pub mod client; //aka client.rs
 
 mod network {
     fn connect() {
