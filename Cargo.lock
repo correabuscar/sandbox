@@ -253,6 +253,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "communicator"
+version = "0.1.0"
+
+[[package]]
 name = "compiletime_env"
 version = "0.1.0"
 
