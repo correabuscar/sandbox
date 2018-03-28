@@ -29,7 +29,7 @@ fn main() {
           //println!("cargo:rustc-env=GIT_HASH={:?}", e);
       }
   }
-  let tm = time::now();
+  let tm = time::now();//TODO: use SOURCE_DATE_EPOCH ? https://reproducible-builds.org/specs/source-date-epoch/
   //nvmFIXME: why is there an empty line between the above and next println! ? oh it's from `git` ffs FIXME: but it really shouldn't be!
   println!("cargo:rustc-env=BUILD_DATE={}", 
            //1 //XXX: even with just this(aka non-changing build date), build.rs gets run every time! like nothing's cached! if and only if, a touch build.rs happened, as opposed to a `cargo check`! FIXME: why no caching of build.rs ? XXX: it's because I've a symlink to the exe in package dir! and it sees the timestamp of it changed! oddly enough! https://github.com/rust-lang/cargo/issues/4907
