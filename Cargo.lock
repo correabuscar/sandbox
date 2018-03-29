@@ -609,6 +609,10 @@ name = "hello_world"
 version = "0.0.1"
 
 [[package]]
+name = "i32_despide_overflow"
+version = "0.1.0"
+
+[[package]]
 name = "idna"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1409,6 +1413,10 @@ version = "0.1.0"
 dependencies = [
  "glium 0.20.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "type_coercion"
+version = "0.1.0"
 
 [[package]]
 name = "unicode-bidi"
