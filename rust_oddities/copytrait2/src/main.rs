@@ -2,7 +2,7 @@
 #[derive(Debug)]
 struct Point<T> {
     x: T,
-    #[allow(dead_code)]
+//    #[allow(dead_code)]
     y: T,
 }
 
