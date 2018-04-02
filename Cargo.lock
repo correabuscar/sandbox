@@ -191,6 +191,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "clone_required__struct"
+version = "0.1.0"
+
+[[package]]
 name = "closures"
 version = "0.0.1"
 
