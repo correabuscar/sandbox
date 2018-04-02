@@ -3,6 +3,7 @@
 struct Moo<T>(T);
 
 
+#[derive(Debug)]
 struct Point<T, U> {
     x: T,
     y: U,
@@ -33,6 +34,9 @@ fn main() {
         //presumably either 'static ? OR, more likely, their ownership is just simply moved, eventually to p3
 
         p3 = p1.mixup(p2);
+        //println!("{:?}", p1);//that's right, moved!
+        //println!("{:?}", p2);//that's right, moved!
+        println!("{:?}", p3);//into p3
     }
     println!("p3.x = {:?}, p3.y = {:?}", p3.x, p3.y);
 }
