@@ -31,7 +31,7 @@ fn main() {
         //  |
         {                         //  |
             let y = &5;           // ---+ y goes into scope
-            let f = Foo { x: y }; // ---+ f goes into scope
+            let _f = Foo { x: y }; // ---+ f goes into scope
             //            x = &f.x;             //  | | error here
         }                         // ---+ f and y go out of scope
         //  |
@@ -42,9 +42,9 @@ fn main() {
     //of the entire program. Most Rust programmers first come across 'static when dealing with
     //strings:
 
-    let x: &'static str = "Hello, world.";
+    let _x: &'static str = "Hello, world.";
     static FOO: i32 = 5;
-    let x: &'static i32 = &FOO;
+    let _x: &'static i32 = &FOO;
 
     //shared ownership: // This is the simplest kind of multiple ownership possible.
     let car = Car { name: "DeLorean".to_string() };
