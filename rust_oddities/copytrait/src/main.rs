@@ -27,7 +27,7 @@ fn main() {
     let oldfirst = a[0].clone();//this is acceptable! but implicitly copy like above isn't! TODO: find a way to disable Copy trait!
 
     a[0] = 7;
-    let reffirst:&i32 = &a[0]; //TODO: find out how to keep a ref and still allow assignment - eg. move this line above the assignment line a[0]=7; and have it work!
+    let reffirst:&i32 = &a[0]; //TODO: find out how to keep a ref and still allow assignment - eg. move this line above the assignment line a[0]=7; and have it work! hmm... maybe this is a good thing that it doesn't work??!
 
     println!("The value of first is: {} {} {}", first, oldfirst, reffirst);
 

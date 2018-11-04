@@ -1,3 +1,5 @@
+#![feature(rustc_attrs)]
+
 // someone (mib_*) on irc had this example, now modified a bit
 // fixed by needing a .clone()
 
@@ -26,6 +28,8 @@ impl Parser {
     }
 }
 
+//see https://github.com/rust-lang/rust/pull/14202#issuecomment-435674973
+#[rustc_mir(borrowck_graphviz_postflow="/tmp/suffix.dot")]
 fn main() {
     let mut parser: Parser = setup_parser();
 
