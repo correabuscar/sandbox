@@ -1,8 +1,12 @@
 #![allow(unused_variables)]
+#![feature(rustc_attrs)]
+
 
 #[derive(Clone,Debug)]//non Copy
 struct A(i32);
 
+//see https://github.com/rust-lang/rust/pull/14202#issuecomment-435674973
+#[rustc_mir(borrowck_graphviz_postflow="/tmp/suffix.dot")]
 fn main() {
     let x:i32 = 5;
     let y = x;//copy, instead of move!
