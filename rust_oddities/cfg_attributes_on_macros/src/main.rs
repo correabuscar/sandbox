@@ -14,6 +14,6 @@ fn main() {
         println!("Hello, world!"); // all good
     }
 
-    #[allow(clippy::print_stdout)]
+    #[allow(clippy::print_stdout)]  // - has no effect!
     println!("Hello, world!"); //error: use of `println!`
 } // https://github.com/rust-lang/rust/issues/15701#issuecomment-368774192
