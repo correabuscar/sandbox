@@ -785,9 +785,6 @@ version = "0.0.1"
 [[package]]
 name = "match0"
 version = "0.0.1"
-dependencies = [
- "clippy 0.0.302 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "match_nonvar"

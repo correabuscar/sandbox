@@ -5,6 +5,7 @@
 
 set -ex
 echo '!! Building...'
-time cargo build --verbose --all
+#time cargo build --verbose --all
+time cargo clippy --all-targets --all-features --verbose --all
 echo '!! Testing...'
 time cargo test --verbose --all

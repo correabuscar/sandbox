@@ -17,15 +17,15 @@
 #![warn(unused_qualifications)]
 #![warn(variant_size_differences)]
 
-#![feature(plugin)]
-#![plugin(clippy)]
+//#![feature(plugin)]
+//#![plugin(clippy)]
 
-#![deny(clippy)]
-#![deny(clippy_pedantic)]
+#![deny(clippy::all)]
+#![deny(clippy::pedantic)]
 
-#![allow(use_debug)]
-#![allow(print_stdout)]
-#![allow(missing_docs_in_private_items)]
+#![allow(clippy::use_debug)]
+#![allow(clippy::print_stdout)]
+#![allow(clippy::missing_docs_in_private_items)]
 
 
 use std::env;

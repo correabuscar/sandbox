@@ -8,5 +8,5 @@ authors = [ "xftroxgpx <xftroxgpx@protonmail.com>" ]
 name = "match0"
 
 [dependencies]
-clippy = "*"
+#clippy = "*"
 
