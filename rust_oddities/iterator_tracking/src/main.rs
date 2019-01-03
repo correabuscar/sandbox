@@ -28,7 +28,7 @@ fn main() {
     }
     println!("{:?}", first_word(&String::from("helloworldtwo!")));
     //println!("!{}!", format!("{:?}", first_word(&String::from("hello world two!"))).trim_matches('"'));
-    //println!("!{}!", format!("{:?}", first_word(&String::from("hello world two!"))).trim_matches(char::is_ascii_punctuation));//fail, but see https://github.com/rust-lang/rust/issues/57307 or project is_ascii_punctuation
+    //println!("!{}!", format!("{:?}", first_word(&String::from("hello world two!"))).trim_matches(char::is_ascii_punctuation));//fail, but see https://github.com/rust-lang/rust/issues/57307 or the is_ascii_punctuation crate in the current workspace
     assert!('"'.is_ascii_punctuation());
     println!("!{}!", format!("{:?}", first_word(&String::from("hello world two!"))).trim_matches(|x| x == '"'));
 
