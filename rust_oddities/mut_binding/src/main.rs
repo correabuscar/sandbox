@@ -62,6 +62,10 @@ otherwise *c=...; would work; if only the value that the ref refers to is allowe
 so let c: &mut B=; is like: let mut c: B=;  in that sense of what mut means
 
 so it allows both the binding(or the ref) AND the value it binds to(or the ref refers to) to change internally
+so it allows both to change:
+1. the binding(or the ref) to change
+AND
+2. the value it binds to(or the ref refers to) to change internally
 
      *
      */
