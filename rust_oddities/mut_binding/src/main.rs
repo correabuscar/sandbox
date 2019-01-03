@@ -22,26 +22,40 @@ fn main() {
     println!("{:?}",b);
 
     //let c:  mut B=B(10,1);//no can do
+    //so, mutable binding, immutable value! so no need to use shadowing(ie. multiple let c=)
     let mut c: &B=&b;
-    c=&b;
+    c=&b;//allowed
+    //*c=b;//`c` is a `&` reference, so the data it refers to cannot be written
     //c.change(); //disallowed: cannot borrow `*c` as mutable, as it is behind a `&` reference
     println!("{:?}",c);
 
+    //immutable binding, but allows value change so acts like a mutable binding, but still
+    //disallows internal changes in the value itself.
+    //this is like the above let mut c:&B=  but more complicated, needlessly
+    let c:&mut &B=&mut &B(50,5);
+    //c.change();//disallowed
+    let x = &B(100,23); *c= x;//allowed (thanks raisin)
+    println!("{:?}",c);
+
+    //mutable binding and value
     let mut c: &mut B=&mut b;//same as b
     c=&mut b;
     c.change();
+    //*c=B(100,23); //allowed
     println!("{:?}",c);
 
+    //immutable binding, mutable ref and mutable value
     let c: &mut B=&mut b;
     //c=&mut b;//disallowed
     c.change();
     println!("{:?}",c);
 
+    //immutable binding, mutable ref and mutable value
     let c: &mut B=&mut B(40,4);
     //c=&mut b;//disallowed (wanted)
-    c.change();//value it's already bound to can change (wanted)
+    c.change();//value it's already bound to  can change (wanted)
     println!("{:?}",c);// B(41, 4)
-    let x = B(100,23); *c= x; //overwritten by raisin on irc
+    let x = B(100,23); *c= x; //overwritten by raisin on irc; so the ref is mutable too (not wanted!)
     println!("{:?}",c);// B(100, 23)
     /* 
      * Hi. Am I missing something or, a mut binding means not only that the binding can bind to a different value but also that the value that the binding binds to can change (ie. if it's a struct, one of its fields can change)
