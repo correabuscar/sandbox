@@ -882,6 +882,10 @@ name = "moved_ownership"
 version = "0.1.0"
 
 [[package]]
+name = "mut_binding"
+version = "0.1.0"
+
+[[package]]
 name = "mutable"
 version = "0.1.0"
 
