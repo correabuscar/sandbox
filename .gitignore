@@ -24,3 +24,5 @@ tags
 
 #rustfmt backup files
 *.bk
+
+incremental.compilation.storage.dir
