@@ -8,6 +8,14 @@ if test -x ./prereq; then
   ./prereq
 fi
 
-time cargo rustc -- -Z borrowck=mir -v "$@"
+time cargo rustc --verbose --release -- -C incremental=true -C lto=off -Z borrowck=mir -v "$@"
+#^ FIXME: this creates a /true/ folder in workspace root!!
+#time cargo rustc --verbose --release -- -C incremental -C lto=off -Z borrowck=mir -v "$@"
+#error: codegen option `incremental` requires a string (C incremental=<value>)
+
+
+#error: can't perform LTO when compiling incrementally
+
+#the extra -C ones are optional and added for future reference only! ie. grepping for "cargo rustc" because I forgot how to add options for it
 
 

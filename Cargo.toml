@@ -27,6 +27,7 @@ codegen-units = 16 # if > 1 enables parallel code generation which improves
 opt-level = 0      # controls the `--opt-level` the compiler builds with.
                    # 0-1 is good for debugging. 2 is well-optimized. Max is 3.
                    # 's' attempts to reduce size, 'z' reduces size even more.
+lto=false #due to incremental being true (see below)
 
 # The release profile, used for `cargo build --release`.
 [profile.release]
@@ -41,11 +42,12 @@ lto = true        # Link Time Optimization usually reduces size of binaries
                    # If true, passes `-C lto` flag to the compiler, and if a
                    # string is specified like 'thin' then `-C lto=thin` will
                    # be passed.
+                   # error: can't perform LTO when compiling incrementally
 rpath = false      # controls whether compiler should set loader paths.
                    # If true, passes `-C rpath` flag to the compiler.
 codegen-units = 1
 panic = 'unwind'
-incremental = true #trying true
+incremental = false # false due to lto=true otherwise: error: can't perform LTO when compiling incrementally
 overflow-checks = true #hmm... false seems unwise here!
 
 
@@ -54,11 +56,11 @@ overflow-checks = true #hmm... false seems unwise here!
 opt-level = 0
 debug = 2
 rpath = false
-lto = false
+lto = false #error: can't perform LTO when compiling incrementally
 debug-assertions = true
 codegen-units = 16
 panic = 'unwind'
-incremental = true
+incremental = true #
 overflow-checks = true
 
 # The benchmarking profile, used for `cargo bench` and `cargo test --release`.
@@ -66,11 +68,11 @@ overflow-checks = true
 opt-level = 3
 debug = false
 rpath = false
-lto = true
+lto = true #error: can't perform LTO when compiling incrementally
 debug-assertions = false
 codegen-units = 16
 panic = 'unwind'
-incremental = true
+incremental = false # false due to lto=true
 overflow-checks = false
 
 ##doesn't work here(in workspace's Cargo.toml):
