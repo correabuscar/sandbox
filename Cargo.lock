@@ -932,6 +932,10 @@ name = "nll_scope1"
 version = "0.1.0"
 
 [[package]]
+name = "no_implicit_prelude"
+version = "0.1.0"
+
+[[package]]
 name = "nodrop"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
