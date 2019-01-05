@@ -37,8 +37,10 @@ impl Drop for Sense2 { //hahaaaaaa bye bye Copy :)) error[E0184]: the trait `Cop
 
 
 //#[derive(Debug, Clone, OwnershipBypasser)] // can't use OwnershipBypasser here : error: cannot find derive macro `OwnershipBypasser` in this scope
-#[derive(Debug, Clone, Copy)] //still works without any 'use' or stuff
+//#[derive(Debug, Clone, Copy)] //still works without any 'use' or stuff
+#[derive(Debug, Clone)] //still works without any 'use' or stuff
 struct EvilSense3(i32,f64, i64);
+impl OwnershipBypasser for EvilSense3 { }
 
 fn main() {
     println!("Hello, world!");
