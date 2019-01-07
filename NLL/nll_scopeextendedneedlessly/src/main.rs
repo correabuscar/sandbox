@@ -56,9 +56,17 @@ impl Foo { //example stolen&modified from jmcomets from irc
             */
 
             //case 3: fails to compile
-            // /*
+             /*
             let a = self.0.as_mut();
             if 1 == 2 {
+                return a.unwrap();
+            }
+             */
+
+            //case 3.2: fails to compile
+            // /*
+            let a = self.0.as_mut();
+            if 1 == 1 {
                 return a.unwrap();
             }
             // */
