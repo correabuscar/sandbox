@@ -936,6 +936,10 @@ name = "nll_scope1"
 version = "0.1.0"
 
 [[package]]
+name = "nll_scopeextendedneedlessly"
+version = "0.1.0"
+
+[[package]]
 name = "no_implicit_prelude"
 version = "0.1.0"
 
