@@ -40,7 +40,7 @@ impl Drop for Sense2 { //hahaaaaaa bye bye Copy :)) error[E0184]: the trait `Cop
 //#[derive(Debug, Clone, Copy)] //still works without any 'use' or stuff
 #[derive(Debug, Clone)] //still works without any 'use' or stuff
 struct EvilSense3(i32,f64, i64);
-impl OwnershipBypasser for EvilSense3 { }
+impl OwnershipBypasser for EvilSense3 { } //ie. renamed the Copy trait to OwnershipBypasser and had it applied to type EvilSense3 without using derive
 
 fn main() {
     println!("Hello, world!");
