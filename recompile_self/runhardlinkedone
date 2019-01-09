@@ -1,2 +1,2 @@
 #!/bin/bash
-RUST_LOG=debug ./hardlink
+RUST_LOG=info ./hardlink_debug

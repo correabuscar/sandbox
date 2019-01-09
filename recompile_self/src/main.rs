@@ -102,7 +102,7 @@ fn main() {
     }
     #[cfg(debug_assertions)] {
         if CARGO_MODE != "debug" {
-            debug!("Note: You're in release and you enabled debug_assertions!");
+            debug!("Note: You're in release and you've enabled debug_assertions!");
         }
     }
     //same thing but require the use of build.rs to set these profile_N things:
