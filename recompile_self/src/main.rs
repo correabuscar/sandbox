@@ -65,7 +65,7 @@ fn main() {
 
     // detect if source changed!
     let exe_full_name=std::env::current_exe().expect("exe_full_name");
-    debug!("exe_full_name={:?}", exe_full_name);//TODO: try symlink to it, yep it doesn't see the symlink filename, it sees the target fname always! Although doc says "The path returned is not necessarily a "real path" of the executable as there may be intermediate symlinks.", ok checked: they clearly mean hardlinks! Yeah realpath doesn't make sense for hardlinks; Let's get this fixed https://github.com/rust-lang/rust/pull/46987
+    debug!("exe_full_name={:?}", exe_full_name);//TODO: try symlink to it, yep it doesn't see the symlink filename, it sees the target fname always! Although doc says "The path returned is not necessarily a "real path" of the executable as there may be intermediate symlinks.", ok checked: they clearly mean hardlinks!(ok, maybe not really! they mean intermediate symlinks - untested tho) Yeah realpath doesn't make sense for hardlinks; Let's get this fixed https://github.com/rust-lang/rust/pull/46987
     debug!("exe args[0]={}", std::env::args().nth(0).expect("failed to get argv[0]"));
     debug!("exe file name at compile time = '{}' (if empty, you're missing patched cargo!)", for_info_only_output_exe_at_compiletime);
     let metadata0 = std::fs::metadata(&exe_full_name).unwrap();
@@ -152,7 +152,7 @@ fn main() {
             //so, compile succeeded AND
             //mtime isn't updated?!
             //this can only mean one thing, so far, the exe is a hardlink!
-            eprintln!("The file you just ran is now outdated selfexe={:?} The updated version is '{}' You will have to update this manually!",exe_full_name, OPTION_OUTPUT_EXE_AT_COMPILETIME.unwrap_or("not available because you weren't using a patched cargo"));
+            eprintln!("The file you just ran(and is running/showing your this message) is now outdated selfexe={:?}\nThe updated version is '{}' You will have to update replace the current exe with the updated one manually, until then it will keep recompiling a new updated one!(FIXME: maybe don't recompile if hardlink? but need real way to dectect hardlink)",exe_full_name, OPTION_OUTPUT_EXE_AT_COMPILETIME.unwrap_or("not available because you weren't using a patched cargo"));
             //TODO: can actually detect if hardlink(before recompiling it!) AND replace it when
             //done!
             //assert!(false);//nvmFIXME: temp, it will crash at the next assert! below anyway

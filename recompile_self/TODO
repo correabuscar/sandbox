@@ -1,0 +1,5 @@
+* count time it took to recompile and show it in either INFO on normal output
+* maybe checksum the source files too? and remember their size too ? currently only checks mtime (if i remember correctly) and this mtime isn't even stored(right?)
+* detect if hardlink and only then replace it -- hmm, wait, this has to be done before compiling it, otherwise hardlinkness cannot be detected
+* if different name eg. "moo" than the original exe, what? do we still replace it? or just ask? or neither(currently just showing msg)
+
