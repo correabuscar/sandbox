@@ -65,7 +65,7 @@ fn main() {
 
     // detect if source changed!
     let exe_full_name=std::env::current_exe().expect("exe_full_name");
-    debug!("exe_full_name={:?}", exe_full_name);//TODO: try symlink to it, yep it doesn't see the symlink filename, it sees the target fname always! Although doc says "The path returned is not necessarily a "real path" of the executable as there may be intermediate symlinks.", ok checked: they clearly mean hardlinks!(ok, maybe not really! they mean intermediate symlinks - untested tho) Yeah realpath doesn't make sense for hardlinks; Let's get this fixed https://github.com/rust-lang/rust/pull/46987
+    debug!("exe_full_name={:?}", exe_full_name);//XXX: try symlink to it, yep it doesn't see the symlink filename, it sees the target fname always! Although doc says "The path returned is not necessarily a "real path" of the executable as there may be intermediate symlinks.", ok checked: they clearly mean that for hardlinks only!(tested intermediate symlinks to always return real non-symlinked exe eg. realpath) Yeah realpath doesn't make sense for hardlinks; Let's get this fixed https://github.com/rust-lang/rust/pull/46987
     debug!("exe args[0]={}", std::env::args().nth(0).expect("failed to get argv[0]"));
     debug!("exe file name at compile time = '{}' (if empty, you're missing patched cargo!)", for_info_only_output_exe_at_compiletime);
     let metadata0 = std::fs::metadata(&exe_full_name).unwrap();
