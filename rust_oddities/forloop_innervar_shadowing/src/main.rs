@@ -1,3 +1,4 @@
+//extern crate rand; //hmm not needed
 use rand::prelude::*;
 
 #[derive(Debug)]

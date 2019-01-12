@@ -507,6 +507,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "forloop_innervar_shadowing"
 version = "0.1.0"
+dependencies = [
+ "rand 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "fu_copy_trait"
