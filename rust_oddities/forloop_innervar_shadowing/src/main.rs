@@ -32,7 +32,7 @@ fn main() {
     println!("next2:");
     for _ in 1..=100 - v.len() {
         // XXX: wicked!!!
-        let   a:  SpreadsheetCell;//getting bad error message with this; so, how do I create a new 'a' here on every loop?
+        let   a:  SpreadsheetCell;//getting bad error message with this; so, how do I create a new 'a' here on every loop? //see https://github.com/rust-lang/rust/issues/57553
         //let   a=SpreadsheetCell::Int(1); //getting better error message with this!(says to make it 'mut')
         //let    mut a:  SpreadsheetCell; //getting no errors with this! because made it 'mut'!
         change(&mut a);

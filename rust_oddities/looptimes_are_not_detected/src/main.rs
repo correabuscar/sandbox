@@ -1,9 +1,9 @@
 #![allow(unused_variables)]
-#![allow(dead_code)]
+//#![allow(dead_code)]
 
 struct NewType(i32);
 
-
+//see https://github.com/rust-lang/rust/issues/57555
 
 fn main() {
 
@@ -14,14 +14,14 @@ fn main() {
         let a:NewType;
         change(&mut a); //true: "borrow of possibly uninitialized variable: `a`"
         v.push(a);
-        break; // loop is detected as happening only once
+        break; // due to this break, the loop is detected as happening only once
     }
 
     loop {
         println!("loop iteration");//hit once
         let a:NewType;
 		//see: confusing_overwritten_errors and forloop_innervar_shadowing for why the false error happen:
-        change(&mut a); //false: "value borrowed here after move"
+        change(&mut a); //false: "value borrowed here after move" see: https://github.com/rust-lang/rust/issues/57553
         v.push(a);// false: "value moved here, in previous iteration of loop"
         if 1==1 { // loop is no longer detected as happening only once due to this 'if'
           break;

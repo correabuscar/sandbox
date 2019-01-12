@@ -9,7 +9,7 @@ enum HeyHey {
     Int(i32),
     Float(f64),
 }
-
+//see https://github.com/rust-lang/rust/issues/57553
 fn main() {
     //let mut v:Vec<HeyHey>=Vec::new();
     let mut v:Vec<NewType>=Vec::new();
