@@ -276,6 +276,10 @@ name = "compiletime_env"
 version = "0.1.0"
 
 [[package]]
+name = "confusing_overwritten_errors"
+version = "0.1.0"
+
+[[package]]
 name = "copytrait"
 version = "0.1.0"
 dependencies = [
@@ -499,6 +503,10 @@ dependencies = [
 name = "foreign-types-shared"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "forloop_innervar_shadowing"
+version = "0.1.0"
 
 [[package]]
 name = "fu_copy_trait"
