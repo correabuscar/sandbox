@@ -534,6 +534,10 @@ name = "get_type"
 version = "0.0.1"
 
 [[package]]
+name = "getcwd"
+version = "0.1.0"
+
+[[package]]
 name = "git2"
 version = "0.6.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
