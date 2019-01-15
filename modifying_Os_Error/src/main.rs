@@ -12,8 +12,30 @@ fn print_error(err: &Error) {
     }
 }
 
+trait SEI {
+  //fn set_extra_info(&self, s: &str) -> Error;
+  fn set_extra_info(self, s: &str) -> Self;
+}
+
+impl SEI for Error {
+  //fn set_extra_info(&self, s: &str) -> Error{
+  fn set_extra_info(self, s: &str) -> Self{ //TODO: define this in src/libstd/io/error.rs
+      //self.repr=Repr::Os(5);
+      //^ repr is still private, obviously!!!!!
+      eprintln!("Setting extra info '{}' for '{:?}'",s,self);
+      self
+  }
+}
+
 fn main() -> std::io::Result<()> {
     let r#fn = "inexistent";
+    fs::remove_file(r#fn).map_err(|e| {
+        //e.repr=Repr::Os(5);//ErrorKind::PermissionDenied;//modify something inside the error?
+        //^ private field!
+        e.set_extra_info("blah")
+            //e
+    })?;
+    //meh:
     fs::remove_file(r#fn).map_err(|e| {
         Error::new(
             e.kind(),
