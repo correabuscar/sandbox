@@ -7,6 +7,12 @@ echo "RUST_LOG=$RUST_LOG"
 if test -x ./prereq; then
   ./prereq
 fi
-time cargo clippy && time cargo run -v -- "$@"
+if test "$1" != "noclippy"; then
+  set -e
+  time cargo clippy
+else
+  set -e
+fi
+time cargo run -v -- "$@"
 
 
