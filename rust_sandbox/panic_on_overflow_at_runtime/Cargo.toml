@@ -1,0 +1,7 @@
+[package]
+name = "panic_on_overflow_at_runtime"
+version = "0.1.0"
+authors = ["xftroxgpx <xftroxgpx@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
