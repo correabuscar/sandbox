@@ -49,6 +49,7 @@ impl Clone for Box<dyn Value> {
     }
 }
 
+// see other (proper) use of lazy_static! here: https://github.com/fortanix/rust-sgx/blob/jb/sgx-detect/sgxs-tools/src/sgx_detect/proc_macro.rs#L122-L294
 lazy_static! {
     static ref REGISTRY: Mutex<HashMap<String, S>> = {
         Mutex::new(HashMap::new())

@@ -17,6 +17,10 @@ trait SEI {
   fn set_extra_info(self, s: &str) -> Self;
 }
 
+//TODO: use a lazy_static!() to init only once an env! call to get some env. var's value like
+//RUST_PEDANTIC=1 and only if non-zero add the extra error info / execute the block that adds it !
+//example lazy_static! (unless I get to read rustbook about it by then): https://github.com/fortanix/rust-sgx/blob/jb/sgx-detect/sgxs-tools/src/sgx_detect/proc_macro.rs#L122-L294
+//
 impl SEI for Error {
   //fn set_extra_info(&self, s: &str) -> Error{
   fn set_extra_info(self, s: &str) -> Self{ //TODO: define this in src/libstd/io/error.rs
