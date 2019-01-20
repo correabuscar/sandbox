@@ -10,7 +10,9 @@ fn main() {
     //let b= 2_i8.overflowing_mul(in_num);
     let b=0;
     println!("{:?} / {:?}", a, b);
-    let _c:i8=2*in_num;
+//    let _c:i8=2*in_num;
     //println!("{:?}", 2*in_num);
+    let v=vec![1,2];
+    let _e=v[in_num as usize];
 }
 
