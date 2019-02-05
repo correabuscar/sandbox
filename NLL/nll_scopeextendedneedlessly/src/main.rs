@@ -1,5 +1,8 @@
 // https://github.com/rust-lang/rust/issues/54663#issuecomment-451996126
 
+#![feature(custom_inner_attributes)]
+#![feature(custom_attribute)]
+
 #![feature(nll)]
 #![nll]
 #![allow(dead_code)]
@@ -64,19 +67,19 @@ impl Foo { //example stolen&modified from jmcomets from irc
              */
 
             //case 3.2: fails to compile
-            // /*
+             /*
             let a = self.0.as_mut();
             if 1 == 1 {
                 return a.unwrap();
             }
-            // */
+             */
 
             //case 4: fails to compile
-            /*
+            // /*
             if let Opt::Some(value) = self.0.as_mut() { //allowing this block compile fails
                 return value;
             }
-            */
+            // */
         }
         self.0 = Opt::Some(value); //compile fails is here: error[E0506]: cannot assign to `self.0` because it is borrowed
         self.0.as_mut().unwrap()
