@@ -1,0 +1,10 @@
+[package]
+name = "graceful_example"
+version = "0.1.0"
+authors = ["none <none>"]
+edition = "2018"
+license = "MIT OR Apache-2.0 OR CC0-1.0 OR UNLICENSE OR ARTISTIC-2.0"
+
+[dependencies]
+graceful = "^0.1.1"
+
