@@ -77,7 +77,7 @@ fn main() {
         let metadatax= std::fs::metadata( //uuu, this intellij idea rust plugin has way to specify type explicitly! loving this; however, it also needs a use, if type is explicit! how odd..
             std::path::Path::new(&PROJECT_DIR_AT_COMPILETIME)
             .join(each)
-            ).unwrap();
+            ).expect(&format!("Can't find project dir(removed?): '{}'",PROJECT_DIR_AT_COMPILETIME));
         let mtimex =filetime::FileTime::from_last_modification_time(&metadatax);
         if mtimex > mtime0 {
             /*//#[cfg(debug_assertions)] {

@@ -1,5 +1,6 @@
 [workspace]
 members = ["**/src/.."]
+edition = "2018"
 exclude = ["helper_scripts", ".git", "**/.git", "target", "**/target"]
 #^ https://doc.rust-lang.org/glob/glob/struct.Pattern.html
 

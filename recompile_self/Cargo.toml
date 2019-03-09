@@ -2,6 +2,7 @@
 name = "recompile_self"
 version = "0.1.0"
 authors = ["xftroxgpx <xftroxgpx@protonmail.com>"]
+edition = "2018"
 exclude = [ "**/symlink_*", "**/hardlink_*", "/testscript", "/test_build_date" ] #ie. if these files change, don't rebuild stuff via `cargo build`
 
 build = "build.rs"
