@@ -16,7 +16,7 @@ fn main() {
         println!("!thread! Worker thread started. Type Ctrl+C to stop.");
         while !STOP.load(Ordering::Acquire) {
             print!("!thread! Sleeping for 5 sec...");
-            io::stdout().flush();//lock().flush();
+            io::stdout().flush().expect("!! failed to flush stdout");//lock().flush();
             thread::sleep(Duration::from_millis(5000));
             println!("done.");
         }
