@@ -27,6 +27,6 @@ fn main() {
         println!("!main! Signal {} received.", sig);
         STOP.store(true, Ordering::Release);
         println!("!main! Waiting for thread(s) to finish");
-        handle.join().unwrap();//so wait for all threads to finish on their own
+        handle.join().unwrap();//so wait for all threads to finish on their own! XXX without this, immediately exit!
     });
 }
