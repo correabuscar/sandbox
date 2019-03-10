@@ -1,0 +1,1 @@
+must find a way to interrupt thread, in some other way than thru it looping and checking for the interruption var being set
