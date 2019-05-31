@@ -1,0 +1,20 @@
+#!/bin/bash
+
+before="/tmp/edit_build_rs.rnd$RANDOM.before"
+after="/tmp/edit_build_rs.rnd$RANDOM.after"
+onexit() { #note: the exit code is preserved anyway
+  trap - exit sigint
+  rm -- "$before" "$after" 2>&1 >/dev/null
+}
+trap onexit exit sigint
+stat build.rs >  "$before"
+vim build.rs
+stat build.rs >  "$after"
+#^ so vim does a `cargo check` OR a `cargo rustc -- -Zno-trans`(in my case) on file save,   both of which are  updating the cached output of build.rs and thus will cause the next `cargo build` to not recompile src/main.rs, if ./build.rs was changed by the above edit!
+#see: https://github.com/rust-lang/cargo/issues/3204#issuecomment-355263561
+#ergo, to workaround this, a `touch build.rs` is needed right after the edit!
+if ! diff -q -- "$before" "$after" >/dev/null; then
+  #touch only if vim saved build.rs !
+  echo "!! cargo workaround for build.rs hit, details here: https://github.com/rust-lang/cargo/issues/3204#issuecomment-355263561"
+  touch build.rs
+fi

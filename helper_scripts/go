@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+#unset RUST_BACKTRACE
+#workaround issue: 29293 https://github.com/rust-lang/rust/issues/29293
+echo "RUST_BACKTRACE=$RUST_BACKTRACE"
+echo "RUST_LOG=$RUST_LOG"
+if test -x ./prereq; then
+  ./prereq
+fi
+if test "$1" != "noclippy"; then
+  set -e
+  time cargo clippy
+else
+  shift 1
+  set -e
+fi
+time cargo run -v -- "$@"
+
+
