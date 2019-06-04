@@ -20,7 +20,7 @@ main
 *.swp
 *~
 
-tags
+#tags
 
 #rustfmt backup files
 *.bk
