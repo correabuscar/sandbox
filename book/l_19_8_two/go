@@ -5,7 +5,7 @@ cargo build
 cbindgen ./ -o blah.h
 LD_LIBRARY_PATH="$(realpath "../../target/debug")"
 export LD_LIBRARY_PATH #for ./a.out call below
-gcc -D_FORTIFY_SOURCE=2 -O2 -Wall -Wextra -ggdb -L $LD_LIBRARY_PATH -l some_ffi ./some.cpp
+gcc -D_FORTIFY_SOURCE=2 -O2 -Wall -Wextra -ggdb -L "$LD_LIBRARY_PATH" -l some_ffi ./some.cpp
 ./a.out
 echo 'All done'
 
