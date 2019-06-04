@@ -1,0 +1,15 @@
+[package]
+name = "l_19_8_two"
+version = "0.1.0"
+authors = ["howaboutsynergy <howaboutsynergy@pm.me>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "some_ffi"
+# in /reflo/target/debug/libsome_ffi.so aka ../../target/debug/libsome_ffi.so
+crate-type = [ "cdylib" ]
+#^ https://speakerdeck.com/dbrgn/calling-rust-from-c-and-java?slide=54  (thanks to sarnold on #rust-beginners irc.mozilla.net)
+
+[dependencies]
