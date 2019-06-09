@@ -5,7 +5,7 @@ if test -z "$projectname"; then
   echo "Ignoring empty project name in dir '`pwd`'" >&2
   exit 1
 fi
-set -e
+set +e
 #cargo clean -v -p "${PWD##*/}"
 #^ project name might be different than current dir's name!
 cargo clean -vv -p "${projectname}"
