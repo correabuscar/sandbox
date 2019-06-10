@@ -12,8 +12,14 @@ if test "$1" != "noclippy"; then
   time cargo clippy
 else
   shift 1
-  set -e
 fi
-time cargo run -v -- "$@"
+set +e
+time cargo run -v -- "$@" ; ec="$?"
+if test "0" == "$ec"; then
+  echo 'Success'
+else
+  echo "Fail, exit code: '$ec'"
+  exit "$ec"
+fi
 
 
