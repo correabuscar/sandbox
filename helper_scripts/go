@@ -9,7 +9,7 @@ if test -x ./prereq; then
 fi
 if test "$1" != "noclippy"; then
   set -e
-  time cargo clippy
+  time cargo clippy "$@"
 else
   shift 1
 fi
