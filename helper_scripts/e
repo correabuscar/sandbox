@@ -9,4 +9,4 @@ fil="./src/main.rs"
 if ! test -e "$fil"; then
   fil="./src/lib.rs"
 fi
-time vim -- "$fil"
+time vim -- "$fil" && rustfmt -- "$fil"
