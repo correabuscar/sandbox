@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set +e
 #cargo clean -v -p "${PWD##*/}"
 #^ project name might be different than current dir's name!
 cargo clean -vv

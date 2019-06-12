@@ -1,5 +1,5 @@
-use structopt::StructOpt;
 use exitfailure::ExitFailure;
+use structopt::StructOpt;
 //use failure::result_ext::ResultExt;
 use failure::ResultExt;
 
@@ -13,7 +13,6 @@ struct Cli {
     path: std::path::PathBuf,
 }
 
-
 #[test]
 fn find_a_match() {
     let mut result = Vec::new();
@@ -24,7 +23,8 @@ fn find_a_match() {
 fn main() -> Result<(), ExitFailure> {
     ctrlc::set_handler(move || {
         println!("received Ctrl+C!");
-    }).expect("Error setting Ctrl-C handler");
+    })
+    .expect("Error setting Ctrl-C handler");
 
     let args = Cli::from_args();
     let content = std::fs::read_to_string(&args.path)

@@ -2,27 +2,114 @@
 
 use std::fs;
 use std::io::prelude::*;
-use std::net::TcpListener;
-use std::net::TcpStream;
+//use std::net::TcpListener;
+//use std::net::TcpStream;
+use mio::net::TcpListener;
+use mio::*;
 use std::thread;
 use std::time::Duration;
 
 use l_20_1_hello::ThreadPool;
 
+use signal_hook::{iterator::Signals, SIGINT, SIGTERM};
+
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    //    ctrlc::set_handler(move || {
+    //        println!("received Ctrl+C!");
+    //    })
+    //    .expect("Error setting Ctrl-C handler");
+    let signals = Signals::new(&[SIGINT, SIGTERM]).unwrap();
+
+    let addr = "127.0.0.1:7878".parse().unwrap();
+    //let listener = TcpListener::bind(&addr).unwrap();
+    // Setup the server socket
+    let server = TcpListener::bind(&addr).unwrap();
+
     let pool = ThreadPool::new(4);
 
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
+    // Setup some tokens to allow us to identify which event is
+    // for which socket.
+    const SERVER: Token = Token(0);
+    const SIGNALS: Token = Token(1);
 
-        pool.execute(|| {
-            handle_connection(stream);
-        });
+    // Create a poll instance
+    let poll = Poll::new().unwrap();
+
+    // Start listening for incoming connections
+    poll.register(&server, SERVER, Ready::readable(), PollOpt::edge())
+        .unwrap();
+    poll.register(&signals, SIGNALS, Ready::readable(), PollOpt::edge())
+        .unwrap();
+    // Create storage for events
+    let mut events = Events::with_capacity(1024);
+
+    //    'streem: for stream in listener.incoming()
+    //    /*.take(2) */
+    //    {
+    //        let stream = stream.unwrap();
+    //
+    //        pool.execute(|| {
+    //            handle_connection(stream);
+    //        });
+    //        //this won't check until after a connection:
+    //        for sig in &signals {
+    //            println!("Received signal {:?}", sig);
+    //            match sig {
+    //                //SIGINT => break 'streem,
+    //                _ => {
+    //                    println!("not-Ignored signal '{:?}'", sig);
+    //                    break 'streem;
+    //                }
+    //            }
+    //        }
+    //    }
+
+    'loopy: loop {
+        poll.poll(&mut events, None).unwrap();
+
+        for event in events.iter() {
+            match event.token() {
+                SERVER => {
+                    // Accept and drop the socket immediately, this will close
+                    // the socket and notify the client of the EOF.
+                    let stream = server.accept_std().unwrap();
+                    pool.execute(|| {
+                        handle_connection(stream.0);
+                    });
+                }
+                SIGNALS => {
+                    #[allow(clippy::never_loop)]
+                    for sig in &signals {
+                        println!("Received signal {:?}", sig);
+                        match sig {
+                            SIGINT | SIGTERM => break 'loopy,
+                            _ => {
+                                println!("Ignored signal '{:?}'", sig);
+                                //break 'loopy;
+                            }
+                        }
+                    }
+                }
+                _ => unreachable!(),
+            }
+        }
+        //        #[allow(clippy::never_loop)]
+        //        for sig in &signals {
+        //            println!("Received signal {:?}", sig);
+        //            match sig {
+        //                //SIGINT => break 'streem,
+        //                _ => {
+        //                    println!("not-Ignored signal '{:?}'", sig);
+        //                    break 'loopy;
+        //                }
+        //            }
+        //        }
     }
+
+    println!("Shutting down.");
 }
 
-fn handle_connection(mut stream: TcpStream) {
+fn handle_connection(mut stream: std::net::TcpStream) {
     let mut buffer = [0; 512];
 
     stream.read(&mut buffer).unwrap();
