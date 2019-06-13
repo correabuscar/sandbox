@@ -12,11 +12,14 @@ fn main() {
         unsafe {
             (
                 slice::from_raw_parts_mut(ptr, mid),
-                slice::from_raw_parts_mut(ptr.offset((mid as isize).try_into().unwrap()), len - mid),
+                slice::from_raw_parts_mut(
+                    ptr.offset((mid as isize).try_into().unwrap()),
+                    len - mid,
+                ),
             )
         }
     }
     let mut a = vec![1, 2, 3, 4];
-    println!("{:?}",split_at_mut(&mut a, 2));
+    println!("{:?}", split_at_mut(&mut a, 2));
     //println!("{:?}",split_at_mut(&mut a, 5));
 }

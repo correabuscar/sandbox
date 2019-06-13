@@ -21,4 +21,3 @@ fn main() {
     //println!("A baby dog is called a {}", Animal::baby_name());//won't work
     println!("A baby dog is called a {}", <Dog as Animal>::baby_name());
 }
-

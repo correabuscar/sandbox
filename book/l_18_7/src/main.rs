@@ -15,5 +15,5 @@ fn main() {
     print_coordinates(&point);
     pc(point);
     //pc(3,6);
-    pc((3,7));
+    pc((3, 7));
 }

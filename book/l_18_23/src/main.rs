@@ -1,5 +1,4 @@
 fn main() {
-
     #[allow(dead_code)]
     struct Point {
         x: i32,
@@ -14,10 +13,10 @@ fn main() {
     }
 
     match origin {
-        Point { x, y:_, z:_ } => println!("x is {}", x),
+        Point { x, y: _, z: _ } => println!("x is {}", x),
     }
 
-/*    match origin {
+    /*    match origin {
         Point { x, _,_ } => println!("x is {}", x), //E0025: field `_` bound multiple times in the pattern  multiple uses of `_` in pattern
     }*/
 }

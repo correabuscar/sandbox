@@ -1,6 +1,5 @@
 #![deny(clippy::pedantic, clippy::all, clippy::correctness, clippy::nursery)]
 //^ no effect on: unreachable_patterns
-
 #![deny(warnings)]
 //^ this works!
 
@@ -13,7 +12,7 @@ fn main() {
         None => (),
     }
 
-/*    match num {
+    /*    match num {
         Some(x) => println!("{}", x),
         Some(x) if x < 5 => println!("less than five: {}", x), // warning: unreachable pattern
         None => (),

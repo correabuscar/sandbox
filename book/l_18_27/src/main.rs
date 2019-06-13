@@ -7,14 +7,15 @@ fn main() {
     let y = 50;
 
     match x {
-        Some(50) => { println!("Got 50") } // when braces comma not needed?!!
+        Some(50) => println!("Got 50"), // when braces comma not needed?!!
         Some(n) if n == y => println!("Matched, n = {:?}", n),
         _ => println!("Default case, x = {:?}", x),
     }
 
     match x {
         Some(n) => {
-            if 50 == n { println!("Got 50")
+            if 50 == n {
+                println!("Got 50")
             } else if n == y {
                 println!("Matched, n = {:?}", n)
             }
@@ -24,4 +25,3 @@ fn main() {
 
     println!("at the end: x = {:?}, y = {:?}", x, y);
 }
-

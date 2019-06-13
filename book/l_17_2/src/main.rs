@@ -1,4 +1,3 @@
-
 pub struct AveragedCollection {
     list: Vec<i32>,
     average: f64,
@@ -16,7 +15,7 @@ impl AveragedCollection {
             Some(value) => {
                 self.update_average();
                 Some(value)
-            },
+            }
             None => None,
         }
     }
@@ -36,14 +35,17 @@ impl AveragedCollection {
 }
 
 fn main() {
-    let mut a:AveragedCollection= AveragedCollection{ average:0_f64, list:vec![]};
+    let mut a: AveragedCollection = AveragedCollection {
+        average: 0_f64,
+        list: vec![],
+    };
     let moo;
     a.add(1);
     a.add(10);
     {
-        let zref=a.average2();
+        let zref = a.average2();
         println!("{}", zref);
-        moo=*zref as i32+1;//6
+        moo = *zref as i32 + 1; //6
     }
     a.add(moo);
     println!("moo={}", moo);

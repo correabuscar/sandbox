@@ -1,6 +1,6 @@
 //src: file:///home/user/build/2nonpkgs/rust.stuff/rust/rust.installed.dir/share/doc/rust/html/book/ch16-02-message-passing.html#sending-multiple-values-and-seeing-the-receiver-waiting
-use std::thread;
 use std::sync::mpsc;
+use std::thread;
 use std::time::Duration;
 
 fn main() {

@@ -1,4 +1,4 @@
-use std::sync::{Mutex, Arc};
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 fn main() {
@@ -21,4 +21,3 @@ fn main() {
 
     println!("Result: {}", *counter.lock().unwrap());
 }
-

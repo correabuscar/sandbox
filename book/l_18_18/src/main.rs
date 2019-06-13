@@ -7,7 +7,8 @@ fn main() {
         (Some(_), Some(_)) => {
             println!("Can't overwrite an existing customized value");
         }
-        _ => { // so: None,Some() , Some(),None and None,None
+        _ => {
+            // so: None,Some() , Some(),None and None,None
             setting_value = new_setting_value;
         }
     }
