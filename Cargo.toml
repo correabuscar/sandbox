@@ -1,7 +1,7 @@
 [workspace]
 members = ["**/src/.."]
 #edition = "2018" #unused key, in workspace! unused manifest key: workspace.edition
-exclude = ["helper_scripts", ".git", "**/.git", "target", "**/target", "book/tags", "cli-wg/tags", "rbe/tags"]
+exclude = ["helper_scripts", ".git", "**/.git", "target", "**/target", "book/tags", "cli-wg/tags", "rbe/tags", "others/tags"]
 #^ https://doc.rust-lang.org/glob/glob/struct.Pattern.html
 
 #license = "MIT/Apache-2.0 OR CC0 OR UNLICENSE" #unused manifest key: workspace.license
