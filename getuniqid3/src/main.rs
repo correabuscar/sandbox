@@ -1,3 +1,6 @@
+//note how this is checking for feature 'rand' even though we've only defined 'rand_num' in
+//Cargo.toml  but rand_num is defined as depending on package 'rand' so this works.
+
 #[cfg(feature = "uuid")]
 #[cfg(feature = "rand")]
 compile_error!("Can't use both mutually exclusive features: uuid & rand");

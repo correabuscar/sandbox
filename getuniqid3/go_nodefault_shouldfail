@@ -4,6 +4,7 @@
 #workaround issue: 29293 https://github.com/rust-lang/rust/issues/29293
 way=3 #way=1 for -Z treat-err-as-bug=1, or way=2 for 'less', or way=3 for you added the -Z in ~/.cargo/config
 #export RUST_BACKTRACE=1 #temp
+export RUST_BACKTRACE=0 # or else the first error will be delayed and dump the stack!
 echo "RUST_BACKTRACE=$RUST_BACKTRACE"
 echo "RUST_LOG=$RUST_LOG"
 if test "$way" == "1"; then
