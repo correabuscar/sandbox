@@ -1,6 +1,6 @@
 #!/bin/bash
 
-projectname=`cat Cargo.toml|perl -n -e'/name = "(.+)"/ && print "$1\n"'|head -1`
+projectname=`cat Cargo.toml|perl -n -e'/^\s*name = "(.+)"/ && print "$1\n"'|head -1`
 if test -z "$projectname"; then
   echo "Ignoring empty project name in dir '`pwd`'" >&2
   exit 1
