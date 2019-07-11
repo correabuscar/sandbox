@@ -14,6 +14,7 @@ edition = "2018"
 uuid = { version = "0.7.4", features = [#"serde", #do i need serde here? copied from an example
 "v4", "v5"], default-features = false, optional = true }
 rand = { version = "0.4.2", optional = true }
+libxid = { version = "0.1.5", optional = true }
 
 [features] #see docs https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
 default = ["uuid"]  #can use "uuid" instead (even tho it's a package!)
@@ -21,4 +22,6 @@ default = ["uuid"]  #can use "uuid" instead (even tho it's a package!)
 #thanks sebk on irc for: cargo build --no-default-features  equivalent of "default-features = false" in packages that use this package (if any, ever); it's mentioned here too https://doc.rust-lang.org/cargo/reference/manifest.html#usage-in-end-products  but i didn't see it before!
 
 rand_num = ["rand"] #the rand_num feature, depends on the "rand" package!
+
+xid = [ "libxid" ]
 
