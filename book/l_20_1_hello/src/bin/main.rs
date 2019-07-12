@@ -24,7 +24,14 @@ fn main() {
     //let listener = TcpListener::bind(&addr).unwrap();
     // Setup the server socket
     let server = TcpListener::bind(&addr).unwrap();
-    println!("Server is listening on {}", addr);
+    println!("HTTP server is listening on {}", addr);
+
+    #[cfg(feature = "https")]
+    {
+        let addr_https = "127.0.0.1:8443".parse().unwrap();
+        let server_https = TcpListener::bind(&addr_https).unwrap();
+        println!("HTTPS server is listening on {}", addr_https);
+    }
 
     let pool = ThreadPool::new(4);
 
@@ -32,6 +39,8 @@ fn main() {
     // for which socket.
     const SERVER: Token = Token(0);
     const SIGNALS: Token = Token(1);
+    #[cfg(feature = "https")]
+    const SERVER_HTTPS: Token = Token(2);
 
     // Create a poll instance
     let poll = Poll::new().unwrap();
@@ -39,6 +48,14 @@ fn main() {
     // Start listening for incoming connections
     poll.register(&server, SERVER, Ready::readable(), PollOpt::edge())
         .unwrap();
+    #[cfg(feature = "https")]
+    poll.register(
+        &server_https,
+        SERVER_HTTPS,
+        Ready::readable(),
+        PollOpt::edge(),
+    )
+    .unwrap();
     poll.register(&signals, SIGNALS, Ready::readable(), PollOpt::edge())
         .unwrap();
     // Create storage for events
@@ -72,6 +89,18 @@ fn main() {
         for event in events.iter() {
             match event.token() {
                 SERVER => {
+                    // Accept and drop the socket immediately, this will close
+                    // the socket and notify the client of the EOF.
+                    let stream = server.accept_std().unwrap();
+                    pool.execute(|| {
+                        handle_connection(stream.0);
+                    });
+                }
+                /*                random_inexistent_identifier => {
+                    //FIXME: what?! how come this works!
+                }*/
+                #[cfg(feature = "https")]
+                SERVER_HTTPS => {
                     // Accept and drop the socket immediately, this will close
                     // the socket and notify the client of the EOF.
                     let stream = server.accept_std().unwrap();
