@@ -28,15 +28,25 @@ fn main() {
 
     #[cfg(feature = "https")]
     macro_rules! a_block_that_does_not_restrict_scope {
-        //FIXME: this still does!
-        () => {
-            let addr_https = "127.0.0.1:8443".parse().unwrap();
-            let server_https = TcpListener::bind(&addr_https).unwrap();
-            println!("HTTPS server is listening on {}", addr_https);
+        //doneFIXME: this still does!
+        ($addr:ident, $serv:ident) => {
+            // ^ thanks to <stephaneyfx> on #rust irc.mozilla.org for the idea!
+            // doneFIXME: if using 'expr' instead of 'ident' then `error: arbitrary expressions aren't allowed in patterns`
+            // FIXME: figure out how this works:
+            // https://github.com/sfackler/rust-native-tls#usage
+            // https://github.com/sfackler/rust-native-tls/blob/master/src/test.rs
+            //let acceptor = TlsAcceptor::new(identity).unwrap();
+            //let acceptor = Arc::new(acceptor);
+
+            //let addr_https = "127.0.0.1:8443".parse().unwrap();
+            let $addr = "127.0.0.1:8443".parse().unwrap();
+            //let server_https = TcpListener::bind(&addr_https).unwrap();
+            let $serv = TcpListener::bind(&$addr).unwrap();
+            println!("HTTPS server is listening on {}", $addr);
         };
     }
     #[cfg(feature = "https")]
-    a_block_that_does_not_restrict_scope! {}
+    a_block_that_does_not_restrict_scope!(addr_https, server_https);
 
     /*    #[cfg(feature = "https")]
     {
@@ -118,7 +128,8 @@ fn main() {
                 SERVER_HTTPS => {
                     // Accept and drop the socket immediately, this will close
                     // the socket and notify the client of the EOF.
-                    let stream = server.accept_std().unwrap();
+                    println!("FIXME: need a different handler here, like: fn handle_client(stream: TlsStream<TcpStream>)"); //FIXME
+                    let stream = server_https.accept_std().unwrap();
                     pool.execute(|| {
                         handle_connection(stream.0);
                     });
