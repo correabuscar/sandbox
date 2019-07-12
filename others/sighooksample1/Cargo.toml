@@ -1,0 +1,12 @@
+[package]
+name = "sighooksample1"
+version = "0.1.0"
+authors = ["howaboutsynergy <howaboutsynergy@pm.me>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+#signal-hook = { version = "0.1.9" , features = [ "mio-support" ] }  # 100% cpu usage
+signal-hook = { version = "0.1.9" , features = [ ] } # no cpu usage!
+libc = "0.2.59"

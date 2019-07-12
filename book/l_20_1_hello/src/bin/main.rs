@@ -80,7 +80,9 @@ fn main() {
                 }
                 SIGNALS => {
                     //#[allow(clippy::never_loop)]  //this is not needed anymore, lookslike
-                    for sig in &signals {
+                    //for sig in &signals {
+                    for sig in signals.forever() {
+                        //same thing!
                         println!("Received signal {:?}", sig);
                         match sig {
                             SIGINT | SIGTERM => break 'loopy,
@@ -88,6 +90,7 @@ fn main() {
                                 //FIXME: pkill -1 l_20_1_hello will cause epic 100% cpu usage from then on!
                                 // SIGHUP and SIGQUIT must be already in the list of &signals else they won't be caught here!
                                 println!("Ignored signal '{:?}'", sig);
+                                //signals.close(); //this prevents 100% cpu usage but also stops everything from being handled!
                                 //break 'loopy;
                             }
                         }

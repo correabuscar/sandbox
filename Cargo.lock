@@ -709,6 +709,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "sighooksample1"
+version = "0.1.0"
+dependencies = [
+ "libc 0.2.59 (registry+https://github.com/rust-lang/crates.io-index)",
+ "signal-hook 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "signal-hook"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
