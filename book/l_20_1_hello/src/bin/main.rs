@@ -27,11 +27,23 @@ fn main() {
     println!("HTTP server is listening on {}", addr);
 
     #[cfg(feature = "https")]
+    macro_rules! a_block_that_does_not_restrict_scope {
+        //FIXME: this still does!
+        () => {
+            let addr_https = "127.0.0.1:8443".parse().unwrap();
+            let server_https = TcpListener::bind(&addr_https).unwrap();
+            println!("HTTPS server is listening on {}", addr_https);
+        };
+    }
+    #[cfg(feature = "https")]
+    a_block_that_does_not_restrict_scope! {}
+
+    /*    #[cfg(feature = "https")]
     {
         let addr_https = "127.0.0.1:8443".parse().unwrap();
         let server_https = TcpListener::bind(&addr_https).unwrap();
         println!("HTTPS server is listening on {}", addr_https);
-    }
+    } this block restricts scope so the ^ vars are undefined outside of it */
 
     let pool = ThreadPool::new(4);
 
@@ -97,7 +109,10 @@ fn main() {
                     });
                 }
                 /*                random_inexistent_identifier => {
-                    //FIXME: what?! how come this works!
+                    //okFIXME: what?! how come this works!
+                    // crate-wide #![allow_unused] would hide any warnings here! very dangerous!
+                    // but using a new(ie. random_inexistent_identifier) variable here is how 'match' works: matches anything and bind this new var. to it.
+                    // I didn't expect it in this context.
                 }*/
                 #[cfg(feature = "https")]
                 SERVER_HTTPS => {
