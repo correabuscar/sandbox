@@ -24,6 +24,7 @@ fn main() {
     //let listener = TcpListener::bind(&addr).unwrap();
     // Setup the server socket
     let server = TcpListener::bind(&addr).unwrap();
+    println!("Server is listening on {}", addr);
 
     let pool = ThreadPool::new(4);
 
