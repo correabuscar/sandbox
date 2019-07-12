@@ -2,7 +2,8 @@ use std::sync::mpsc;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
-//use std::time::Duration;
+#[cfg(feature = "sleepindrop")]
+use std::time::Duration;
 
 pub struct ThreadPool {
     workers: Vec<Worker>,
@@ -103,8 +104,11 @@ impl Drop for ThreadPool {
                 thread.join().unwrap();
             }
         }
-        //println!("Sleeping 5 sec for you to try C-c here to see if it works."); //no effect, of course.
-        //thread::sleep(Duration::from_secs(5));
+        #[cfg(feature = "sleepindrop")]
+        {
+            println!("Sleeping 5 sec for you to try C-c here to see if it works."); //no effect, of course.
+            thread::sleep(Duration::from_secs(5));
+        }
     }
 }
 

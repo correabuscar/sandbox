@@ -66,6 +66,7 @@ fn main() {
     //    }
 
     'loopy: loop {
+        println!(".");
         poll.poll(&mut events, None).unwrap();
 
         for event in events.iter() {
@@ -113,6 +114,12 @@ fn main() {
     }
 
     println!("Shutting down.");
+    #[cfg(feature = "sleepbeforeexitmain")]
+    {
+        println!("...but first: sleeping 5 sec before exiting main()");
+        thread::sleep(Duration::from_secs(5));
+        println!("done sleeping, exiting!");
+    }
 }
 
 fn handle_connection(mut stream: std::net::TcpStream) {
