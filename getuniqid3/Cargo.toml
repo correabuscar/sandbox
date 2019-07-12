@@ -25,3 +25,10 @@ rand_num = ["rand"] #the rand_num feature, depends on the "rand" package!
 
 xid = [ "libxid" ]
 
+# Features can be used to reexport features of other packages. The `session`
+# feature of package `awesome` will ensure that the `session` feature of the
+# package `cookie` is also enabled.
+#session = ["cookie/session"]
+#src: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
+
+
