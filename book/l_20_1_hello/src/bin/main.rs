@@ -11,14 +11,14 @@ use std::time::Duration;
 
 use l_20_1_hello::ThreadPool;
 
-use signal_hook::{iterator::Signals, SIGINT, SIGTERM};
+use signal_hook::{iterator::Signals, SIGHUP, SIGINT, SIGQUIT, SIGTERM};
 
 fn main() {
     //    ctrlc::set_handler(move || {
     //        println!("received Ctrl+C!");
     //    })
     //    .expect("Error setting Ctrl-C handler");
-    let signals = Signals::new(&[SIGINT, SIGTERM]).unwrap();
+    let signals = Signals::new(&[SIGINT, SIGTERM, SIGHUP, SIGQUIT]).unwrap();
 
     let addr = "127.0.0.1:7878".parse().unwrap();
     //let listener = TcpListener::bind(&addr).unwrap();
@@ -79,12 +79,14 @@ fn main() {
                     });
                 }
                 SIGNALS => {
-                    #[allow(clippy::never_loop)]
+                    //#[allow(clippy::never_loop)]  //this is not needed anymore, lookslike
                     for sig in &signals {
                         println!("Received signal {:?}", sig);
                         match sig {
                             SIGINT | SIGTERM => break 'loopy,
                             _ => {
+                                //FIXME: pkill -1 l_20_1_hello will cause epic 100% cpu usage from then on!
+                                // SIGHUP and SIGQUIT must be already in the list of &signals else they won't be caught here!
                                 println!("Ignored signal '{:?}'", sig);
                                 //break 'loopy;
                             }
