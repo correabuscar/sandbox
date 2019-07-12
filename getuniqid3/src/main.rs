@@ -59,8 +59,12 @@ xid_as_block!();
 
 use std::collections::HashMap;
 
+use std::time::Instant; // thanks to danieldg on #rust irc.mozilla.org
+
 fn main() {
-    let n: u32 = 1000000;
+    let now = Instant::now();
+
+    let n: u32 = 1_000_000; // 10mil is 15-23sec for xid
     let mut all_so_far = HashMap::with_capacity(n as usize);
     let mut i: u32 = 1;
 
@@ -75,13 +79,13 @@ fn main() {
     loop {
         //XXX: had to use loop instead of 'for' so that I'd have access to |i| outside of loop!
         #[cfg(feature = "uuid")]
-        let cur_ting = Uuid::new_v4();
+        let cur_ting = Uuid::new_v4(); // 0% will be dups!
 
         #[cfg(feature = "rand")]
-        let cur_ting = rng.gen::<u32>();
+        let cur_ting = rng.gen::<u32>(); //11.6% will be dups!
 
         #[cfg(feature = "xid")]
-        let cur_ting = g.new_id().unwrap().encode();
+        let cur_ting = g.new_id().unwrap().encode(); // 0% will be dups!
 
         if let Some(old_i) = all_so_far.insert(
             #[cfg(feature = "xid")]
@@ -110,10 +114,11 @@ fn main() {
         i += 1;
     }
     println!(
-        "Done, generated {} {}s of which {} were unique and {} were dups",
+        "Done, generated {} {}s of which {} were unique and {} were dups. Took {:.2} seconds",
         i,
         WHAT_TING,
         i - dups,
-        dups
+        dups,
+        now.elapsed().as_millis() as f64 / 1000_f64
     );
 }
