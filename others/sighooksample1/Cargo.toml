@@ -7,6 +7,16 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-signal-hook = { version = "0.1.9" , features = [ "mio-support" ] }  # 100% cpu usage
-#signal-hook = { version = "0.1.9" , features = [ ] } # no cpu usage!
+#signal-hook = { version = "0.1.9" , features = [ "mio-support" ] }  # 100% cpu usage
+signal-hook = { version = "0.1.9" , features = [ ] } # no cpu usage!
 libc = "0.2.59"
+
+[features]
+# Features can be used to reexport features of other packages. The `session`
+# feature of package `awesome` will ensure that the `session` feature of the
+# package `cookie` is also enabled.
+#session = ["cookie/session"]
+#src: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
+default = [] #just being explicit about it.
+infiniteloop = [ "signal-hook/mio-support" ] #ie. cargo run -v --no-default-features --features "infiniteloop" -- "$@"
+
