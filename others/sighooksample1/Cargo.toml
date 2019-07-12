@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 #signal-hook = { version = "0.1.9" , features = [ "mio-support" ] }  # 100% cpu usage
-signal-hook = { version = "0.1.9" , features = [ ] } # no cpu usage!
+signal-hook = { version = "0.1.9" , features = [ ], optional = false } # no cpu usage!
 libc = "0.2.59"
 
 [features]
