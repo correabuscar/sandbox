@@ -136,8 +136,9 @@ fn main() {
                 }
                 SIGNALS => {
                     //#[allow(clippy::never_loop)]  //this is not needed anymore, lookslike
-                    //for sig in &signals {
-                    for sig in signals.forever() {
+                    //for sig in &signals { this is a bug (ie. for sig in signals.forever()), thanks vorner https://github.com/vorner/signal-hook/issues/16#issuecomment-511027754  this is also a workaround for #16 for this particular context I'm in.
+                    for sig in signals.pending() {
+                        //fixed
                         //same thing!
                         println!("Received signal {:?}", sig);
                         match sig {
@@ -151,6 +152,7 @@ fn main() {
                             }
                         }
                     }
+                    //println!("exited for");
                 }
                 _ => unreachable!(),
             }

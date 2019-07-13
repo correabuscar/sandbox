@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 #signal-hook = { version = "0.1.9" , features = [ "mio-support" ] }  # 100% cpu usage
 signal-hook = { version = "0.1.9" , features = [ ], optional = false } # no cpu usage!
+#, path = '/tmp/signal-hook'
 libc = "0.2.59"
 
 [features]
@@ -19,5 +20,5 @@ libc = "0.2.59"
 #src: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
 default = [] #just being explicit about it.
 infiniteloop = [ "signal-hook/mio-support" ] #ie. cargo run -v --no-default-features --features "infiniteloop" -- "$@"
-#^ https://github.com/vorner/signal-hook/issues/16
+#^ https://github.com/vorner/signal-hook/issues/16  (fixed in #17)
 

@@ -13,7 +13,7 @@ path= "src/bin/main.rs"
 
 [dependencies]
 #ctrlc = "3"
-signal-hook = { version = "0.1.9", features = [ "mio-support" ] }
+signal-hook = { version = "0.1.9", features = [ "mio-support" ] } #, path="/tmp/signal-hook" }
 #/*, "tokio-support" */] }
 mio = "0.6.19"
 native-tls = { version = "0.2", optional = true }
