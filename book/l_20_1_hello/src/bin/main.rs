@@ -24,7 +24,36 @@ fn main() {
     //let listener = TcpListener::bind(&addr).unwrap();
     // Setup the server socket
     let server = TcpListener::bind(&addr).unwrap();
-    println!("Server is listening on {}", addr);
+    println!("HTTP server is listening on {}", addr);
+
+    #[cfg(feature = "https")]
+    macro_rules! a_block_that_does_not_restrict_scope {
+        //doneFIXME: this still does!
+        ($addr:ident, $serv:ident) => {
+            // ^ thanks to <stephaneyfx> on #rust irc.mozilla.org for the idea!
+            // doneFIXME: if using 'expr' instead of 'ident' then `error: arbitrary expressions aren't allowed in patterns`
+            // FIXME: figure out how this works:
+            // https://github.com/sfackler/rust-native-tls#usage
+            // https://github.com/sfackler/rust-native-tls/blob/master/src/test.rs
+            //let acceptor = TlsAcceptor::new(identity).unwrap();
+            //let acceptor = Arc::new(acceptor);
+
+            //let addr_https = "127.0.0.1:8443".parse().unwrap();
+            let $addr = "127.0.0.1:8443".parse().unwrap();
+            //let server_https = TcpListener::bind(&addr_https).unwrap();
+            let $serv = TcpListener::bind(&$addr).unwrap();
+            println!("HTTPS server is listening on {}", $addr);
+        };
+    }
+    #[cfg(feature = "https")]
+    a_block_that_does_not_restrict_scope!(addr_https, server_https);
+
+    /*    #[cfg(feature = "https")]
+    {
+        let addr_https = "127.0.0.1:8443".parse().unwrap();
+        let server_https = TcpListener::bind(&addr_https).unwrap();
+        println!("HTTPS server is listening on {}", addr_https);
+    } this block restricts scope so the ^ vars are undefined outside of it */
 
     let pool = ThreadPool::new(4);
 
@@ -32,6 +61,8 @@ fn main() {
     // for which socket.
     const SERVER: Token = Token(0);
     const SIGNALS: Token = Token(1);
+    #[cfg(feature = "https")]
+    const SERVER_HTTPS: Token = Token(2);
 
     // Create a poll instance
     let poll = Poll::new().unwrap();
@@ -39,6 +70,14 @@ fn main() {
     // Start listening for incoming connections
     poll.register(&server, SERVER, Ready::readable(), PollOpt::edge())
         .unwrap();
+    #[cfg(feature = "https")]
+    poll.register(
+        &server_https,
+        SERVER_HTTPS,
+        Ready::readable(),
+        PollOpt::edge(),
+    )
+    .unwrap();
     poll.register(&signals, SIGNALS, Ready::readable(), PollOpt::edge())
         .unwrap();
     // Create storage for events
@@ -75,6 +114,22 @@ fn main() {
                     // Accept and drop the socket immediately, this will close
                     // the socket and notify the client of the EOF.
                     let stream = server.accept_std().unwrap();
+                    pool.execute(|| {
+                        handle_connection(stream.0);
+                    });
+                }
+                /*                random_inexistent_identifier => {
+                    //okFIXME: what?! how come this works!
+                    // crate-wide #![allow_unused] would hide any warnings here! very dangerous!
+                    // but using a new(ie. random_inexistent_identifier) variable here is how 'match' works: matches anything and bind this new var. to it.
+                    // I didn't expect it in this context.
+                }*/
+                #[cfg(feature = "https")]
+                SERVER_HTTPS => {
+                    // Accept and drop the socket immediately, this will close
+                    // the socket and notify the client of the EOF.
+                    println!("FIXME: need a different handler here, like: fn handle_client(stream: TlsStream<TcpStream>)"); //FIXME
+                    let stream = server_https.accept_std().unwrap();
                     pool.execute(|| {
                         handle_connection(stream.0);
                     });
