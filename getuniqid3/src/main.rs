@@ -64,7 +64,7 @@ use std::time::Instant; // thanks to danieldg on #rust irc.mozilla.org
 fn main() {
     let now = Instant::now();
 
-    let n: u32 = 1_000_000; // 10mil is 15-23sec for xid
+    let n: u32 = 1_000_000; // 10mil is 15-23sec for xid (debug), or 1.56s (release)
     let mut all_so_far = HashMap::with_capacity(n as usize);
     let mut i: u32 = 1;
 
