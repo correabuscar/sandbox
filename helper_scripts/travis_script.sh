@@ -7,7 +7,8 @@ set -ex
 time {
 echo '!! Building...'
 #time cargo build --verbose --all
-time cargo clippy --all-targets --all-features --verbose --all
+#time cargo clippy --all-targets --all-features --verbose --all
+time cargo clippy --all-targets --verbose --all
 echo '!! Testing...'
 time cargo test --verbose --all
 }
