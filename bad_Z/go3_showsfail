@@ -1,5 +1,6 @@
 #!/bin/bash
 
-time cargo rustc --verbose --release -- -Z treat-err-as-bug=2000 -C target-cpu=intel -v "$@"
+time cargo rustc --verbose --release -- -Z treat-err-as-bug=2 -v "$@"
+#time cargo rustc --verbose --release -- -Z treat-err-as-bug=2000 -C target-cpu=intel -v "$@"
 #fail:
 #FIXME: How can I override rustc args specified in ~/.cargo/config from the command line? I tried: time cargo rustc --verbose --release -- -Z treat-err-as-bug=2000 -C target-cpu=intel -v "$@"  but got: note: compiler flags: -Z treat-err-as-bug=2000 -Z treat-err-as-bug=1 -C opt-level=3 -C lto -C codegen-units=1 -C target-cpu=intel -C debug-assertions=on -C target-cpu=native --crate-type bin  Had the following in ~/.cargo/config: [target.'cfg(any(windows, unix))'] rustflags = ["-C", "target-cpu=native" , "-Z", "treat-err-as-bug=1" ]

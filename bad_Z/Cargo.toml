@@ -10,3 +10,6 @@ edition = "2018"
 
 [features]
 bad = []
+
+[build]
+rustflags = [ "-Z", "treat-err-as-bug=4000" ]  #no effect, https://github.com/rust-lang/cargo/issues/6338
