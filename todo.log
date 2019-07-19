@@ -9,6 +9,7 @@ use one of the libs:
 ctrlc
 graceful (last update 3years ago)
 signal
+signal-hook
 
 to exit gracefully
 ------
