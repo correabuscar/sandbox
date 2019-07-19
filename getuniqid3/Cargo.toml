@@ -15,6 +15,7 @@ uuid = { version = "0.7.4", features = [#"serde", #do i need serde here? copied 
 "v4", "v5"], default-features = false, optional = true }
 rand = { version = "0.4.2", optional = true }
 libxid = { version = "0.1.5", optional = true }
+num-format = "0.4.0" #for showing numbers like "1,000,000" for US English  Thanks go to <sumeet> on irc.mozilla.org #rust-beginners channel, for telling me about this crate!
 
 [features] #see docs https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
 default = ["uuid"]  #can use "uuid" instead (even tho it's a package!)

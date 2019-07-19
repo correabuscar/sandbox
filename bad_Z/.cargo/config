@@ -1,0 +1,13 @@
+#
+#<sebk> howaboutsynergy: you can create a .cargo/config in the directory you are working in
+#<sebk> it overrides ~/.cargo/config
+#<sebk> or set RUSTFLAGS="-Z treat-err-as-bug=0" cargo build …
+
+# ^ thanks sebk on #rust-beginners freenode irc, it works with RUSTFLAGS env. var only! because ~/.cargo/config flags are appended after .cargo/config ones!
+
+[target.'cfg(any(windows, unix))']
+rustflags = ["-C", "target-cpu=native"
+, "-Z", "treat-err-as-bug=1000"  #ok this is overriden by ~/.cargo/config because that one's appended last
+#XXX: ok `-Z treat-err-as-bug=1` is bad https://github.com/rust-lang/rust/issues/27189#issuecomment-512126528
+]
+

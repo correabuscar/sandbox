@@ -61,10 +61,12 @@ use std::collections::HashMap;
 
 use std::time::Instant; // thanks to danieldg on #rust irc.mozilla.org
 
+use num_format::{Locale, ToFormattedString};
+
 fn main() {
     let now = Instant::now();
 
-    let n: u32 = 1_000_000; // 10mil is 15-23sec for xid
+    let n: u32 = 1_000_000; // 10mil is 15-23sec for xid (debug), or 1.56s (release)
     let mut all_so_far = HashMap::with_capacity(n as usize);
     let mut i: u32 = 1;
 
@@ -99,12 +101,15 @@ fn main() {
             old: i='{}' {}='{}'
             cur: i='{}' {}='{}'",
                 WHAT_TING, //all_so_far.get(cur_ting).expect("oldi")
-                old_i,
+                old_i.to_formatted_string(&Locale::en),
                 WHAT_TING,
                 cur_ting,
-                i,
+                i.to_formatted_string(&Locale::en),
                 WHAT_TING,
-                cur_ting
+                #[cfg(not(feature = "rand"))]
+                cur_ting,
+                #[cfg(feature = "rand")]
+                cur_ting.to_formatted_string(&Locale::en),
             );
             dups += 1;
         }
@@ -115,10 +120,10 @@ fn main() {
     }
     println!(
         "Done, generated {} {}s of which {} were unique and {} were dups. Took {:.2} seconds",
-        i,
+        i.to_formatted_string(&Locale::en),
         WHAT_TING,
-        i - dups,
-        dups,
-        now.elapsed().as_millis() as f64 / 1000_f64
+        (i - dups).to_formatted_string(&Locale::en),
+        dups.to_formatted_string(&Locale::en),
+        (now.elapsed().as_millis() as f64 / 1000_f64)
     );
 }
