@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#the vim editor via rls generates this (./target  whilst only ../target/ should exist in this workspace) and thus will otherwise fail if not removed:
+rm -rf ./target
+
+#
+#unset RUST_BACKTRACE
+#workaround issue: 29293 https://github.com/rust-lang/rust/issues/29293
+echo "RUST_BACKTRACE=$RUST_BACKTRACE"
+echo "RUST_LOG=$RUST_LOG"
+if test -x ./prereq; then
+  ./prereq
+fi
+#XXX: don't run clippy here because then it always causes rebuilds from scratch for no apparent reason
+#if test "$1" != "noclippy"; then
+#  set -e
+#  time cargo clippy "$@"
+#else
+#  shift 1
+#fi
+set +e
+time cargo build -v -- "$@" ; ec="$?"
+if test "0" == "$ec"; then
+  echo 'Success'
+else
+  echo "Fail, exit code: '$ec'"
+  exit "$ec"
+fi
+
+
+mpirun -n 2 -- ../target/debug/three
