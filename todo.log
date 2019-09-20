@@ -85,5 +85,11 @@ https://github.com/kpcyrd
 actix?
 https://github.com/actix/examples
 ------------
+note/todo: there's a way to run two different exes as part of the same 'mpirun' and in theory(untested) they can communicate with each other: https://stackoverflow.com/a/2892223/11509478
+
+better would be to run two different mpi programs at any random time(not part of the same mpi run!) and have them communicate with each other!
 ------------
+get a KV database like https://github.com/tikv/tikv
+find out how can access the same DB even over the network, I guess by running a server ? :(  if so, make it tls/https ?
+
 ------------

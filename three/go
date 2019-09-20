@@ -27,5 +27,5 @@ else
   exit "$ec"
 fi
 
-
+#note: there's a way to run two different exes as part of the same 'mpirun' and in theory(untested) they can communicate with each other: https://stackoverflow.com/a/2892223/11509478
 mpirun -n 2 -- ../target/debug/three
