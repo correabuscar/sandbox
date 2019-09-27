@@ -1,16 +1,4 @@
 use {
-    hyper::{
-        // Miscellaneous types from Hyper for working with HTTP.
-        Body, Client, Request, Response, Server, Uri,
-
-        // This function turns a closure which returns a future into an
-        // implementation of the the Hyper `Service` trait, which is an
-        // asynchronous function from a generic `Request` to a `Response`.
-        service::service_fn,
-
-        // A function which runs a future to completion using the Hyper runtime.
-        rt::run,
-    },
     futures::{
         // Extension trait for futures 0.1 futures, adding the `.compat()` method
         // which allows us to use `.await` on 0.1 futures.
@@ -19,6 +7,22 @@ use {
         // `FutureExt` adds methods that work for all futures, whereas
         // `TryFutureExt` adds methods to futures that return `Result` types.
         future::{FutureExt, TryFutureExt},
+    },
+    hyper::{
+        // A function which runs a future to completion using the Hyper runtime.
+        rt::run,
+        // This function turns a closure which returns a future into an
+        // implementation of the the Hyper `Service` trait, which is an
+        // asynchronous function from a generic `Request` to a `Response`.
+        service::service_fn,
+
+        // Miscellaneous types from Hyper for working with HTTP.
+        Body,
+        Client,
+        Request,
+        Response,
+        Server,
+        Uri,
     },
     std::net::SocketAddr,
 };
