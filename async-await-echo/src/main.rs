@@ -28,17 +28,32 @@ use {
 };
 
 async fn serve_req(_req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
-    println!("Got request at {:#?}", _req);
+    println!("Got request {:#?}", _req);
     // Always return successfully with a response containing a body with
     // a friendly greeting ;)
     //Ok(Response::new(Body::from("hello, world!")))
-    //let url_str = "https://www.rust-lang.org/en-US/"; //must be http or else 'connection was reset'! but when it's http then it just redirects there! so it doesn't remain on http://127.0.0.1:3000
-    let url_str = "http://raw.githubusercontent.com/tikv/client-rust/master/examples/raw.rs"; //same, has to be http for this to work!
+    //let url_str = "http://www.rust-lang.org/en-US/"; //must be http or else 'connection was reset'! but when it's http then it just redirects there! so it doesn't remain on http://127.0.0.1:3000
+    let url_str = "http://www.rust-lang.org/en-US/";
+    //let url_str = "http://test.com"; //302 https://www.test.com
+    //let url_str = "http://raw.githubusercontent.com/tikv/client-rust/master/examples/raw.rs"; //same, has to be http for this to work!
+    //let url_str = "https://raw.githubusercontent.com/tikv/client-rust/master/examples/raw.rs"; //Error not https hmm
     let url = url_str.parse::<Uri>().expect("failed to parse URL");
     let res = Client::new().get(url).compat().await;
     // Return the result of the request directly to the user
     println!("request finished-- returning response");
-    res //fail, connection was reset!
+    println!("Returning this {:#?}", res);
+    //let (mut parts, body) = res.unwrap().into_parts();
+    //parts.headers().insert("location","https://github.com".parse().unwrap());
+    let mut messing = res.unwrap();
+    //messing.headers.location = "https://github.com";
+    //let headers: &mut HeaderMap<HeaderValue> = messing
+    let headers = messing.headers_mut();
+    headers
+        //.insert("location", "https://github.com".parse().unwrap())
+        .remove("location");
+    //messing.status(200);
+    //res //fail, connection was reset!
+    Ok(messing)
 }
 
 async fn run_server(addr: SocketAddr) {
