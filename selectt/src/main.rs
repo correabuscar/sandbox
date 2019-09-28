@@ -8,7 +8,9 @@ use futures::{
 
 async fn task_one() { /* ... */
 }
-async fn task_two() { /* ... */
+async fn task_two() -> i32 {
+    /* ... */
+    return 1;
 }
 
 async fn race_tasks() {
@@ -19,10 +21,10 @@ async fn race_tasks() {
 
     select! {
     () = t1 => println!("task one completed first"),
-          () = t2 => println!("task two completed first"),
+          a = t2 => println!("task two completed first '{}' ",a),
               }
 
-    select! {
+    select! { // with _ compiler won't notify you if return type of task_two changed and you forgot to also change stuff here! (Bad)
     _ = t1 => println!("task one completed first"),
           _ = t2 => println!("task two completed first"),
               }
