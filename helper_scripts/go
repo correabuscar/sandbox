@@ -8,8 +8,13 @@ if test -x ./prereq; then
   ./prereq
 fi
 if test "$1" != "noclippy"; then
-  set -e
-  time cargo clippy "$@"
+  if clippy-driver; then
+    set -e
+    time cargo clippy "$@"
+  else
+    echo "Skipping clippy because clippy-driver failed to load .so (guessing)" >&2
+    #/home/user/.cargo/bin/clippy-driver: error while loading shared libraries: librustc_driver-62440e4dfa357b84.so: cannot open shared object file: No such file or directory
+  fi
 else
   shift 1
 fi

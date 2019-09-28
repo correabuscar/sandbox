@@ -5,11 +5,13 @@
 // multiple futures onto the same thread.
 use futures::executor::block_on;
 
-//use futures::future::TryFutureExt;
+use futures::future::TryFutureExt; //for map_err
 use futures::try_join; // need features: 'nightly' which is on futures-preview crate  v0.3.0-alpha.17 not on .19 !  maybe also needs feature 'async-await' ?
 
 use futures_timer::Delay;
-use std::{thread, time};
+#[allow(unused)]
+use std::thread;
+use std::time;
 
 //async fn Book() -> i32 {
 //    return 1;
@@ -21,7 +23,7 @@ struct Book; //good
 #[derive(Debug)]
 struct Music; //good
 
-async fn get_book() -> Result<Book, String> {
+async fn get_book() -> Result<Book, ()> {
     /* ... */
     println!("in get_book");
     //static mut a: bool=false;
@@ -45,7 +47,7 @@ async fn get_music() -> Result<Music, String> {
 
 async fn get_book_and_music() -> Result<(Book, Music), String> {
     println!("in get_book_and_music before");
-    let book_fut = get_book();
+    let book_fut = get_book().map_err(|()| "Unable to get boot".to_string());
     let music_fut = get_music();
     let r = try_join!(book_fut, music_fut);
     println!("in get_book_and_music after");
