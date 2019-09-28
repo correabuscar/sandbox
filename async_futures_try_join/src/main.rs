@@ -25,7 +25,7 @@ struct Music; //good
 
 async fn get_book() -> Result<Book, ()> {
     /* ... */
-    println!("in get_book");
+    println!("in get_book before");
     //static mut a: bool=false;
     //if !a {
     //    a=true;
@@ -33,21 +33,23 @@ async fn get_book() -> Result<Book, ()> {
     //}
     //thread::sleep(time::Duration::from_secs(2)); //this blocks get_music's run too! so bad!
     let now = Delay::new(time::Duration::from_secs(2)).await; //this doesn't; so good!
-    println!("in get_book done sleep '{:?}'", now);
+    println!("in get_book after //done sleep '{:?}'", now);
     return Ok(Book);
+    //return Err(());
 }
 async fn get_music() -> Result<Music, String> {
     /* ... */
-    println!("in get_music");
+    println!("in get_music before");
     //thread::sleep(time::Duration::from_secs(1));//bad
     let now = Delay::new(time::Duration::from_secs(1)).await; //this doesn't; so good!
     println!("in get_music done sleep '{:?}'", now);
-    Ok(Music)
+    return Ok(Music);
+    //return Err("moosic".to_string());
 }
 
 async fn get_book_and_music() -> Result<(Book, Music), String> {
     println!("in get_book_and_music before");
-    let book_fut = get_book().map_err(|()| "Unable to get boot".to_string());
+    let book_fut = get_book().map_err(|()| "Unable to get book".to_string());
     let music_fut = get_music();
     let r = try_join!(book_fut, music_fut);
     println!("in get_book_and_music after");
