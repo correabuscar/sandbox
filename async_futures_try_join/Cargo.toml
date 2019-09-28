@@ -1,5 +1,5 @@
 [package]
-name = "async-await-echo"
+name = "async_futures_try_join"
 version = "0.1.0"
 authors = ["howaboutsynergy <howaboutsynergy@pm.me>"]
 edition = "2018"
@@ -12,8 +12,6 @@ edition = "2018"
 # functions for using futures 0.3 and async/await with the Hyper library,
 # which use futures 0.1.
 #futures-preview = { version = "=0.3.0-alpha.19", features = ["compat"] }
-futures-preview = { version = "=0.3.0-alpha.17", features = ["async-await", "nightly", "compat"] }
-
-# Hyper is an asynchronous HTTP library. We'll use it to power our HTTP
-# server and to make HTTP requests.
-hyper = "0.12.9"
+futures-preview = { version = "=0.3.0-alpha.17", features = ["async-await", "nightly"] }
+#futures = { version = "=0.1.27" }
+futures-timer = "0.3"
