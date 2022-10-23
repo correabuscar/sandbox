@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "bash script at sleep (0: $0; *: $*)"
+sleep 30

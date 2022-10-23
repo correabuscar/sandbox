@@ -1,0 +1,85 @@
+#!/bin/bash
+
+#note: can pass --debug to $0 to pass it to 'wget' !
+
+fname='wgotten.txt'
+wget='wget' #ie. in PATH
+#wget='sudo -u portage -- /var/tmp/portage/net-misc/wget-1.21.3-r1/work/wget-1.21.3/src/wget'
+#wget='/var/tmp/portage/net-misc/wget-1.21.3-r1/work/wget-1.21.3/src/wget'
+
+#fsize=0
+
+function red() {
+  echo "$(tput setaf 1)${@}$(tput sgr0)"
+}
+
+function green() {
+  echo "$(tput setaf 2)${@}$(tput sgr0)"
+}
+
+function yellow() {
+  echo "$(tput setaf 3)${@}$(tput sgr0)"
+}
+
+trap onexit EXIT SIGINT
+onexit() {
+  kill -9 $(jobs -p)
+}
+
+function doit() {
+  set -e
+  python3 ./a.py "$1" &
+  shift
+  sleep 1
+  pushd /tmp
+  #rm -- "$fname" #needed for --continue
+  #if you change the value of the timeout here you have to change it in the .py too!
+  "$wget" "$@" --tries=3 --timeout=2 --passive-ftp -O "$fname" 127.0.2.9:8000/a.txt
+  #"$wget" "$@" --tries=3 --timeout=2 --passive-ftp --continue "http://127.0.2.9:8000/$fname"  #this does work with --continue ie. there's no bug!
+  #declare -g fsize
+  fsize="$(stat -c %s "$fname")"
+  fcontents="$(cat -- "$fname")"
+  echo -n "!";cat "$fname"; echo -n "!"
+  echo $fsize
+  popd
+}
+
+#BEGINs:
+
+#cat aha
+doit nobug "$@"
+echo $fsize
+if test "$fsize" != "14"; then
+  red "Failed nobug testing"
+  exit 1
+else
+  echo "!$fcontents!"
+  echo
+  #if test "$fcontents" == $'Hello World.\r\n'; then #XXX: this won't equal!
+  #if test "$fcontents" == ""$'Hello World.\r\n'""; then #XXX: this won't equal!
+  if test "$fcontents" == "$(echo -n $'Hello World.\r\n')"; then
+    green "ok, nobug test is fine (should always be)"
+  else
+    red "nobug test is fine but the contents are wrong eg. bug in .py file?"
+  fi
+fi
+#ls -la aha
+#echo 'Should be 14 bytes when no bug, or 20 if wget bug'
+sleep 1
+doit bug "$@"
+echo $fsize
+if test "$fsize" != "20"; then
+  yellow "Failed to reveal the bug, was the wget bug fixed?! (assume this is green if you know that wget got fixed)"
+  exit 0
+else
+  echo "!$fcontents!"
+  echo
+  #if test "$fcontents" == $'Hello Hello World.\r\n'; then #XXX: this won't equal!
+  if test "$fcontents" == "$(echo -n $'Hello Hello World.\r\n')"; then
+    yellow "ok, bug test is fine ie. wget isn't fixed (but it should eventually be, hence why this is yellow)"
+  else
+    red "bug test is fine but the contents are wrong ie. bug in .py file"
+  fi
+  exit 1
+fi
+

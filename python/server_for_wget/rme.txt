@@ -1,0 +1,5 @@
+patch for wget 1.21.3-r1 is:
+
+/patches/portage/net-misc/wget.reused/wget_no_append_on302_uponretry.patch
+
+see https://savannah.gnu.org/bugs/index.php?62869

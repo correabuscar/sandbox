@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo started
+time time ls -R / >/dev/null 2>&1
+#^ double time only works on command line! that is, when C-C-ing you can still see one of their output
+echo ended
+
+

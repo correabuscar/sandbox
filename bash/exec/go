@@ -1,0 +1,7 @@
+gcc 2.c -o 2.out
+gcc x.c -o x.out && ./x.out & sleep 1; ps -F
+#ps -F or -f shows the arg0 !
+#ps -c will ensure it doesn't show arg0 (unless you use ps -F -c  which does show custom arg0 anyway due to -F)
+#
+ps --format comm,args,command
+#^ warning: columns output is truncated depending on their size

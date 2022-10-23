@@ -1,0 +1,4 @@
+reproduced by having symlink @run_exe_debug without an exclude line in Cargo.toml
+old:
+nvm//cannot currently reproduce the issue here
+but it's now present in /home/$USER/build/2nonpkgs/rust.stuff/rustlearnage/recompile_self

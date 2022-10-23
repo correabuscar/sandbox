@@ -1,0 +1,24 @@
+#!/bin/bash
+
+doit() {
+  infile="$1"
+  outfile="$2"
+  if test -z "$infile" -o -z "$outfile"; then
+    echo "Args fail: '$@'"
+    exit 1
+  fi
+  perl -w -pe 's{^(.*[\(,]\h*|\h*[\(\h]+)(\b(?:const )?tracked_objects::Location& \w+\b|\b(?:(?:SQL_|BLINK_|BEGINFRAME_){0,1}FROM_HERE|from_here)\b)(?!\.)(,){0,1}(\)){0,1}(.*$)}{
+#note: left {0,1} for visibility, as "?" may not be that obvious (for me)
+#matching the start comment aka "//" is thanks to "pj" on #perl, freenode; and basically the whole idea of writing perl inside the {} via the "e" suffix! Thanks pj, for your time too!
+my($pj1,$pj2,$pj3,$pj4,$pj5)=($1,$2,$3,$4,$5);
+#ternary:
+$pj1=~m{//}?
+#leave commented lines alone:
+"$pj1$pj2$pj3$pj4$pj5":
+#for uncommented lines, modify by commenting out the arg:
+"$pj1//$pj2$pj3 //auto removed by perl#008\n$pj4$pj5"}ge' -- "$infile" > "$outfile"
+}
+
+doit ./a.fil /tmp/a.mod && colordiff -up ./a.fil /tmp/a.mod|less
+#XXX: should be no diff!
+doit /tmp/a.mod /tmp/a.mod2 && colordiff -up /tmp/a.mod /tmp/a.mod2|less

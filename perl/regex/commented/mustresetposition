@@ -1,0 +1,13 @@
+#!/bin/bash
+( cat <<EOF
+#should comment out:
+Status ChromiumWritableFile::Append(const Slice& data) {
+  DCHECK(file_.IsValid());
+  DCHECK(uma_logger1);
+  DCHECK(uma_logger2);
+  DCHECK(uma_logger3);
+  DCHECK(uma_logger4);
+#
+EOF
+) | perl -w -0777 -pe 's{(?:[{};]\v+\K)(?<namedcapture1>^\h*\bDCHECK\([^;#]*;)}{ $+{namedcapture1} =~ s!^!//!mgr }meg'
+

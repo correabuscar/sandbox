@@ -1,0 +1,54 @@
+#!/bin/bash
+
+sourcedfile='/tmp/applyallpatches_and_patch2_functions_implement.sh'
+cat /home/user/build/1packages/4used/pacman/1pacman-git/applyallpatches_and_patch2_functions_implement.patch | grep '^+' | grep -v '^+++' | sed -e 's/^+//' > "$sourcedfile"
+
+source "$sourcedfile"
+
+
+#the idea is to test if the patch still causes a recompilation even though the timestamp is the same as before, however upstream added some sneaky change before patch was applied compared to previously - so it seems it still gets recompiled (probably due to size difference detected by ccache? nope, it's still detected even if size is same but contents differ)
+#XXX: these are already set in env.:
+#CCACHE_BASEDIR=/home/user/build/
+#CCACHE_HARDLINK=1
+#CCACHE_NOCOMPRESS=1
+#CCACHE_NOHASHDIR=1
+#CCACHE_SLOPPINESS=include_file_mtime,file_stat_matches,include_file_ctime,file_stat_matches_ctime
+#CCACHE_TEMPDIR=/tmp
+
+export -n CCACHE_SLOPPINESS #remove the export property from each NAME
+unset CCACHE_SLOPPINESS
+#^ no effect
+
+#emulate upstream git pull
+rm main.c ; cp -a main.c.upstream main.c
+
+patch2 a.patch
+
+#emulate compiling whole project:
+ccache gcc main.c
+
+stat a.out
+./a.out
+
+
+#emulate upstream git pull that changes something modifying file size
+rm main.c ; cp -a main.c.upstream2 main.c
+
+patch2 a.patch
+
+#emulate compiling whole project:
+ccache gcc main.c
+
+stat a.out
+./a.out
+
+#emulate upstream git pull that changes something without modifying file size
+rm main.c ; cp -a main.c.upstream3 main.c
+
+patch2 a.patch
+
+#emulate compiling whole project:
+ccache gcc main.c
+
+stat a.out
+./a.out

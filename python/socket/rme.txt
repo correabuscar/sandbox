@@ -1,0 +1,3 @@
+this uses tcp/ip connections!
+
+the pid of the connection(s) can be identified, as long as runner runs as root, unless you only want to see the pids of same user processes.

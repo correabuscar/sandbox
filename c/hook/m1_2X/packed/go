@@ -1,0 +1,24 @@
+#!/bin/bash
+
+rm /tmp/gamma_setters.log
+
+set -e
+
+#not needed: -D_FORTIFY_SOURCE=2 -O1 -rdynamic
+gcc -D_FORTIFY_SOURCE=2 -O1 -rdynamic -ggdb -shared -ldl -fPIC prog2.c -o libprog2.so
+
+if test -e "$(which secote)"; then
+  LD_PRELOAD="$(realpath -- libprog2.so)" secote 3000
+fi
+
+if test -e "$(which xgamma)"; then
+  LD_PRELOAD="$(realpath -- libprog2.so)" xgamma -gamma 1.0
+  LD_PRELOAD="$(realpath -- libprog2.so)" xgamma -rgamma 1.0 -ggamma 0.6949030005552019 -bgamma 0.4310480202110507
+  LD_PRELOAD="$(realpath -- libprog2.so)" xgamma -gamma 1.0
+fi
+
+if test -e "$(which redshift)"; then
+  LD_PRELOAD="$(realpath -- libprog2.so)" redshift -P -O 3000 -m vidmode
+  LD_PRELOAD="$(realpath -- libprog2.so)" redshift -P -O 3000 -m drm
+  LD_PRELOAD="$(realpath -- libprog2.so)" redshift -P -O 3000 -m randr
+fi

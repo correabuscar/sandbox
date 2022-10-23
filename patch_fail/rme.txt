@@ -1,0 +1,2 @@
+crap I'm missing a line due to having deleted other hunks via vim!!!!!!
+so this isn't a bug, it's a malformed patch! grrr

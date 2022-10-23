@@ -1,0 +1,36 @@
+#!/bin/bash
+#if you want IPs to be marked for tracking, the blocked hostnames would use different 127.0.0.0/8 IPs so they can be seen in the logs when blocked by iptables. Not recommended in case you have something listening on localhost on that port(eg. 443) then the browser could access it, unless it's NOT listening on 0.0.0.0 or 127.0.0.0/8 ! (fixed sshd in regards to this!)
+
+cat ./hosts|awk 'BEGIN {
+#IP has form: 127.a.b.c initially 127.1.1.1
+a=1;
+b=1;
+c=0;
+max=254; #eg. 127.254.254.254
+}
+/^[[:space:]]*(0\.0\.0\.0)[[:space:]]/ {
+c++;
+if (c>max) {
+  c=1;
+  b++;
+  if (b>max) {
+    b=1;
+    a++;
+    if (a>max) {
+      $1="";
+      have="0.0.0.0 "$0;
+      a=max;
+      b=max;
+      c=max;
+      print "# overflow, thus using 0.0.0.0 instead!"
+    };
+  };
+} else {
+      $1="";
+      have="127."a"."b"."c" "$0;
+}
+print have; next;
+};
+// { print $0 }
+'|less
+

@@ -1,0 +1,36 @@
+#!/bin/bash --login
+
+#originally this was inside ~/.bashrc
+#to emulate that here:
+shopt -s expand_aliases
+#shopt -s login_shell #this won't work like that! it remains off, unless I use "--login" shebang arg!
+
+unset abc1
+unset abc2
+unset abc3
+echo 'alias list before the "if" is:'
+alias -p |grep abc
+#FIXME: the 'abc2' alias call inside the 'if' doesn't work in: GNU bash, version 5.0.11(2)-maint (x86_64-pc-linux-gnu)  aka 5.0.r660.gaa99ef52-1 and in 5.0.r671.g9831556e-1 because "do not use alias in compound commands." from `man 1 bash`
+alias abc1="echo 'abc1 executed'"
+abc1
+if true; then
+  alias abc2="echo 'abc2 executed'"
+  abc3() {
+    echo "abc3 executed"
+  }
+  echo 'alias list inside "if" is:'
+  alias -p |grep abc  #both abc1 and abc2 are present
+  shopt expand_aliases  #it's "on"
+  shopt login_shell #is 'on' only if this is inside ~/.bashrc or when using sheband arg "--login" to 'bash'
+  [[ $- != *i* ]] || echo "shell is interactive"  #this will show!
+  abc1  #works
+  abc2  #XXX doesn't work: "-bash: abc2: command not found", because I'm defining and using the alias inside the same compound command (which 'if ;then...fi' is).
+  abc3
+  if true; then
+    abc2  #still won't work
+    abc3
+  fi
+fi
+abc2 #works
+echo 'alias list outside of "if" is:'
+alias -p |grep abc #both abc1 and abc2 are present

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+time ./go
+#!! 72 tests failed
+#
+#real	1m1.380s
+#user	1m21.111s
+#sys	2m51.017s
+
+#!! 98/264 tests failed
+#real	0m45.971s
+#user	1m47.950s
+#sys	1m5.852s
+
+#!! 124/264 tests failed
+#
+#real	1m36.391s
+#user	2m7.427s
+#sys	4m29.756s
+
+

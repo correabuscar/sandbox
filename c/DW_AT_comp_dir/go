@@ -1,0 +1,10 @@
+#!/bin/bash
+
+#gcc test0.c -ggdb -S -o- | grep comp_dir
+#gcc test0.c -g -dA -S -o- | grep comp_dir
+
+#works:
+#gcc a.c -g -dA -S -o- | grep comp_dir
+#gcc a.c -g -dA -o blah; readelf -wi ./blah
+gcc a.c -g -o blah; readelf -wi ./blah | grep -E 'DW_AT_comp'
+#-dA is useless! it's only -g that adds DW_AT_comp_dir !

@@ -1,0 +1,14 @@
+hook X function XRRSetCrtcGamma, to see which program uses it and
+thus changes the gamma!
+inspired by: https://github.com/jumper149/blugon/issues/25#issuecomment-1112359426
+on 6-7 Sept. 2022
+
+LD_PRELOAD won't work if the binary is suid root, tested on prog1 !
+startx is non-suid for me!
+yes this works:
+
+LD_PRELOAD=/home/user/sandbox/c/hook/m1_2X/libprog2.so startx
+
+now anyprogram that I run inside X whill dump stacktraces whenever
+XRRSetCrtcGamma is called from within that program!
+

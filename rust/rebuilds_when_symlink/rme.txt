@@ -1,0 +1,10 @@
+this will always rebuild (ie. when `cargo build`) because of the symlink to the exe, which is detected as changed!
+happens only when build.rs exists, because:
+"In addition to environment variables, the build script’s current directory is the source directory of the build script’s package."
+
+https://doc.rust-lang.org/cargo/reference/build-scripts.html
+
+https://github.com/rust-lang/cargo/issues/4907
+
+workaround:
+the exclude line in Cargo.tml!

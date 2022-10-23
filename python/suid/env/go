@@ -1,0 +1,5 @@
+#!/bin/bash
+#^ for syntax highlighting in vim
+
+./sooidtest.py
+sudo ./sooidtest.py

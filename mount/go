@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo 'ok the mountpoint is the same as the root / dir of fs, hence why the attrs are stores inside the fs, they are the attrs for the root dir /'
+exit 1
+
+mkdir mountpoint
+chmod a-rwx moutpoint
+sudo chown 1:2 mountpoint
+dd if=/dev/zero of=/tmp/emptyext4 bs=1M count=20
+mkfs.ext4 /dev/

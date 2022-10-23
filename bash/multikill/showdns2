@@ -1,0 +1,39 @@
+#!/bin/bash
+
+processes=(
+"sleep 61"
+"sleep 62"
+showdns_successes
+showdns_fails
+)
+
+(
+oninterrupted() {
+  trap - SIGINT
+  if test -n "$DEBUG"; then
+    echo
+    echo 'Before kill:' >&2
+    ps "${mejobs[@]}" >&2
+  fi
+  /usr/bin/kill --verbose -9 -- "${mejobs[@]}"
+  if test -n "$DEBUG"; then
+    echo 'After kill:' >&2
+    ps "${mejobs[@]}" >&2
+    echo 'All done!' >&2
+  fi
+}
+for p in "${processes[@]}"; do
+  $p &
+done
+#sleep 60 &
+#echo "$!"
+#sleep 60 &
+#echo "$!"
+mejobs=($(jobs -p))
+if test -n "$DEBUG"; then
+  echo "Jobs: ${mejobs[*]}" >&2
+fi
+trap oninterrupted SIGINT
+wait -f "${mejobs[@]}"
+)
+

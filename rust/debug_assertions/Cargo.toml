@@ -1,0 +1,21 @@
+[package]
+name = "debug_assertions"
+version = "0.1.0"
+authors = ["none <none>"]
+
+[dependencies]
+
+[profile.dev]
+#opt-level=3
+debug-assertions = false
+#debug-assertions = true
+
+[profile.release]
+#opt-level=0
+#debug-assertions = false
+debug-assertions = true
+
+#^ the above work here, unless you're inside a workspace, then they have to be in the workspace's Cargo.toml or else you get warning like:
+#warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+#package:   /home/user/build/2nonpkgs/rust.stuff/rustlearnage/recompile_self/Cargo.toml
+

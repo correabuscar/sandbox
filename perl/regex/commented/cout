@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#XXX: This should Comment out DCHECK lines
+#For documentation, run: perldoc perlre
+
+#fail by me:
+#colordiff -up sedtest <(perl -w -0777 -pe 's/([ \t]*DCHECK\([^\n\r;]*(;|\n))(([^\n\r;]*\n)*)([^\n\r;]*;[ \t]*\n)/\/\/$1\/\/$3\/\/$4\/\/$5/igs' sedtest)|less -R
+#block comments: colordiff -up sedtest <(perl -w -0777 -pe 's{\b(DCHECK\([^;]*;)}{/* $1 */}g') | less -R
+
+#Thanks to mauke on #perl freenode irc
+#my attempt to transcribe it from program mode: colordiff -up sedtest <(perl -w -0777 -pe 's{\b(DCHECK\([^;]*;)}{ $1 =~ s!^!// !mgr }eg')|less -R
+#mauke:
+#colordiff -up sedtest <(perl -w -0777 -pe 's{(\h*\bDCHECK\([^;]*;)}{ $1 =~ s!^!// !mgr }eg' sedtest|tee sedtest.commentedout)|less -R
+#slightly modified:
+#XXX: it's supposed to show the differences after commenting out:
+colordiff -up sedtest <(perl -w -0777 -pe 's{(?:[{};]\v+\K)(?<namedcapture1>^\h*\bDCHECK\([^;#]*;)}{ $+{namedcapture1} =~ s!^!//!mgr }meg' sedtest|tee sedtest.commentedout)
+#|less -R
+# {} and ! are used as /
+

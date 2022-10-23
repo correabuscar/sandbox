@@ -1,0 +1,5 @@
+#!/bin/bash
+
+#see: https://docs.python.org/3/library/unittest.html
+python3 -m unittest --failfast test_sslverify
+#python3 -m unittest --failfast test_tls && python3 -m unittest --failfast test_sslverify

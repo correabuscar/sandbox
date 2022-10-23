@@ -1,0 +1,31 @@
+#!/bin/bash
+
+rm ./a.out || true
+rm /tmp/output.txt 2>/dev/null || true
+
+howmany="110" #to know actual buffer size it's necessary to add 21 (in this case) \0 not included
+howmanydiv10="$(( howmany / 10 ))"
+srcfile="./e.c"
+
+if ! grep "^#define HOWMANY $howmany" -- "$srcfile"; then
+  sed -re "s/(#define HOWMANY )(.*)($)/\1$howmany\3/"  -i "$srcfile"
+fi
+set -e
+grep "^#define HOWMANY $howmany" -- "$srcfile"
+gcc -D_FORTIFY_SOURCE=2 -O0 -ggdb3 "$srcfile"
+
+
+#shellcheck disable=SC2034
+for i in $(seq 1 1000); do
+    ./a.out &
+done
+wait
+#cat /tmp/output.txt|less
+#[ xx - 4 - 012345678901234567890123456789 - 27402]
+set +e
+grep -vE "^\[ xx - [0-9] - (0123456789){$howmanydiv10} - [0-9]{1,5}\]" -- /tmp/output.txt ; ec="$?"
+if test "$ec" -ne "0"; then
+  echo 'All good, no interleaving!'
+else
+  echo "Bad, interleaving detected!"
+fi

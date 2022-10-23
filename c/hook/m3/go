@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#// Compile the file containing user defined malloc()
+gcc  -c mymalloc.c
+
+#// Compile hello.c with output file name as helloc.
+#// -I. is used to include current folder (.) for header
+#// files to make sure our malloc.h is becomes available.
+gcc  -I. -o helloc hello.c mymalloc.o
+
+#// Run the generated executable
+./helloc
+#My malloc called
+#Hello World

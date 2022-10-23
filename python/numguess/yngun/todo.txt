@@ -1,0 +1,27 @@
+* generate N tables for 1..((2^N)-1) range numbers
+  * 2^X, X=[0..(N-1)] must be first number in table
+  - combine those 2^X numbers in such a way as to their sum(as a number) will
+    end up in all of 2^X combined numbers' tables.
+    * also add numbers from prev. tables to 2^X table, such that the numbers
+      are less than 2^X and then you add them to 2^X number then add it into
+      2^X table.
+    * ok bad strategy
+  * new try: for each number in range 1..(2^N-1) try decreasing each 2^X
+    (where X=[(N-1)..0]) from the number and if result is >= 0 add the number
+    in 2^X's table.
+    * this is good variant!
+* ask user N yes/no questions while each table is shown on screen
+  // the tables are static for a given range [1..((2^N)-1)] aka [1..2^N) so
+  they could be printed on paper, this is also known as 'magic numbers'
+* for each Yes table add(/sum) the first numbers, this will be the user's chosen(and
+  kept-secret number), unless they answered the questions wrong!
+* keep history of answers, just in case user answered wrong so they can be
+  shown which question they answered wrong, in case they would be willing to
+  retry answering the questions.
+* do it in python
+* at first blush, I think I must use backtracking for generating the
+  combinations for the 2^0..2^(N-1) numbers, but maybe not. Yeah it seems not!
+  It's just simple subtraction of each 2^X, while parsing each number in
+  range, and as long as result isn't negative, add the number to the 2^X's
+  table.
+

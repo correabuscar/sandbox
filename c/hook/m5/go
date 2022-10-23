@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#// Compile hello.c with output name as helloc
+gcc -o hellor hello.c
+
+#// Generate a shared library myalloc.so. Refer
+#// https://www.geeksforgeeks.org/working-with-shared-libraries-set-2/
+#// for details.
+gcc -shared -fPIC -o mymalloc.so mymalloc.c
+
+#// Make sure shared library is loaded and run before .
+LD_PRELOAD=./mymalloc.so ./hellor
+#My malloc called
+#Hello World

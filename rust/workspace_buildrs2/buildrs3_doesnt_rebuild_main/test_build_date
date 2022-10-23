@@ -1,0 +1,22 @@
+#!/bin/bash
+
+#PATH="$HOME/.cargo/bin:$PATH"
+#^ tried an older unmodified-cargo too!
+cargo -vV
+#this currently fails!
+bd_before=`cargo run -vv 2>/dev/null|grep BUILD_DATE|tail -n1`
+#presumably BUILD_DATE is now current!
+sleep 2 #ensure at least 1 sec diff!
+touch src/main.rs #emulate modification
+bd_after=`cargo run -vv 2>/dev/null|grep BUILD_DATE|tail -n1`
+#FIXME: this should've updated BUILD_DATE by recompiling&running build.rs but it doesn't! nvmfixedXXX: Weird that it takes 2 runs of ./$0 to get this to fail! but only the FIRST TIME, eg. after `cargo clean`
+#cargo 0.26.0
+#release: 0.26.0
+#rustc 1.24.0-dev (687d3d15b 2018-01-02)
+if test "$bd_before" == "$bd_after"; then
+  echo "!! Failed! BUILD_DATE was not updated!"
+  echo "$bd_before"
+  echo "$bd_after"
+else
+  echo "!! Success!"
+fi

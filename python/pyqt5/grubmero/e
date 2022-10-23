@@ -1,0 +1,5 @@
+#!/bin/bash
+
+fn=grubmero.py
+vim -- "$fn"
+time mypy --strict "./$fn"

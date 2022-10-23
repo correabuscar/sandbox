@@ -1,0 +1,7 @@
+cargo 0.26.0
+release: 0.26.0
+Started...
+!! Failed! BUILD_DATE was not updated!
+BUILD_DATE=Fri, 05 Jan 2018 02:44:45 GMT
+BUILD_DATE=Fri, 05 Jan 2018 02:44:45 GMT
+

@@ -1,0 +1,74 @@
+#!/bin/bash
+
+echo "listing all available(!) for hub-ctrl HUBs:"
+sudo ./hub-ctrl -v
+
+#bus=3
+#dev=3
+#^ not a hub!
+
+#actual hubs:
+#bus=2
+#dev=4
+
+#bus=2
+#dev=1
+#
+#bus=4
+#dev=1
+#
+#bus=1
+#dev=1
+
+#bus=3
+#dev=1
+#port=3
+#^ should be mouse! => "Device not found."  for 1,2 also!
+#dev=3
+#port=3
+#^ "Device not found."
+
+bus=2
+dev=4
+#port=4
+#^ this worked but doesn't seem to have cut off power to anything(that doesn't have data lines!)
+#$ lsusb -tvvvvv|grep Hub -A2
+#    |__ Port 4: Dev 4, If 0, Class=Hub, Driver=hub/4p, 480M
+#        ID 1a40:0101 Terminus Technology Inc. Hub
+#        /sys/bus/usb/devices/2-4  /dev/bus/usb/002/004
+# well, there's nothing connected to this hub, wtf is it doing?!!! ok I stand corrected, only those with data lines are sensed or disconnected
+port=1
+#^ placed USB receiver for mouse on this port! yep that powerr off (3 sec delay) then on,  definitely worked!
+
+#bus=2
+#dev=1
+#port=1
+
+#so the Class=root_hub ones don't work!
+
+#./hub-ctrl -b "$bus" -d "$dev" -P "$port" -p 0
+#exit "$?"
+#^ "No hubs found.", unless 'sudo' !
+
+read -r -p "Now doing some shie, press Enter"
+#sudo -v
+##turn off(then on) the power to mouse (yes this works!)
+#sudo ./hub-ctrl -v -b "$bus" -d "$dev" -P "$port" -p 0
+#sleep 3
+#lsusb
+#sudo ./hub-ctrl -v -b "$bus" -d "$dev" -P "$port" -p 1
+#lsusb
+
+onoff=0
+#sudo ./hub-ctrl -v -b "$bus" -d "$dev" -P 1 -p "$onoff"
+sudo ./hub-ctrl -v -b "$bus" -d "$dev" -P 2 -p "$onoff"
+sudo ./hub-ctrl -v -b "$bus" -d "$dev" -P 3 -p "$onoff"
+sudo ./hub-ctrl -v -b "$bus" -d "$dev" -P 4 -p "$onoff"
+#^ cuttion off power of these other ports seems to have no effect and I wonder if it's because of CONFIG_USB_DEFAULT_PERSIST=y
+# even setting 0 (default=1) to power/pm_qos_no_power_off for each of those ports! see $ grep . --  /sys/bus/usb/devices/2-4/2-4\:1.0/2-4-port{1,2,3,4}/power/*
+
+# "Device is not hub." :
+#./hub-ctrl0 -b 3 -d 3 -P 1 -p 1
+#sudo ./hub-ctrl0 -b 2 -d 4 -P 1 -p 1
+#^ hmm this seem to work!! with sudo anyway!
+

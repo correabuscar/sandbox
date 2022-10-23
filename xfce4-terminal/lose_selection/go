@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#get some scrollback buffer via:
+ls -laR / & jobpid="$!"; sleep 1; kill -9 "$jobpid"
+
+echo '1. Now, start selecting by holding LMB and moving up past the window title which will (normally)cause it to scroll up'
+echo '2. stop the above auto-scrolling by moving mouse into the window contents, before a new 'a' is echoed(by the below 'while'), while still holding LMB'
+echo '3. keep holding LMB until a new 'a' line is echoed'
+echo 'as soon as that happens, the entire selection is lost'
+echo '(this issue only works if the action of selecting caused window scrolling at least once)'
+
+
+#echo something every 3 seconds(C-c to stop):
+while true; do echo -n "a"; sleep 3; done #doesn't have to be a new line output!
+
+# ok this is a vte3 issue! see https://bugzilla.xfce.org/show_bug.cgi?id=15718#c2
+# https://gitlab.gnome.org/GNOME/vte/issues/154#note_556367

@@ -1,0 +1,4 @@
+gcc -std=gnu99 -Os -nostdlib -m32 -march=i386 -ffreestanding \
+    -o hello.com -Wl,--nmagic,--script=com.ld hello.c
+
+

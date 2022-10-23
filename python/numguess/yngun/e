@@ -1,0 +1,5 @@
+#!/bin/bash
+#^ for syntax in vim
+fn="commutative_combine_of_uniques.py"
+vim -- "$fn"
+time mypy --strict "./$fn"

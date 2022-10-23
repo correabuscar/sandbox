@@ -1,0 +1,5 @@
+#!/bin/bash
+
+#/usr/bin/patch --fuzz=0 -p1 -i ./append_mode.patch
+/usr/bin/patch -p1 -i ./append_mode.patch
+diff -up ./src/check_log.c.original ./src/check_log.c && echo "Verification failed, patch was NOT applied!"

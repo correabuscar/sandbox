@@ -1,0 +1,27 @@
+#!/bin/bash
+
+mkdir path1 path2 -p
+touch path1/ww
+touch path2/ww
+
+export PATH="$(realpath path1):$(realpath path2)"
+echo "PATH is $PATH"
+hash -r
+
+/usr/bin/chmod a-x path1/ww
+/usr/bin/chmod a-x path2/ww
+#not found(with my patch):
+type -p ww
+/usr/bin/chmod a+x path2/ww
+#found:
+type -p ww
+
+/usr/bin/chmod a-x path2/ww
+#not found again:
+type -p ww
+
+/usr/bin/chmod a+x path1/ww
+#finds path1, can't repro. the case when it found path2!
+type -p ww
+#hash #hmm empty
+

@@ -1,0 +1,60 @@
+#!/bin/bash
+#run this(/tmp/a) like this:
+#/tmp/a --makeopts="-j4 V=0"
+#/tmp/a --makeopts="-j4 V=0" "--one --two"
+
+parse_cmdline() {
+#  if test "$#" -ne "1"; then
+#    echo "Unexpected situation, $# args passed to parse_cmdline() function: '$*'" >&2
+#    echo "forcing exit" >&2
+#    exit 1
+#  fi
+  local got="$*"
+  case "$got" in
+    --one*)
+      echo "ONE!$#!$*!"
+      ;;
+    --two*)
+      echo "TWO!$#!$*!"
+      ;;
+    --makeopts=*)
+      #original line(exists in genkernel 4.0.2):
+      CMD_MAKEOPTS="${*#*=}"
+      #^ fails with that!
+      echo "original CMD_MAKEOPTS: !${CMD_MAKEOPTS}!"
+
+      #XXX: a way to fix:
+      #works ok with this:
+      #workaround for --makeopts="-j4 V=0" else it's seen as "-j4 0"
+      #local moo="$*"
+      #CMD_MAKEOPTS="${moo#*=}"
+      CMD_MAKEOPTS="${got#*=}"
+      echo "fixed    CMD_MAKEOPTS: !${CMD_MAKEOPTS}!"
+      ;;
+    *)
+      echo 'you must pass args like: --makeopts="-j4 V=0"'
+      ;;
+  esac
+}
+
+##fails with original line:
+#parse_cmdline $*
+##works with original line:
+#parse_cmdline "$*"
+#parse_cmdline "$@"
+
+# extract from /usr/bin/genkernel 4.0.2
+# Parse all command line options...
+#GK_OPTIONS=$* # Save for later
+while [ $# -gt 0 ]
+do
+  GK_OPTION=$1; shift
+  echo "GK_OPTION=!$GK_OPTION!"
+  ##fails with original line:
+  parse_cmdline ${GK_OPTION}
+  ##works with original line:
+  #XXX: second way to fix, but this might have unintended effects?
+  parse_cmdline "${GK_OPTION}"
+done
+unset GK_OPTION
+

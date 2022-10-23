@@ -1,0 +1,8 @@
+#!/bin/sh
+
+a="1"
+if test "0$a" -eq "01"; then
+  echo "good"
+else
+  echo "bad"
+fi

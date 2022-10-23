@@ -1,0 +1,5 @@
+#!/bin/bash
+
+fn=swcode.py
+vim -- "$fn"
+time mypy --strict "./$fn"

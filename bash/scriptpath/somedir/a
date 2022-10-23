@@ -1,0 +1,17 @@
+#!/bin/bash
+
+self="$0"
+selfpath="$(dirname -- "$self")"
+selfrealpath="$(dirname -- "$(realpath --canonicalize-existing --physical -- "$self")")"  #follows symlinks, eg. if $self is symlink
+selfactualpath="$(dirname -- "$(realpath --canonicalize-existing --logical --no-symlinks -- "$self")")" #ie. doesn't follow symlinks eg. if $self is a symlink !
+echo "!! self=!${self}!"
+echo "!! realself=!$(realpath -- "$self")"
+echo "!! selfrealpath=!$selfrealpath!"
+echo "!! selfpath=!$selfpath!"
+#realpath --canonicalize-existing --logical --no-symlinks "$self"
+echo "!! selfactualpath=!$selfactualpath!"
+
+#first try to get common.h from the same dir as the possibly-symlinked-to-real-script-file $self , then if it didn't exist, follow the $self symlink and try loading common.h from there, fails (for the second time) if $self isn't a symlink
+# shellcheck source=./common.sh
+source "${selfactualpath}/common.sh" || source "${selfrealpath}/common.sh"
+

@@ -1,0 +1,2 @@
+TODO, got distracted by sudo keeping PATH, unless sudo -i, doh, OR unless
+secure_path= is set

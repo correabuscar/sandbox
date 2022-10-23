@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#// Compile the file containing user defined malloc()
+gcc  -c mymalloc.c
+
+#// Compile hello.c with output name as hellol
+#// "-Wl,--wrap=malloc" is used tell the linker to use
+#//  malloc() to call __wrap_malloc(). And to use
+#// __real_malloc() to actual library malloc()
+gcc  -Wl,--wrap=malloc -o hellol hello.c mymalloc.o
+
+#// Run the generated executable
+./hellol
+#My malloc called
+#Hello World

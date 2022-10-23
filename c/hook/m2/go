@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+gcc -shared -ldl -fPIC file1.c file2.c -o libfile.so
+gcc -rdynamic -o dl_prog1 dl_prog1.c -ldl
+./dl_prog1
+

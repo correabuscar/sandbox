@@ -1,0 +1,15 @@
+{
+    "name": "Redirect all http to https",
+    "description": "chromium --load-extension=. http://example.com  # should open https://example.com",
+    "version": "1",
+    "manifest_version": 2,
+    "background": {
+        "scripts": ["background.js"]
+    },
+    "permissions": [
+        "declarativeWebRequest",
+        "webRequest",
+        "webRequestBlocking",
+        "*://*/*"
+    ]
+}

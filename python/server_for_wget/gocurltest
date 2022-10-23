@@ -1,0 +1,43 @@
+#!/bin/bash
+
+curl='curl'
+#wget='sudo -u portage -- /var/tmp/portage/net-misc/wget-1.21.3-r1/work/wget-1.21.3/src/wget'
+#wget='/var/tmp/portage/net-misc/wget-1.21.3-r1/work/wget-1.21.3/src/wget'
+
+trap onexit EXIT SIGINT
+onexit() {
+  kill -9 $(jobs -p)
+}
+
+#set -exv
+set -e
+python3 ./a.py "$@" &
+test "$#" -gt "0" && shift
+sleep 1
+pushd /tmp
+#if you change the value of the timeout here you have to change it in the .py too!
+fname="aha.txt"
+echo >"$fname"
+rm -- "$fname"
+set +e
+#XXX: while this works fine, it discards the already downloaded (eg. 6 bytes of "Hello ") and redownloads from 0! even when using --continue-at -  (you see "Throwing away 6 bytes") this all happens with --retry-all-errors which is needed because otherwise curl sees the transfer as closed because curl doesn't have a read timeout arg, hmm... oh wait yes it does it's --max-time 2  ! that's the one that sees it as timeout as it should! and it still throws away 6 bytes even without --retry-all-errors, because of --retry 3
+"$curl" "$@" --continue-at - --retry 3 --verbose --connect-timeout 2 --max-time 2 --retry-max-time 20 --ftp-pasv --max-redirs 10 --location --output "$fname" -- http://127.0.2.9:8000/a.txt
+ec="$?"
+if test "$ec" != "0"; then
+  echo "$curl failed with exit code $ec but should be 0"
+  exit 1
+fi
+set -e
+fsize="$(stat -c %s "$fname")"
+fcontents="$(cat -- "$fname")"
+cat -- "$fname"
+ls -la -- "$fname"
+if test "$fsize" != "14" -o "$fcontents" != "$(echo -n $'Hello World.\r\n')"; then
+  echo "`tput setaf 1`Bug still present!`tput sgr0`"
+  exit 1
+else
+  echo "Bug is fixed."
+fi
+#echo 'Should be 14 bytes when no bug, or 20 if wget bug'
+popd
+#kill -9 $(jobs -p)

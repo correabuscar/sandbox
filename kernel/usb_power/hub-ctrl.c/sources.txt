@@ -1,0 +1,3 @@
+hub-ctrl.c - this is from a forked version of: https://github.com/temporaryrespite/hub-ctrl.c.git
+hub-ctrl.c.original - this is from https://marc.info/?l=linux-usb-devel&m=113724451205634
+

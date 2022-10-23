@@ -1,0 +1,11 @@
+#!/bin/bash
+
+evilPATH="/nothing:/bin"
+result="$(PATH="$evilPATH" /usr/bin/sudo -- bash -c 'echo "$PATH"')"
+#PATH is being preseved inside sudo! hmm... in Gentoo. even if line "Defaults env_reset" explicitly exists in /etc/sudoers!
+if test "$evilPATH" == "$result"; then
+  echo "Sudo preserved the PATH as '$result'"
+  echo "So this is a feature, run sudo -V, as root to see that it preserves some env.vars. hardcoded in, thus you can't even env_delete PATH"
+  exit 1
+fi
+exit 0

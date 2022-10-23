@@ -1,0 +1,9 @@
+yes/no guess user's number = yngun (aka magic numbers)
+ask N yes/no -only, user questions, to find out user's number in range from 1 to 2^N
+that works well on paper.
+
+I suppose a simpler way for computer to do it would be to ask the 10 questions
+for binary search purposes, like is your number bigger(or: smaller or equal)
+than (2^N)/2 then repeat for the remaining range div 2, so on... 
+it would still be N questions(wouldn't it? unsure, maybe +1) 'til found.
+

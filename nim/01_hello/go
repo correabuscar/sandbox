@@ -1,0 +1,3 @@
+#nim compile --run greetings.nim
+nim compile --run greetings.nim arg1 arg2
+#^ debug

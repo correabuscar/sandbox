@@ -1,0 +1,2 @@
+#!/bin/bash
+vim ./interleaved_output_check.c

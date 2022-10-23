@@ -1,0 +1,40 @@
+#!/bin/bash
+
+wget='wget'
+#wget='sudo -u portage -- /var/tmp/portage/net-misc/wget-1.21.3-r1/work/wget-1.21.3/src/wget'
+#wget='/var/tmp/portage/net-misc/wget-1.21.3-r1/work/wget-1.21.3/src/wget'
+
+trap onexit EXIT SIGINT
+onexit() {
+  kill -9 $(jobs -p)
+}
+
+#set -exv
+set -e
+python3 ./a.py "$@" &
+test "$#" -gt "0" && shift
+sleep 1
+pushd /tmp
+#if you change the value of the timeout here you have to change it in the .py too!
+fname="aha.txt"
+echo >"$fname"
+rm -- "$fname"
+"$wget" "$@" --tries=3 --timeout=2 --passive-ftp -O "$fname" 127.0.2.9:8000/a.txt
+ec="$?"
+if test "$ec" != "0"; then
+  echo "wget failed with exit code $ec"
+  exit 1
+fi
+fsize="$(stat -c %s "$fname")"
+fcontents="$(cat -- "$fname")"
+cat -- "$fname"
+ls -la -- "$fname"
+if test "$fsize" != "14" -o "$fcontents" != "$(echo -n $'Hello World.\r\n')"; then
+  echo "`tput setaf 1`Bug still present!`tput sgr0`"
+  exit 1
+else
+  echo "Bug is fixed."
+fi
+#echo 'Should be 14 bytes when no bug, or 20 if wget bug'
+popd
+#kill -9 $(jobs -p)

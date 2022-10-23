@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#set one of the CPUs to different governor, to see how cutectrl handles it
+CPUnum=2
+gov=powersave
+#shellcheck disable=SC2002
+if ! cat "/sys/devices/system/cpu/cpufreq/policy${CPUnum}/scaling_available_governors" | grep -F "$gov" ; then
+  #FIXME: avoid this warning when I can modprobe it!
+  #$ lsmod|grep power
+  #cpufreq_powersave      16384  1
+
+  tput setab 1
+  echo "WARNING: governor $gov is not currently available. cpupower cmd below may fail(unless it succeeds in modprobing it!), if so you may need to recompile kernel with the specific governor enabled(as a module or builtin)."
+  tput sgr0
+fi
+sudo sudo cpupower --cpu "$CPUnum" frequency-set --governor "$gov" --min 800MHz --max 800MHz
+tput setaf 3
+echo "State now:"
+tput sgr0
+cpupower -c all frequency-info --policy | grep 'The governor'|grep ' "\w.*\w" '

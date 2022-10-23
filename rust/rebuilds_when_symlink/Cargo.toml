@@ -1,0 +1,7 @@
+[package]
+name = "rebuilds_when_symlink"
+version = "0.1.0"
+authors = ["none <none>"]
+exclude = [ "rebuilds_when_symlink" ]
+
+[dependencies]

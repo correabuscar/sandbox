@@ -1,0 +1,12 @@
+#!/bin/bash
+
+emcc hello.c -s WASM=1 -o hello.html
+#^emcc is from archlinux package emscripten: XXX sudo pacman -S emscripten
+
+#emcc hello.c -s WASM=1 -Wl,emrun -o hello.html
+#The html page you are running is not emrun-capable. Stdout, stderr and exit(returncode) capture will not work. Recompile the application with the --emrun linker flag to enable this, or pass --no_emrun_detect to emrun to hide this check.
+#emcc:WARNING: ignoring unsupported linker flag: `emrun`
+#good one
+#emcc hello.c -s WASM=1 -Wl,--emrun -o hello.html
+#emcc:WARNING: ignoring unsupported linker flag: `--emrun`
+

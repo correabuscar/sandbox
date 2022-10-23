@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#used this to test that chromium doesn't indeed wait for the extension(s) to load before loading the url
+rm -rf -- /tmp/whatever /tmp/whatever.cachedir
+chro2 "--load-extension=`pwd`" --disk-cache-dir=/tmp/whatever.cachedir --user-data-dir=/tmp/whatever http://example.com
+#you should get https://example.com in the url bar! if the extension is loaded before the tab contents, which is not the case, but should be - #wish
+#code src: https://bugs.chromium.org/p/chromium/issues/detail?id=523634
+
+#FIXedME: currently crashes due to: https://github.com/user/chrosnap/blob/master/src/chrome/browser/extensions/unpacked_installer.cc#L161-L166
+#with error=Manifest file is missing or unreadable.' extension_path_=/tmp.
+#oh yeah I'm in /tmp due to using the 'chro' script!!
+#so if you specify an empty dir! it crashes like that!  was before: --load-extension=./
+

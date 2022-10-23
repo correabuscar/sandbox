@@ -1,0 +1,7 @@
+#!/bin/bash
+
+#rm ./a.out ; gcc -ggdb3 -O0 b.c && ./a.out >screen.out
+#rm ./a.out ; gcc -ggdb3 -O2 b.c && ./a.out >screen.out
+#rm ./a.out ; gcc -g0 -O2 b.c && ./a.out >screen.out
+
+rm ./a.out ; gcc -ggdb3 -O0 mmap_access_beyond.c && ./a.out >screen.out ; ls -la ./screen.out ; cat /tmp/_diff_mmap | colordiff

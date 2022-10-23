@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+gcc -Wa,--generate-missing-build-notes=yes -o foo.o -DFUNC=foo -c func.S
+gcc -Wa,--generate-missing-build-notes=yes -o bar.o -DFUNC=bar -c func.S
+ld -r foo.o bar.o
+echo 'All good'

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#problematic commit: https://git.savannah.gnu.org/cgit/bash.git/commit/?h=devel&id=35bc7025c1db5078eb157eea7c0436754ac91aa3
+#reported at bug bash: https://lists.gnu.org/archive/html/bug-bash/2021-05/msg00052.html
+
+#when broken:
+#$ if [[ "$#" -eq "2" ]]; then echo a ; fi
+#bash: [[: \0: syntax error: operand expected (error token is "\0")
+#
+#when working: no error!
+
+if [[ "$#" -eq "2" ]]; then echo a ; fi
+if test "$?" != "0"; then
+  echo "Failed! bash 'devel' branch commit 35bc7025c1db5078eb157eea7c0436754ac91aa3 wasn't fixed or reverted yet!"
+else
+  echo "Your 'bash' is working well, re this issue!"
+fi

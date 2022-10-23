@@ -1,0 +1,7 @@
+#!/bin/bash
+
+#XXX two scripts using same fd (eg. 300) will lock each other
+./b.bash & ./c.bash &
+wait
+echo 'go2 done'
+

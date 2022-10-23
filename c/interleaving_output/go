@@ -1,0 +1,84 @@
+#!/bin/bash
+
+jobsnumber=100 #was 1000; works as well with 100 also! takes only 25sec instead of 1m36s
+showgoodstoo=1
+#^ set to 0 to not show the good ones where no interleaving occurred.
+
+#----------- nothing to set/modify below:
+failedcount=0
+testcount=0
+
+#howmany="110" #to know actual buffer size it's necessary to add 21 (in this case) \0 not included
+#buffersize="$(( fprintfsize ))"
+
+#1=yes, 0=no
+#fflusheachline=0
+
+for fflusheachline in 0 1; do
+
+  for howmany in 30 110; do
+    fprintfsize="$(( howmany + 21 ))"
+    for buffersize in 10 100 127 128 129 140 $(( fprintfsize - 2 )) $(( fprintfsize - 1 )) $fprintfsize $(( fprintfsize + 1)) $(( fprintfsize - 2 )) 500 "BUFSIZ"; do
+      for setbufline in $(seq 0 5); do
+#---------
+outexe="/tmp/a.out" #TODO: morph this name for each case and if all tests succeed, then run a bunch of all at once to see if interleaving happens!
+rm "$outexe" 2>/dev/null
+rm /tmp/output.txt 2>/dev/null
+howmanydiv10="$(( howmany / 10 ))"
+srcfile="./interleaved_output_check.c"
+
+if ! grep "^#define SETBUFLINE $setbufline" -- "$srcfile" >/dev/null; then
+  sed -re "s/(#define SETBUFLINE )(.*)($)/\1$setbufline\3/"  -i "$srcfile"
+fi
+if ! grep "^#define HOWMANY $howmany" -- "$srcfile" >/dev/null; then
+  sed -re "s/(#define HOWMANY )(.*)($)/\1$howmany\3/"  -i "$srcfile"
+fi
+if ! grep "^#define BUFFERSIZE $buffersize" -- "$srcfile" >/dev/null; then
+  sed -re "s/(#define BUFFERSIZE )(.*)($)/\1$buffersize\3/"  -i "$srcfile"
+fi
+if ! grep "^#define FLUSHEACHLINE $fflusheachline" -- "$srcfile" >/dev/null; then
+  sed -re "s/(#define FLUSHEACHLINE )(.*)($)/\1$fflusheachline\3/"  -i "$srcfile"
+fi
+
+onexit() {
+  local ec="$?"
+  if test "$ec" != "0"; then
+    echo "!! Something failed ec='$ec'" >&2
+  elif test "$failedcount" -gt "0"; then
+    echo "!! $failedcount/$testcount tests failed" >&2
+  else
+    echo "All $testcount tests passed!" >&2
+  fi
+}
+trap onexit EXIT
+set -e
+grep "^#define SETBUFLINE $setbufline" -- "$srcfile" >/dev/null
+grep "^#define HOWMANY $howmany" -- "$srcfile" >/dev/null
+grep "^#define BUFFERSIZE $buffersize" -- "$srcfile" >/dev/null
+grep "^#define FLUSHEACHLINE $fflusheachline" -- "$srcfile" >/dev/null
+#gcc -O0 -ggdb3 "$srcfile"
+#gcc -D_FORTIFY_SOURCE=0 -O0 -ggdb3 "$srcfile" -o "$outexe"
+gcc -D_FORTIFY_SOURCE=0 -O2 "$srcfile" -o "$outexe"
+
+
+#shellcheck disable=SC2034
+for i in $(seq 1 ${jobsnumber}); do
+    "$outexe" &
+done
+wait
+#cat /tmp/output.txt|less
+#[ xx - 4 - 012345678901234567890123456789 - 27402]
+set +e
+  (( testcount++ ))
+grep -vE "^\[ xx - [0-9] - (0123456789){$howmanydiv10} - [0-9]{1,5}\]" -- /tmp/output.txt >/dev/null ; ec="$?"
+if test "$ec" -eq "0"; then
+  echo "Bad, interleaving detected! buffersize=$buffersize fprintfsize=$fprintfsize fflusheachline=$fflusheachline setbufline=$setbufline howmany=$howmany"
+  (( failedcount++ ))
+elif test "0$showgoodstoo" == "01"; then
+  echo "All good, no interleaving!  buffersize=$buffersize fprintfsize=$fprintfsize fflusheachline=$fflusheachline setbufline=$setbufline howmany=$howmany"
+fi
+
+done #for setbufline
+done #for buffersize
+done #for howmany
+done #for fflusheachline

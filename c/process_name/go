@@ -1,0 +1,3 @@
+#!/bin/bash
+
+gcc cpn.c -o cpn && ./cpn "with args" 1 2 3 "4 5" 6

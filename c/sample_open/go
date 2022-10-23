@@ -1,0 +1,1 @@
+gcc -S -x c -o /dev/null -D_FORTIFY_SOURCE=1 -O2 - < sample_open.c

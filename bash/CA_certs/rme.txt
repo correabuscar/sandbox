@@ -1,0 +1,3 @@
+stuff from:
+https://github.com/crossbario/crossbar-examples/blob/1045aeda312c2a820859206a149392eb6c7f6e3f/authentication/tls/static/create-certificates.sh#L1
+

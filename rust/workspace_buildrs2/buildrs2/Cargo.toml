@@ -1,0 +1,9 @@
+[package]
+name = "buildrs2"
+version = "0.1.0"
+authors = ["none <none>"]
+
+build = "build.rs"
+#^implied if not specified; aka the default!
+
+[dependencies]

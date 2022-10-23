@@ -1,0 +1,1 @@
+src: https://webassemblycode.com/browser-supports-webassembly-degree/

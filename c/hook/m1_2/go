@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+gcc -ggdb -o prog1 prog1.c
+#./prog1
+gcc -ggdb -shared -ldl -fPIC prog2.c -o libprog2.so
+LD_PRELOAD="$(realpath -- libprog2.so)" ./prog1

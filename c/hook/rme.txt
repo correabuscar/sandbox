@@ -1,0 +1,6 @@
+hooking a library function at runtime, aka function interposition
+
+m3,4,5 are a more naive method from 2017, ignore!
+
+m1,2 are from 2011 and they work even now in 2022,
+ except that malloc gets called for printf so I've had to fix that in m1_2

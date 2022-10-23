@@ -1,0 +1,4 @@
+#!/bin/bash
+
+gcc usbreset.c -o usbreset -D_FORTIFY_SOURCE=2 -O2 -ggdb -lusb-1.0
+

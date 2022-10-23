@@ -1,0 +1,9 @@
+#!/bin/bash
+
+latestkernelpackageinstalled="$(qlist -mCI --format='%{CATEGORY}/%{P}' -- sys-kernel/gentoo-sources|head -1)"
+latestkernelpackageinstalled_inworldformat="$(echo "$latestkernelpackageinstalled"|sed -re 's/(\/.*)-([0-9]+)/\1:\2/')"
+if ! grep -q "^${latestkernelpackageinstalled_inworldformat}$" /var/lib/portage/world >/dev/null; then
+  favkernelcmd=(sudo emerge -qnv --ask=n "=${latestkernelpackageinstalled}")
+  echo "Auto-adding latest installed kernel package to favs via cmd: '${favkernelcmd[@]}'"
+  time ${favkernelcmd[@]}
+fi

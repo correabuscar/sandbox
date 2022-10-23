@@ -1,0 +1,32 @@
+#!/bin/bash
+
+#PATH="$HOME/.cargo/bin:$PATH"
+#^ tried an older unmodified-cargo too!
+cargo -vV
+#tested with:
+#cargo 0.26.0
+#release: 0.26.0
+#rustc 1.24.0-dev (687d3d15b 2018-01-02)
+echo "Started..."
+#this currently fails!
+bd_before=`cargo run -vv 2>/dev/null|grep BUILD_DATE|tail -n1`
+if test -z "$bd_before"; then
+  echo "Compilation failed!" >&2
+  exit 1
+fi
+#presumably BUILD_DATE is now current!
+sleep 2 #ensure at least 1 sec diff!
+touch src/main.rs #emulate modification
+bd_after=`cargo run -vv 2>/dev/null|grep BUILD_DATE|tail -n1`
+if test -z "$bd_after"; then
+  echo "Compilation failed on the second run which is real odd!" >&2
+  exit 2
+fi
+#FIXME: this should've updated BUILD_DATE by recompiling&running build.rs but it doesn't!
+if test "$bd_before" == "$bd_after"; then
+  echo "!! Failed! BUILD_DATE was not updated!"
+  echo "$bd_before"
+  echo "$bd_after"
+else
+  echo "!! Success!"
+fi

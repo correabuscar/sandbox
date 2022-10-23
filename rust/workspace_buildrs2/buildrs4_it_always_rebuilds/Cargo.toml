@@ -1,0 +1,42 @@
+[package]
+name = "recompile_self"
+version = "0.1.0"
+authors = ["none <none>"]
+#exclude = [ "run_exe_debug" ]
+#XXX: ^ workaround for constant rebuilding: uncomment this! (see rme.txt too)
+
+build = "build.rs"
+#^implied if not specified; aka the default!
+
+[dependencies]
+filetime = "0.1"
+#^ for file timestamp
+log = "0.4"
+env_logger = "0.3"
+#^ for logging msgs
+
+[build-dependencies]
+time = "0.1"
+#^ only for build.rs to get the build date!
+#the [build-dependencies] idea from https://github.com/mitnk/cicada/blob/5fac888ccc3cef0abc24e2d3bdf1655eddfdbc98/Cargo.toml
+
+#oh fml:
+#XXX: warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+#package:   /home/user/build/2nonpkgs/rust.stuff/rustlearnage/recompile_self/Cargo.toml
+#so the following has no effect while in workspace!!!
+##doc: https://doc.crates.io/manifest.html#the-profile-sections
+## The development profile, used for `cargo build`.
+#[profile.dev]
+#debug-assertions = false 
+##debug-assertions = true # default 
+## controls whether debug assertions are enabled
+## (e.g. debug_assert!() and arithmetic overflow checks)
+#
+## The release profile, used for `cargo build --release`.
+#[profile.release]
+#debug-assertions = true 
+##debug-assertions = false #default 
+#
+##purposefully flipped debug-assertions for testing purposes!
+#
+#XXX: patched cargo will now err when the above profile sections are uncommented!

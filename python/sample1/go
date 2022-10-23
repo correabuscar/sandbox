@@ -1,0 +1,10 @@
+#!/bin/bash
+
+#This will make .pyc compiled bytecode:
+#python -m compileall .
+#^ src: https://stackoverflow.com/questions/5607283/how-can-i-manually-generate-a-pyc-file-from-a-py-file/22779209#22779209
+
+#^ that compiles it but doesn't seem to execute it according to `strace ./a.py`
+#But the following will execute the .pyc after it's making it, according to `strace -f ./a.pu`:
+time python -c 'import a'
+time pypy3 -c 'import a'

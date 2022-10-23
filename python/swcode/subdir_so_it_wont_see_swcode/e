@@ -1,0 +1,6 @@
+#!/bin/bash
+
+export MYPYPATH="$MYPYPATH:/swcode/"
+#this is so that I can edit it with vim and not have it error on the line 'import swcode', and also so that any 'mypy' runs will succeed without errors!
+
+vim a.py

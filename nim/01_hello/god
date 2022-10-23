@@ -1,0 +1,5 @@
+#nim compile --run greetings.nim
+#nim compile --run greetings.nim arg1 arg2
+#^ debug
+nim c -d:release -d:someElSe=14 -r greetings.nim arg1 arg2
+#^ release by defining release=true ("release" is case insensitive)

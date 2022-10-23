@@ -1,0 +1,4 @@
+(exec -a arg0 bash -c 'echo $0')
+
+#aka shows "arg0" !!
+

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+mkdir -p destdir
+echo "round 01"
+rsync --recursive --perms --checksum --delay-updates --numeric-ids --preallocate --sparse --files-from=./ff01 -- ./ ./destdir/
+echo "round 02"
+rsync --recursive --perms --checksum --delay-updates --numeric-ids --preallocate --sparse --files-from=./ff02 -- ./ ./destdir/
+echo "round 03"
+rsync --recursive --perms --checksum --delay-updates --numeric-ids --preallocate --sparse --files-from=./ff03 -- ./ ./destdir/
+#^ note: without ".extrafileneeded" existing and having >0 bytes in size, the error file is still a/b instead of .less
+echo "round 04"
+rsync --recursive --perms --checksum --delay-updates --numeric-ids --preallocate --sparse --files-from=./ff04 -- ./ ./destdir/

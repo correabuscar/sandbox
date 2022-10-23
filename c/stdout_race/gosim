@@ -1,0 +1,34 @@
+#!/bin/bash
+
+echo '-------- bad version:'
+gcc simple.c && { ./a.out >/tmp/a_out_.log ; cat /tmp/a_out_.log ; }
+#output(no patch):
+#$ ./gosim
+#First stdout line!
+#Something not another
+#s and nicks
+
+#output with O_APPEND bash patch:
+#$ ./gosim
+# messy  jessy
+#More stuff and simple tricks and nicks
+#First stdout line!
+#Something not another
+
+echo '-------- good version:'
+##echo -n "" > /tmp/a_out_.log
+: >/tmp/a_out_.log
+gcc simple.c && { ./a.out >>/tmp/a_out_.log ; cat /tmp/a_out_.log ; }
+
+#output:
+#$ ./gosim
+# messy  jessy
+#More stuff and simple tricks and nicks
+#First stdout line!
+#Something not another
+
+
+#bash won't make cmd > $file act like `: > $file ; cmd >> $file` under the hood:
+#https://lists.gnu.org/archive/html/bug-bash/2019-05/msg00041.html
+#oh but it was so simple, just adding O_APPEND !!!!!
+

@@ -1,0 +1,2 @@
+opt b.ll -loop-vectorize -disable-output -debugify-each
+#-loop-reroll

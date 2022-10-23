@@ -1,0 +1,3 @@
+#!/bin/bash
+stty echo #you've to run this after ./a.bash else you can't see what you're typing!
+stty echok #this too was changed, ie. do `stty` before `./a.bash` then do `stty` again to see diff!

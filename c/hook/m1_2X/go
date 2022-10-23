@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -ex
+gcc -ggdb -o prog1 prog1.c -lm -lX11 -lXrandr -D_FORTIFY_SOURCE=2 -O1 -rdynamic
+#./prog1
+#not needed: -D_FORTIFY_SOURCE=2 -O1 -rdynamic
+gcc -D_FORTIFY_SOURCE=2 -O1 -rdynamic -ggdb -shared -ldl -fPIC prog2.c -o libprog2.so
+LD_PRELOAD="$(realpath -- libprog2.so)" ./prog1 arg1 2 3 "4 5 with spaces" 6
+if test -e "$(which secote)"; then
+  LD_PRELOAD="$(realpath -- libprog2.so)" secote 3000
+fi
+if test -e "/usr/bin/xgamma"; then
+  LD_PRELOAD="$(realpath -- libprog2.so)" /usr/bin/xgamma -gamma 1.0
+  #^ this changes nothing even if you ran `secote 3000`
+  LD_PRELOAD="$(realpath -- libprog2.so)" /usr/bin/xgamma -rgamma 1.0 -ggamma 0.6949030005552019 -bgamma 0.4310480202110507
+  #^ that takes wtw current is, and adds/subs the args! odd!
+  LD_PRELOAD="$(realpath -- libprog2.so)" /usr/bin/xgamma -gamma 1.0
+fi
+
+if test -e "/usr/bin/redshift"; then
+  LD_PRELOAD="$(realpath -- libprog2.so)" /usr/bin/redshift -P -O 3000 -m vidmode
+  LD_PRELOAD="$(realpath -- libprog2.so)" /usr/bin/redshift -P -O 3000 -m drm
+  LD_PRELOAD="$(realpath -- libprog2.so)" redshift -P -O 3000 -m randr
+fi

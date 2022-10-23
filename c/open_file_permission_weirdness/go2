@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#originally from: https://github.com/libcheck/check/issues/188#issuecomment-492794060
+fn='/tmp/broken_perms.log'
+#thanks to `<djdelorie>` on #glibc freenode irc for telling me that I had to use -D on MY OWN program! not on building glibc! :)
+#^ https://gist.github.com/howaboutsynergy/4dc0c41d6244d91a7dfd07159b905fe9#gistcomment-2920533
+gcc -D_FORTIFY_SOURCE=2 -O1 -ggdb c.c && {
+#gcc -D_FORTIFY_SOURCE=0 -O0 -ggdb c.c && {
+  rm -f "$fn"
+  ./a.out
+   #ls -la "$fn"
+   stat -c '%a %A %n' "$fn"
+ }

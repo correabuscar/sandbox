@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#XXX: This should unComment DCHECK lines
+#For documentation, run: perldoc perlre
+
+#fail by me:
+#colordiff -up sedtest <(perl -w -0777 -pe 's/([ \t]*DCHECK\([^\n\r;]*(;|\n))(([^\n\r;]*\n)*)([^\n\r;]*;[ \t]*\n)/\/\/$1\/\/$3\/\/$4\/\/$5/igs' sedtest)|less -R
+#block comments: colordiff -up sedtest <(perl -w -0777 -pe 's{\b(DCHECK\([^;]*;)}{/* $1 */}g') | less -R
+
+#Thanks to mauke on #perl freenode irc
+#my attempt to transcribe it from program mode: colordiff -up sedtest <(perl -w -0777 -pe 's{\b(DCHECK\([^;]*;)}{ $1 =~ s!^!// !mgr }eg')|less -R
+
+#XXX: It's supposed to show empty because it uncommented successfuly, just like the original
+#colordiff -up sedtest <(perl -w -0777 -pe 's{(^\h*//\h*\bDCHECK\(:?([^;\v]*)?(:?(:?[^;]*^[^;\v]*(?://)[^;\v]*)+)?;)}{ $1 =~ s!(^\h*)(//)([^\n]*$)!$1$3!mgr }meg' sedtest.commentedout|tee sed.commentedin_again)
+colordiff -up sedtest <(perl -w -0777 -pe 's{(?:[{};]\v+\K)(^\h*//\h*\bDCHECK\(:?([^;\v]*)?(:?(:?[^;]*^[^;\v]*(?://)[^;\v]*)+)?;)}{ $1 =~ s!(^\h*)(//)([^\n]*$)!$1$3!mgr }meg' sedtest.commentedout|tee sed.commentedin_again)
+#this bad, mkay:
+#colordiff -up <(perl -w -0777 -pe 's{(\h*//\h*\bDCHECK\([^;]*;)}{ $1 =~ s!(^\h*)(//)([^\n]*$)!$1$3!mgr }eg' sedtest.commentedout|tee sed.commentedin_again) sedtest
+# {} and ! are used as /
+#Doc for =~  search for '=~ m' in perldoc perlre
+

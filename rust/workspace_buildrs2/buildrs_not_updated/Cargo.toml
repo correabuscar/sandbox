@@ -1,0 +1,17 @@
+[package]
+name = "buildrs_not_updated"
+version = "0.1.0"
+edition = '2021'
+
+build = "build.rs"
+#^implied if not specified; aka the default!
+
+[dependencies]
+filetime = "0.1"
+#^ for file timestamp
+
+[build-dependencies]
+time = "0.1"
+#^ only for build.rs to get the build date!
+#the [build-dependencies] idea from https://github.com/mitnk/cicada/blob/5fac888ccc3cef0abc24e2d3bdf1655eddfdbc98/Cargo.toml
+

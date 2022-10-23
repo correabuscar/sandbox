@@ -1,0 +1,4 @@
+#!/bin/bash
+export DEBUG=1
+echo 'Press C-c to stop'
+./showdns2  >/dev/null

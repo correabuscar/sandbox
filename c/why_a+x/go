@@ -1,0 +1,4 @@
+#!/bin/bash
+f=/tmp/a.log
+#f=./a.log
+gcc a.c && ./a.out ; touch /tmp/a.log && ls -la --color=always "$f" ; stat "$f"; rm "$f"

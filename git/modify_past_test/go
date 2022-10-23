@@ -1,0 +1,82 @@
+#!/bin/bash
+
+rm -rf -- repo_base repo_clone{1,2,3,4,_initial}
+set -ex
+mkdir repo_base
+cd repo_base
+git init --bare
+cd ..
+
+git clone repo_base repo_clone_initial
+cd repo_clone_initial
+echo "file1contents from repo_clone_initial" >> file1.txt
+echo "file2contents from repo_clone_initial" >> file2.txt
+git add file1.txt file2.txt
+git commit -m "initial commit from repo_clone_initial"
+echo "let's do another change only on file1.txt so that a file2.txt change isn't part of the same commit" >> file1.txt   #git pull is still required, below!
+git add file1.txt
+git commit -m "change only file1.txt"
+git push -u --all
+cd ..
+
+git clone repo_base repo_clone1
+git clone repo_base repo_clone2
+
+cd repo_clone1
+echo "file1addition or change by repo_clone1" >> file1.txt
+git add file1.txt
+git commit -m "file1.txt changed on `date` by repo_clone1"
+cd ..
+
+cd repo_clone2
+echo "file2addition or change by repo_clone2" >> file2.txt
+git add file2.txt
+git commit -m "file2.txt changed on `date` by repo_clone2"
+commit_hash="`git rev-parse --verify HEAD`"
+git push -u --all
+cd ..
+
+git clone repo_base repo_clone4
+
+git clone repo_base repo_clone3
+cd repo_clone3
+#this basically adds more to the state of repo_clone2 which is already pushed in repo_base !
+echo "file2addition or change from repo_clone3" >> file2.txt
+git add file2.txt
+git commit -m "file2.txt changed on `date` by repo_clone3"
+git push -u --all
+cd ..
+
+cd repo_clone4
+git checkout "${commit_hash}"
+#so I got a snapshot here...
+snap1="`du -b --exclude=.git`"
+cd ..
+
+cd repo_clone1
+#now I push a commit that was finalized previous to $commit_hash commit!
+git pull #XXX: so this is required before you can push older commit!!! (which causes a Merge!!!)
+git push -u --all  #or else this fails, like this:
+#^  ! [rejected]        master -> master (fetch first)
+#error: failed to push some refs to '/home/user/sandbox/git/modify_past_test/repo_base'
+#hint: Updates were rejected because the remote contains work that you do
+#hint: not have locally. This is usually caused by another repository pushing
+#hint: to the same ref. You may want to first integrate the remote changes
+#hint: (e.g., 'git pull ...') before pushing again.
+#hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+
+cd ..
+
+cd repo_clone4
+git pull origin master  #args needed because I'm not currently on a branch
+git checkout "${commit_hash}"
+#so I got THE SAME snapshot here...
+snap2="`du -b --exclude=.git`"
+if test "$snap1" == "$snap2" -a -n "$snap1"; then
+  echo "Same snapshot, probably (only checked file sizes to match!)"
+else
+  echo "!! Failed, snapshots differ!"
+  exit 2
+fi
+cd ..
+

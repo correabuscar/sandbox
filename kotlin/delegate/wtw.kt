@@ -1,0 +1,1 @@
+../../../AndroidStudioProjects/mykotlinconsoleapp/app/src/main/java/com/example/mykotlinconsoleapp/wtw.kt

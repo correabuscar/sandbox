@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#originally from: https://github.com/libcheck/check/issues/188#issuecomment-492794060
+#XXX: using two different descriptors pointing to the same file (one is used inside a.c)
+gcc a.c && { 
+  #rm /tmp/a_out_.log ;
+  ./a.out >/tmp/a_out_.log
+  #./a.out | tee /tmp/a_out_.log >/dev/null
+   cat /tmp/a_out_.log ; }

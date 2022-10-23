@@ -1,0 +1,2 @@
+vim d.py
+mypy --strict ./d.py

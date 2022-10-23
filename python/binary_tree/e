@@ -1,0 +1,21 @@
+#!/bin/bash
+
+srcfile="a.py"
+nvim -- "$srcfile"
+
+#release mode, equivalent to passing arg -OO to python or pypy3
+export PYTHONOPTIMIZE=2
+#    If this is set to a non-empty string it is equivalent to specifying the -O option. If set to an integer, it is equivalent to specifying -O multiple times.
+
+#debug mode(overrides the above!):
+export -n PYTHONOPTIMIZE
+unset PYTHONOPTIMIZE
+#Note: change in the above doesn't require the removal of the dir: ./.mypy_cache/
+
+if test -z "$PYTHONOPTIMIZE"; then
+  echo "Debug mode (asserts enabled!)"
+else
+  echo "Release/optimized mode(asserts disabled)"
+fi
+
+time mypy --python-executable=/usr/bin/python3 --strict /dev/null "./$srcfile" && python3 -bb "./$srcfile"

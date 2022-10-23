@@ -1,0 +1,282 @@
+XXX: redacted my own IP to XXX.XXX.XXX.XXX
+
+$ time wget --debug --tries=3 --timeout=2 --passive-ftp -O testoutfile1 "https://redirector.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz"
+Setting --tries (tries) to 3
+Setting --timeout (timeout) to 2
+Setting --passive-ftp (passiveftp) to 1
+Setting --output-document (outputdocument) to testoutfile1
+DEBUG output created by Wget 1.21.3 on linux-gnu.
+
+Reading HSTS entries from /home/user/.wget-hsts
+--2022-08-05 15:37:19--  https://redirector.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz
+Resolving redirector.gvt1.com... wget: !! FUNCTION_NAME == 'gethostbyname' hostname='redirector.gvt1.com'
+wget: !! REENTRANT_NAME == 'gethostbyname_r' hostname='redirector.gvt1.com'
+172.217.17.142
+Caching redirector.gvt1.com => 172.217.17.142
+Connecting to redirector.gvt1.com|172.217.17.142|:443... connected.
+Created socket 4.
+Releasing 0x0000586b4e174640 (new refcount 1).
+Initiating SSL handshake.
+Handshake successful; connected socket 4 to SSL handle 0x0000586b4e174f70
+certificate:
+  subject: CN=*.google.com
+  issuer:  CN=GTS CA 1C3,O=Google Trust Services LLC,C=US
+X509 certificate successfully verified and matches host redirector.gvt1.com
+
+---request begin---
+GET /edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz HTTP/1.1
+Host: redirector.gvt1.com
+User-Agent: Wget/1.21.3
+Accept: */*
+Accept-Encoding: identity
+Connection: Keep-Alive
+
+---request end---
+HTTP request sent, awaiting response... 
+---response begin---
+HTTP/1.1 302 Found
+Date: Fri, 05 Aug 2022 13:37:20 GMT
+Pragma: no-cache
+Expires: Fri, 01 Jan 1990 00:00:00 GMT
+Cache-Control: no-cache, must-revalidate
+X-Content-Type-Options: nosniff
+Location: https://r7---sn-h5bt5guxax3vh-hj9l.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?cms_redirect=yes&mh=d-&mip=XXX.XXX.XXX.XXX&mm=28&mn=sn-h5bt5guxax3vh-hj9l&ms=nvh&mt=1659706339&mv=m&mvi=7&pl=19&rmhost=r5---sn-h5bt5guxax3vh-hj9l.gvt1.com&shardbypass=sd
+Content-Type: text/html; charset=UTF-8
+Server: ClientMapServer
+Content-Length: 532
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+
+---response end---
+302 Found
+Registered socket 4 for persistent reuse.
+Location: https://r7---sn-h5bt5guxax3vh-hj9l.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?cms_redirect=yes&mh=d-&mip=XXX.XXX.XXX.XXX&mm=28&mn=sn-h5bt5guxax3vh-hj9l&ms=nvh&mt=1659706339&mv=m&mvi=7&pl=19&rmhost=r5---sn-h5bt5guxax3vh-hj9l.gvt1.com&shardbypass=sd [following]
+Skipping 532 bytes of body: [<HTML><HEAD><meta http-equiv="content-type" content="text/html;charset=utf-8">
+<TITLE>302 Moved</TITLE></HEAD><BODY>
+<H1>302 Moved</H1>
+The document has moved
+<A HREF="https://r7---sn-h5bt5guxax3vh-hj9l.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?cms_redirect=yes&amp;mh=d-&amp;mip=XXX.XXX.XXX.XXX&amp;mm=28&amp;mn=sn-h5bt5guxax3vh-hj9l&amp;ms=nvh&amp;mt=1659706339&amp;mv=m&amp;mvi=7&amp;pl=19&amp;rmhost=r5---sn-h5bt5guxax3vh-hj9l.gvt1.com&amp;shardbypass=sd">here</ASkipping 20 bytes of body: [>.
+</BODY></HTML>
+] done.
+--2022-08-05 15:37:19--  https://r7---sn-h5bt5guxax3vh-hj9l.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?cms_redirect=yes&mh=d-&mip=XXX.XXX.XXX.XXX&mm=28&mn=sn-h5bt5guxax3vh-hj9l&ms=nvh&mt=1659706339&mv=m&mvi=7&pl=19&rmhost=r5---sn-h5bt5guxax3vh-hj9l.gvt1.com&shardbypass=sd
+Resolving r7---sn-h5bt5guxax3vh-hj9l.gvt1.com... wget: !! FUNCTION_NAME == 'gethostbyname' hostname='r7---sn-h5bt5guxax3vh-hj9l.gvt1.com'
+wget: !! REENTRANT_NAME == 'gethostbyname_r' hostname='r7---sn-h5bt5guxax3vh-hj9l.gvt1.com'
+145.236.72.146
+Caching r7---sn-h5bt5guxax3vh-hj9l.gvt1.com => 145.236.72.146
+Connecting to r7---sn-h5bt5guxax3vh-hj9l.gvt1.com|145.236.72.146|:443... connected.
+Created socket 5.
+Releasing 0x0000586b4e1844b0 (new refcount 1).
+Initiating SSL handshake.
+Handshake successful; connected socket 5 to SSL handle 0x0000586b4e178080
+certificate:
+  subject: CN=*.googlevideo.com
+  issuer:  CN=GTS CA 1C3,O=Google Trust Services LLC,C=US
+X509 certificate successfully verified and matches host r7---sn-h5bt5guxax3vh-hj9l.gvt1.com
+
+---request begin---
+GET /edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?cms_redirect=yes&mh=d-&mip=XXX.XXX.XXX.XXX&mm=28&mn=sn-h5bt5guxax3vh-hj9l&ms=nvh&mt=1659706339&mv=m&mvi=7&pl=19&rmhost=r5---sn-h5bt5guxax3vh-hj9l.gvt1.com&shardbypass=sd HTTP/1.1
+Host: r7---sn-h5bt5guxax3vh-hj9l.gvt1.com
+User-Agent: Wget/1.21.3
+Accept: */*
+Accept-Encoding: identity
+Connection: Keep-Alive
+
+---request end---
+HTTP request sent, awaiting response... 
+---response begin---
+HTTP/1.1 302 Found
+Last-Modified: Wed, 02 May 2007 10:26:10 GMT
+Date: Fri, 05 Aug 2022 13:37:20 GMT
+Expires: Fri, 05 Aug 2022 13:52:20 GMT
+Cache-Control: public, max-age=900
+Location: https://r4---sn-c0q7lnse.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?mh=d-&pl=19&shardbypass=sd&redirect_counter=1&cm2rm=sn-h5bt5guxax3vh-hj9l7k&req_id=9cac83733e668338&cms_redirect=yes&mip=XXX.XXX.XXX.XXX&mm=42&mn=sn-c0q7lnse&ms=onc&mt=1659706360&mv=m&mvi=4&rmhost=r5---sn-c0q7lnse.gvt1.com&smhost=r3---sn-c0q7lns7.gvt1.com
+Content-Length: 0
+Connection: close
+Vary: Origin
+X-Content-Type-Options: nosniff
+Content-Type: text/html
+Server: gvs 1.0
+
+---response end---
+302 Found
+Location: https://r4---sn-c0q7lnse.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?mh=d-&pl=19&shardbypass=sd&redirect_counter=1&cm2rm=sn-h5bt5guxax3vh-hj9l7k&req_id=9cac83733e668338&cms_redirect=yes&mip=XXX.XXX.XXX.XXX&mm=42&mn=sn-c0q7lnse&ms=onc&mt=1659706360&mv=m&mvi=4&rmhost=r5---sn-c0q7lnse.gvt1.com&smhost=r3---sn-c0q7lns7.gvt1.com [following]
+Closed 5/SSL 0x0000586b4e178080
+--2022-08-05 15:37:19--  https://r4---sn-c0q7lnse.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?mh=d-&pl=19&shardbypass=sd&redirect_counter=1&cm2rm=sn-h5bt5guxax3vh-hj9l7k&req_id=9cac83733e668338&cms_redirect=yes&mip=XXX.XXX.XXX.XXX&mm=42&mn=sn-c0q7lnse&ms=onc&mt=1659706360&mv=m&mvi=4&rmhost=r5---sn-c0q7lnse.gvt1.com&smhost=r3---sn-c0q7lns7.gvt1.com
+Resolving r4---sn-c0q7lnse.gvt1.com... wget: !! FUNCTION_NAME == 'gethostbyname' hostname='r4---sn-c0q7lnse.gvt1.com'
+wget: !! REENTRANT_NAME == 'gethostbyname_r' hostname='r4---sn-c0q7lnse.gvt1.com'
+74.125.173.73
+Caching r4---sn-c0q7lnse.gvt1.com => 74.125.173.73
+Connecting to r4---sn-c0q7lnse.gvt1.com|74.125.173.73|:443... connected.
+Created socket 5.
+Releasing 0x0000586b4e173c00 (new refcount 1).
+Initiating SSL handshake.
+Handshake successful; connected socket 5 to SSL handle 0x0000586b4e178080
+certificate:
+  subject: CN=*.c.docs.google.com
+  issuer:  CN=GTS CA 1C3,O=Google Trust Services LLC,C=US
+X509 certificate successfully verified and matches host r4---sn-c0q7lnse.gvt1.com
+
+---request begin---
+GET /edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?mh=d-&pl=19&shardbypass=sd&redirect_counter=1&cm2rm=sn-h5bt5guxax3vh-hj9l7k&req_id=9cac83733e668338&cms_redirect=yes&mip=XXX.XXX.XXX.XXX&mm=42&mn=sn-c0q7lnse&ms=onc&mt=1659706360&mv=m&mvi=4&rmhost=r5---sn-c0q7lnse.gvt1.com&smhost=r3---sn-c0q7lns7.gvt1.com HTTP/1.1
+Host: r4---sn-c0q7lnse.gvt1.com
+User-Agent: Wget/1.21.3
+Accept: */*
+Accept-Encoding: identity
+Connection: Keep-Alive
+
+---request end---
+HTTP request sent, awaiting response... 
+---response begin---
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Cache-Control: public,max-age=86400
+Content-Disposition: attachment
+Content-Length: 1013721948
+Content-Security-Policy: default-src 'none'
+Content-Type: application/gzip
+Etag: "ee20b4"
+Server: downloads
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+Date: Thu, 04 Aug 2022 20:25:13 GMT
+Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+Last-Modified: Wed, 03 Aug 2022 09:00:00 GMT
+Connection: keep-alive
+Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+Vary: Origin
+
+---response end---
+200 OK
+Disabling further reuse of socket 4.
+Closed 4/SSL 0x0000586b4e174f70
+Registered socket 5 for persistent reuse.
+Length: 1013721948 (967M) [application/gzip]
+Saving to: 'testoutfile1'
+
+testoutfile1                               2%[=>                                                                               ]  24.00M  4.75MB/s    in 5.1s    
+
+Disabling further reuse of socket 5.
+Closed 5/SSL 0x0000586b4e178080
+2022-08-05 15:37:25 (4.75 MB/s) - Read error at byte 25165632/1013721948 (Connection timed out). Retrying.
+
+--2022-08-05 15:37:26--  (try: 2)  https://r4---sn-c0q7lnse.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?mh=d-&pl=19&shardbypass=sd&redirect_counter=1&cm2rm=sn-h5bt5guxax3vh-hj9l7k&req_id=9cac83733e668338&cms_redirect=yes&mip=XXX.XXX.XXX.XXX&mm=42&mn=sn-c0q7lnse&ms=onc&mt=1659706360&mv=m&mvi=4&rmhost=r5---sn-c0q7lnse.gvt1.com&smhost=r3---sn-c0q7lns7.gvt1.com
+Found r4---sn-c0q7lnse.gvt1.com in host_name_addresses_map (0x586b4e173c00)
+Connecting to r4---sn-c0q7lnse.gvt1.com|74.125.173.73|:443... connected.
+Created socket 4.
+Releasing 0x0000586b4e173c00 (new refcount 1).
+Initiating SSL handshake.
+Handshake successful; connected socket 4 to SSL handle 0x0000586b4e178080
+certificate:
+  subject: CN=*.c.docs.google.com
+  issuer:  CN=GTS CA 1C3,O=Google Trust Services LLC,C=US
+X509 certificate successfully verified and matches host r4---sn-c0q7lnse.gvt1.com
+
+---request begin---
+GET /edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?mh=d-&pl=19&shardbypass=sd&redirect_counter=1&cm2rm=sn-h5bt5guxax3vh-hj9l7k&req_id=9cac83733e668338&cms_redirect=yes&mip=XXX.XXX.XXX.XXX&mm=42&mn=sn-c0q7lnse&ms=onc&mt=1659706360&mv=m&mvi=4&rmhost=r5---sn-c0q7lnse.gvt1.com&smhost=r3---sn-c0q7lns7.gvt1.com HTTP/1.1
+Host: r4---sn-c0q7lnse.gvt1.com
+Range: bytes=25165632-
+User-Agent: Wget/1.21.3
+Accept: */*
+Accept-Encoding: identity
+Connection: Keep-Alive
+
+---request end---
+HTTP request sent, awaiting response... 
+---response begin---
+HTTP/1.1 302 Found
+Last-Modified: Wed, 02 May 2007 10:26:10 GMT
+Date: Fri, 05 Aug 2022 13:37:27 GMT
+Expires: Fri, 05 Aug 2022 13:52:27 GMT
+Cache-Control: public, max-age=900
+Location: https://r1---sn-4g5ednsz.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?mh=d-&pl=19&shardbypass=sd&cm2rm=sn-h5bt5guxax3vh-hj9l7k&req_id=9cac83733e668338&redirect_counter=2&rm=sn-c0qly7z&cms_redirect=yes&cmsv=e&mip=XXX.XXX.XXX.XXX&mm=34&mn=sn-4g5ednsz&ms=ltu&mt=1659706595&mv=m&mvi=1&smhost=r2---sn-4g5lznes.gvt1.com
+Content-Length: 0
+Connection: close
+Vary: Origin
+X-Content-Type-Options: nosniff
+Content-Type: text/html
+Server: gvs 1.0
+
+---response end---
+302 Found
+Location: https://r1---sn-4g5ednsz.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?mh=d-&pl=19&shardbypass=sd&cm2rm=sn-h5bt5guxax3vh-hj9l7k&req_id=9cac83733e668338&redirect_counter=2&rm=sn-c0qly7z&cms_redirect=yes&cmsv=e&mip=XXX.XXX.XXX.XXX&mm=34&mn=sn-4g5ednsz&ms=ltu&mt=1659706595&mv=m&mvi=1&smhost=r2---sn-4g5lznes.gvt1.com [following]
+Closed 4/SSL 0x0000586b4e178080
+--2022-08-05 15:37:27--  https://r1---sn-4g5ednsz.gvt1.com/edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?mh=d-&pl=19&shardbypass=sd&cm2rm=sn-h5bt5guxax3vh-hj9l7k&req_id=9cac83733e668338&redirect_counter=2&rm=sn-c0qly7z&cms_redirect=yes&cmsv=e&mip=XXX.XXX.XXX.XXX&mm=34&mn=sn-4g5ednsz&ms=ltu&mt=1659706595&mv=m&mvi=1&smhost=r2---sn-4g5lznes.gvt1.com
+Resolving r1---sn-4g5ednsz.gvt1.com... wget: !! FUNCTION_NAME == 'gethostbyname' hostname='r1---sn-4g5ednsz.gvt1.com'
+wget: !! REENTRANT_NAME == 'gethostbyname_r' hostname='r1---sn-4g5ednsz.gvt1.com'
+173.194.188.134
+Caching r1---sn-4g5ednsz.gvt1.com => 173.194.188.134
+Connecting to r1---sn-4g5ednsz.gvt1.com|173.194.188.134|:443... connected.
+Created socket 4.
+Releasing 0x0000586b4e1944d0 (new refcount 1).
+Initiating SSL handshake.
+Handshake successful; connected socket 4 to SSL handle 0x0000586b4e178080
+certificate:
+  subject: CN=*.c.docs.google.com
+  issuer:  CN=GTS CA 1C3,O=Google Trust Services LLC,C=US
+X509 certificate successfully verified and matches host r1---sn-4g5ednsz.gvt1.com
+
+---request begin---
+GET /edgedl/android/studio/ide-zips/2022.1.1.9/android-studio-2022.1.1.9-linux.tar.gz?mh=d-&pl=19&shardbypass=sd&cm2rm=sn-h5bt5guxax3vh-hj9l7k&req_id=9cac83733e668338&redirect_counter=2&rm=sn-c0qly7z&cms_redirect=yes&cmsv=e&mip=XXX.XXX.XXX.XXX&mm=34&mn=sn-4g5ednsz&ms=ltu&mt=1659706595&mv=m&mvi=1&smhost=r2---sn-4g5lznes.gvt1.com HTTP/1.1
+Host: r1---sn-4g5ednsz.gvt1.com
+User-Agent: Wget/1.21.3
+Accept: */*
+Accept-Encoding: identity
+Connection: Keep-Alive
+
+---request end---
+HTTP request sent, awaiting response... 
+---response begin---
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Cache-Control: public,max-age=86400
+Content-Disposition: attachment
+Content-Length: 1013721948
+Content-Security-Policy: default-src 'none'
+Content-Type: application/gzip
+Etag: "ee20b4"
+Server: downloads
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+Date: Fri, 05 Aug 2022 12:10:31 GMT
+Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+Last-Modified: Wed, 03 Aug 2022 09:00:00 GMT
+Connection: keep-alive
+Alt-Svc: h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443"; ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+Vary: Origin
+
+---response end---
+200 OK
+Registered socket 4 for persistent reuse.
+Length: 1013721948 (967M) [application/gzip]
+Saving to: 'testoutfile1'
+
+testoutfile1                             100%[================================================================================>] 966.76M  29.4MB/s    in 27s     
+
+2022-08-05 15:37:54 (35.4 MB/s) - 'testoutfile1' saved [1013721948/1013721948]
+
+
+real    0m34.996s
+user    0m1.619s
+sys     0m2.792s
+-----------
+
+$ l testoutfile1 
+-rw-r--r-- 1 user user 1038887580 03.08.2022 11:00 testoutfile1
+-----------
+
+$ bc -l
+bc 1.07.1
+Copyright 1991-1994, 1997, 1998, 2000, 2004, 2006, 2008, 2012-2017 Free Software Foundation, Inc.
+This is free software with ABSOLUTELY NO WARRANTY.
+For details type `warranty'. 
+1038887580-1013721948
+25165632
+25165632/1024
+24575.81250000000000000000
+25165632/1024/1024
+23.99981689453125000000
+
+so those 24MiB that it got the first time and got interrupted on, were left in the output file, the rest was appended, why? because status 200 was for subsequent request(after that 302 redirect), not the 206 aka partial content... but why? because the Range request was dropped by wget after it encountered that 302 when retrying.

@@ -1,0 +1,43 @@
+it's because the settings.toml already exists! if it doesn't it will work!
+
+
+
+Current installation options:
+
+   default host triple: x86_64-unknown-linux-gnu
+     default toolchain: nightly
+  modify PATH variable: no
+
+1) Proceed with installation (default)
+2) Customize installation
+3) Cancel installation
+1
+
+error: toolchain 'nightly' is not installed
+info: caused by: not a directory: '/home/user/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu'
+info: backtrace:
+
+stack backtrace:
+   0:     0x5637f5a5ce6d - backtrace::backtrace::trace::h024009f066a6a901
+   1:     0x5637f5a5d312 - backtrace::capture::Backtrace::new::hea6d366cd875d5b7
+   2:     0x5637f5a5c966 - error_chain::make_backtrace::h7fba8aedc78ce4f7
+   3:     0x5637f5a5ca18 - _<error_chain..State as core..default..Default>::default::ha66d10f5720c005b
+   4:     0x5637f5a15f11 - rustup_utils::utils::assert_is_directory::h13906faa13de04cd
+   5:     0x5637f59a7814 - rustup::config::Cfg::verify_toolchain::he6b5b7cb1f4a3b92
+   6:     0x5637f59a90e8 - rustup::config::Cfg::find_default::h57ceb27bc2fd1f52
+   7:     0x5637f590312f - rustup_init::self_update::install::h93fe09199829b496
+   8:     0x5637f5912572 - rustup_init::run_multirust::h38e5ad44bee0b9e7
+   9:     0x5637f5910e93 - rustup_init::main::hff5fd3aaa5ccc8b4
+  10:     0x5637f5cb102a - panic_unwind::__rust_maybe_catch_panic
+                        at /buildslave/rust-buildbot/slave/nightly-dist-rustc-linux/build/obj/../src/libpanic_unwind/lib.rs:97
+  11:     0x5637f5ca88a5 - std::panicking::try<(),fn()>
+                        at /buildslave/rust-buildbot/slave/nightly-dist-rustc-linux/build/obj/../src/libstd/panicking.rs:332
+                         - std::panic::catch_unwind<fn(),()>
+                        at /buildslave/rust-buildbot/slave/nightly-dist-rustc-linux/build/obj/../src/libstd/panic.rs:351
+                         - std::rt::lang_start
+                        at /buildslave/rust-buildbot/slave/nightly-dist-rustc-linux/build/obj/../src/libstd/rt.rs:57
+  12:     0x7feaf49a2290 - __libc_start_main
+  13:     0x5637f58d9ab8 - <unknown>
+rustup: command failed: /tmp/tmp.PHVtEE6BmI/rustup-init
+Press any key to continue...
+

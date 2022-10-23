@@ -1,0 +1,4 @@
+reply here
+https://bbs.archlinux.org/viewtopic.php?id=78162
+that pacman -S xfce4-settings fixes the icons, and -Rs hides them again
+

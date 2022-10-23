@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#GNU bash, version 5.0.16(1)-maint (x86_64-pc-linux-gnu) aka 5.0.r683.ge2e18b72-1
+set -e
+trap 'echo got it' ERR
+touch PKGBUILD
+chmod a-rwx PKGBUILD
+#chmod a+rwx PKGBUILD
+#rm PKGBUILD
+source PKGBUILD  #it exits here without running ERR, when PKGBUILD doesn't exist or is unreadable
+echo "exit code: $?"
+#^ not reached!

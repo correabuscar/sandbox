@@ -1,0 +1,1 @@
+gcc matrix.c && ./a.out

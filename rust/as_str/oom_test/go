@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e
+cargo build
+export MALLOC_CONF=stats_print:true
+time target/debug/oom_test >/dev/null

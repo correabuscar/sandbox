@@ -1,0 +1,2 @@
+touch build.rs
+#well, it actually rebuilds because of the symlinks existing!

@@ -1,0 +1,23 @@
+[workspace]
+members = ["**/src/.."]
+exclude = ["helper_scripts", ".git", "**/.git", "target", "**/target"]
+
+#Careful, these profile sections only have effect in here! so,
+#warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+#package:   ${HOME}/build/2nonpkgs/rust.stuff/rustlearnage/recompile_self/Cargo.toml
+
+#doc: https://doc.crates.io/manifest.html#the-profile-sections
+# The development profile, used for `cargo build`.
+[profile.dev]
+debug-assertions = false
+#debug-assertions = true # default
+# controls whether debug assertions are enabled
+# (e.g. debug_assert!() and arithmetic overflow checks)
+
+# The release profile, used for `cargo build --release`.
+[profile.release]
+debug-assertions = true
+#debug-assertions = false #default
+
+#purposefully flipped debug-assertions for testing purposes!
+

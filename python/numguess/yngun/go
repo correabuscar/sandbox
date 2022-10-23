@@ -1,0 +1,3 @@
+#!/bin/bash
+#^ for syntax in vim
+./commutative_combine_of_uniques.py

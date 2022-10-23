@@ -1,0 +1,61 @@
+#!/bin/bash
+
+#tested to fail as below: ArchLinux's rsync-3.1.3-1-x86_64.pkg.tar.xz
+#tested to fail as below: ArchLinux's rsync-3.1.3pre1-1-x86_64.pkg.tar.xz
+#tested to work ok      : ArchLinux's rsync-3.1.2-8-x86_64.pkg.tar.xz
+
+if test "$1" == "clean"; then
+  rm -vrf destdir sourcedir sourcedir2 sourcedir3
+  exit 0
+fi
+
+echo '!! test 1:'
+
+mkdir -p destdir
+mkdir -p sourcedir/a
+#one \0 followed by a non-\0 (so, using a space) required:
+echo -ne '\0 ' > sourcedir/a/b
+#non zero size file required:
+echo -ne 'c' > sourcedir/c
+echo 'sourcedir' >/tmp/filesfrom.lst.tmp
+rsync --recursive --perms --checksum --delay-updates --numeric-ids --preallocate --sparse --files-from=/tmp/filesfrom.lst.tmp -- ./ ./destdir/
+#rsync: write failed on "/home/user/sandbox/rsync/nsfod_issues/try2/destdir/sourcedir/a/b": No such file or directory (2)
+#rsync error: error in file IO (code 11) at receiver.c(374) [receiver=3.1.3]
+
+# ^ this happens first and any subsequent times!
+
+echo '!! test 2:'
+
+mkdir -p sourcedir2/a
+#one \0 followed by a non-\0 (so, using an M) required:
+echo -ne '\0M' > sourcedir2/a/b
+#one \0 followed by a non-\0 (so, using an M) required:
+echo -ne '\0M' > sourcedir2/c
+
+#in order to see this error: (for file 'c')
+
+#non-zero file size required and it must be prefixed by '.' aka dot
+#echo -ne '1' > sourcedir2/.d
+#XXX: ^ (un)comment, don't forget to ./go clean afterwards, then ./go
+
+#otherwise, the error is for file "a/b"
+
+echo 'sourcedir2' >/tmp/filesfrom.lst.tmp
+rsync --recursive --perms --checksum --delay-updates --numeric-ids --preallocate --sparse --files-from=/tmp/filesfrom.lst.tmp -- ./ ./destdir/
+#rsync: write failed on "/home/user/sandbox/rsync/nsfod_issues/try2/destdir/sourcedir2/a/b": No such file or directory (2)
+#rsync error: error in file IO (code 11) at receiver.c(374) [receiver=3.1.3pre1]
+
+echo '!! test 3:' #same as 2 but an extra file '.d' exists!
+
+mkdir -p sourcedir3/a
+#one \0 followed by a non-\0 (so, using an M) required:
+echo -ne '\0M' > sourcedir3/a/b
+#one \0 followed by a non-\0 (so, using an M) required:
+echo -ne '\0M' > sourcedir3/c
+
+#non-zero file size required and it must be prefixed by '.' aka dot
+echo -ne '1' > sourcedir3/.d
+echo 'sourcedir3' >/tmp/filesfrom.lst.tmp
+rsync --recursive --perms --checksum --delay-updates --numeric-ids --preallocate --sparse --files-from=/tmp/filesfrom.lst.tmp -- ./ ./destdir/
+#rsync: write failed on "/home/user/sandbox/rsync/nsfod_issues/try2/destdir/sourcedir2/c": No such file or directory (2)
+#rsync error: error in file IO (code 11) at receiver.c(374) [receiver=3.1.3]

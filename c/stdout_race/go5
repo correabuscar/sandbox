@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#originally from: https://github.com/libcheck/check/issues/188#issuecomment-492794060
+#XXX: using two different descriptors pointing to the same file (one is used inside a.c)
+gcc d.c && {
+  #rm /tmp/a_out_.log ;
+  #./a.out #aka good!
+  #./a.out 1>/tmp/a_out_.log 2>/tmp/a_out_.log #aka bad! descriptor is different, yet pointing to same file
+  #./a.out 1>/tmp/a_out_.log 2>&1 #aka good! because descriptor is duplicated? or what
+  : > /tmp/a_out_.log
+  ./a.out 1>>/tmp/a_out_.log 2>&1 #aka good! because descriptor is duplicated? or what
+   cat /tmp/a_out_.log ;
+ }

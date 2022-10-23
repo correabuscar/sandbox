@@ -1,0 +1,16 @@
+diff --git a/src/check_log.c b/src/check_log.c
+index c785b33..0051f35 100644
+--- a/src/check_log.c
++++ b/src/check_log.c
+     }
+     else
+     {
+-        f = fopen(filename, "w");
++        f = fopen(filename, "a");
++        if(f == NULL)
++        {
++            f = fopen(filename, "w");
++        }
+         if(f == NULL)
+         {
+             eprintf("Error in call to fopen while opening file %s:", __FILE__,

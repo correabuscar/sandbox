@@ -1,0 +1,3 @@
+#!/bin/bash
+#XXX a script using same fd in multiple parallel calls will serialize them. To pralellize use different fd aka lockgroup
+./a.bash

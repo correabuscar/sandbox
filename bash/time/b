@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#this ensures the endedon date gets set even if C-c
+
+endedon_file="`mktemp --tmpdir="/tmp" -t -- "${0##*/}.$$.XXXXXXXXXX"`"
+
+cleanup() {
+  trap - exit sigint
+  endedon="`get_endedon`"
+  if test -z "$endedon"; then
+    set_endedon
+    endedon="`get_endedon`"
+    if test -z "$endedon"; then
+      echo "Epic fail in getting the date when compilation ended! Ignoring"
+      endedon="$startedon"
+    fi
+  fi
+  echo "!${endedon}!"
+  rm -- "$endedon_file"
+}
+
+get_endedon() {
+  cat "$endedon_file"
+}
+set_endedon() {
+  date > "$endedon_file"
+}
+
+trap cleanup exit sigint
+
+#export endedon=""
+startedon="`date`"
+time (ls / >/dev/null 2>&1 && set_endedon && echo done )
+
