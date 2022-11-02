@@ -19,7 +19,7 @@
 #![allow(clippy::blanket_clippy_restriction_lints)] //workaround clippy
 
 // might want to deny later:
-#![allow(clippy::default_numeric_fallback)] // might want to deny later!
+#![allow(clippy::default_numeric_fallback)]
 #![allow(clippy::dbg_macro)]
 
 //src: https://users.rust-lang.org/t/rust-book-suggestion-add-a-section-regarding-copy-vs-move/1549/2

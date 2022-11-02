@@ -1,0 +1,5 @@
+using the rust book from:
+https://rust-book.cs.brown.edu/ch01-02-hello-world.html
+which is a quiz version of:
+https://doc.rust-lang.org/nightly/book/title-page.html
+
