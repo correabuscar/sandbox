@@ -1,17 +1,11 @@
 #!/bin/bash
 
-projectname=`cat Cargo.toml|perl -n -e'/^\s*name = "(.+)"/ && print "$1\n"'|head -1`
-if test -z "$projectname"; then
-  echo "Ignoring empty project name in dir '`pwd`'" >&2
-  exit 1
-fi
 set +e
 #cargo clean -v -p "${PWD##*/}"
 #^ project name might be different than current dir's name!
-cargo clean -vv -p "${projectname}"
+cargo clean -vv
 #^ clean only the exe  aka -p projectnamehere
 # to clean all(the deps too, eg. when using clippy, its deps which are kinda costly to rebuild then just don't use -p ...)
-#find . -maxdepth 1 -name target -type d -exec rm -vr -- "{}" \; #can fail w/o maxdepth, unlike xargs below:
 find . -name target -type d -print0 | xargs -0 --no-run-if-empty --exit -P0 -- rm -vr --
 #^ 'rls' ran by 'ale' (in vim) creates a ./target/ in each project dir!
 echo 'Done'
