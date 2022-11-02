@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "copy_trait"
+name = "copy_trait_array"
 version = "0.1.0"
