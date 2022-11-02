@@ -6,3 +6,4 @@ echo execute ./go from vim by typing:   :!./go
 #or else it will hang on each file write (when rust.vim and syntactic!)
 
 time nvim ./src/main.rs
+cargo check

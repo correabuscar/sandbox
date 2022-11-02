@@ -5,3 +5,11 @@ version = 3
 [[package]]
 name = "ch01_02_hw"
 version = "0.1.0"
+
+[[package]]
+name = "ch01_03_hc"
+version = "0.1.0"
+
+[[package]]
+name = "ch02_00_ggt"
+version = "0.1.0"
