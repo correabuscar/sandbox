@@ -1,6 +1,21 @@
-#![deny(clippy::all, clippy::pedantic, clippy::nursery, warnings, future_incompatible, nonstandard_style, non_ascii_idents, clippy::restriction, rust_2018_compatibility, rust_2021_compatibility, unused)]
-#![allow(clippy::print_stdout, clippy::use_debug, clippy::missing_docs_in_private_items)]
-
+#![deny(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    warnings,
+    future_incompatible,
+    nonstandard_style,
+    non_ascii_idents,
+    clippy::restriction,
+    rust_2018_compatibility,
+    rust_2021_compatibility,
+    unused
+)]
+#![allow(
+    clippy::print_stdout,
+    clippy::use_debug,
+    clippy::missing_docs_in_private_items
+)]
 #![allow(clippy::blanket_clippy_restriction_lints)] //workaround clippy
 
 // might want to deny later:
@@ -8,11 +23,11 @@
 //#![allow(clippy::dbg_macro)]
 
 fn main() {
-    let mut has_spawned:bool=false;
+    let mut has_spawned: bool = false;
     //...
-    let handler=std::thread::spawn(move || {
+    let handler = std::thread::spawn(move || {
         println!("Before {has_spawned}!"); // false
-        has_spawned=true;
+        has_spawned = true;
         println!("Set {has_spawned}!"); // true
     });
     #[allow(clippy::unwrap_used)]
