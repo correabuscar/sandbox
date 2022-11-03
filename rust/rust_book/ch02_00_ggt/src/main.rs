@@ -1,21 +1,24 @@
 #![no_implicit_prelude]
 
 // "::" required, see issue: https://github.com/rust-lang/rust/issues/56390
-use ::std::io;
-//use std::io as io;
-use ::std::println;
-use ::std::string::String;
+//use ::std::io;
+//use ::std::io as io;
+//use ::std::io::stdin;
+//use ::std::println;
+//use ::std::string::String;
 
 fn main() {
-    println!("Guess the number!");
+    ::std::println!("Guess the number!");
 
-    println!("Please input your guess.");
+    ::std::println!("Please input your guess.");
 
-    let mut guess = String::new();
+    let mut guess = ::std::string::String::new();
 
-    io::stdin()
+    //stdin()
+    //io::stdin()
+    ::std::io::stdin()
         .read_line(&mut guess)
         .expect("Failed to read line");
 
-    println!("You guessed: '{guess}'");
+    ::std::println!("You guessed: '{guess}'");
 }
