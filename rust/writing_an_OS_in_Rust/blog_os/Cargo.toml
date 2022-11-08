@@ -6,10 +6,24 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bootloader = "0.9.8"
+#bootloader = "0.10.13"
+x86_64 = "0.14.10"
 
 [profile.dev]
 panic = "abort"
 
 [profile.release]
 panic = "abort"
+
+
+[patch.crates-io]
+#This won't work here:
+#llvm-tools = { path = "/tmp/llvm-tools" }
+bootloader = { path = "/home/user/SOURCE/rust.stuff/2used/bootloader" }
+#^ this is just using a patch section in Cargo.toml to point to llvm-tools which is patched using: https://github.com/phil-opp/llvm-tools/issues/2#issue-1439795586  this is simply done to allow using llvm-objdump of system LLVM instead of rust's, on Gentoo when rust package has USE=system-llvm , it's needed!
+
+#This has no effect anyway (because it's using the crates.io url):
+#[patch."https://github.com/phil-opp/llvm-tools"]
+#llvm-tools = { path = "/tmp/llvm-tools" }
 
