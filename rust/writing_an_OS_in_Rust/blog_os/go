@@ -13,7 +13,7 @@ if test -f "$vdifile"; then
 else
   set -e
 fi
-VBoxManage convertdd /tmp/shiet.dd "$vdifile" --format VDI
+VBoxManage convertdd /tmp/shie.dd "$vdifile" --format VDI
 #this moo.vdi is already linked as IDE HDD in virtualbox, but new contents invalidates it!
 #VBoxManage modifyvm "blog_os" --hda "/tmp/moo.vdi"
 
