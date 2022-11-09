@@ -1,11 +1,12 @@
 #!/bin/bash
 
 vdifile="/tmp/moo.vdi"
+tempddfile="/tmp/shie.dd"
 set -xev
 cargo build
 cargo bootimage
-dd if=/dev/zero of=/tmp/shie.dd count=1 bs=1M
-dd if=./target/x86_64-blog_os/debug/bootimage-blog_os.bin of=/tmp/shie.dd conv=notrunc
+dd if="/dev/zero" of="$tempddfile" count=1 bs=1M
+dd if=./target/x86_64-blog_os/debug/bootimage-blog_os.bin of="$tempddfile" conv=notrunc
 set +e
 if test -f "$vdifile"; then
   set -e
@@ -13,7 +14,7 @@ if test -f "$vdifile"; then
 else
   set -e
 fi
-VBoxManage convertdd /tmp/shie.dd "$vdifile" --format VDI
+VBoxManage convertdd "$tempddfile" "$vdifile" --format VDI
 #this moo.vdi is already linked as IDE HDD in virtualbox, but new contents invalidates it!
 #VBoxManage modifyvm "blog_os" --hda "/tmp/moo.vdi"
 
