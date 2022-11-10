@@ -1,0 +1,10 @@
+I recommend you edit
+1. /var/tmp/portage/app-misc/mc-9999/work/mc-9999/src/viewer/ascii.c (and src/viewer/hex.c:329)
+2. rather than glibc's /usr/share/i18n/charmaps/IBM437.gz (aka /var/tmp/portage/sys-libs/glibc-2.36-r5/work/glibc-2.36/localedata/charmaps/IBM437 )
+because the latter(2) uses glibc's iconv() function and this doesn't mean it's used for viewing only like mcview would use it for.
+
+so having mcview do the conversions locally(for on-screen viewing) in the formerly mentioned file(1) is preferred!
+
+see: /patches/portage/app-misc/mc.reused/cp437.patch
+
+see also: https://midnight-commander.org/ticket/3257

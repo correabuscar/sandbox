@@ -1,0 +1,10 @@
+see: /patches/portage/app-misc/mc.reused/cp437.patch
+
+https://en.wikipedia.org/wiki/Code_page_437
+https://www.unicode.org/Public/MAPPINGS/VENDORS/MISC/IBMGRAPH.TXT
+https://github.com/unicode-org/icu/blob/main/icu4c/source/data/mappings/ibm-437_P100-1995.ucm
+
+https://www.fonts4free.net/perfect-dos-vga-437-font.html
+https://unix4lyfe.org/cp437/
+https://github.com/berenddeschouwer/fourthreeseven
+
