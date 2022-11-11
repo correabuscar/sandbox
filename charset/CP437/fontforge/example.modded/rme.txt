@@ -1,0 +1,1 @@
+char #1 of cp437 was modified for this font which is U+263A in Cousine

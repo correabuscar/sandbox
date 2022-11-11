@@ -1,6 +1,6 @@
 #!/usr/bin/fontforge
 
-#TODO: ideally here, we'd copy/paste from chars from the 437 to our Cousine font and resize them too! and move them a bit, but PerfectDOSVGA437Unicode.ttf kinda already has all that, tho it doesn't look like Cousine for other chars.
+#TODO: ideally here, we'd copy/paste from chars from the 437 to our Cousine font and resize them too! and move them a bit, but PerfectDOSVGA437Unicode.ttf kinda already has all that, tho it doesn't look like Cousine for other chars. See example.modded/*.ttf for a font which had only 1 char modified (imported from cp437)
 
 #from fontforge import *
 import fontforge  #this errors in vim but works when ran!
