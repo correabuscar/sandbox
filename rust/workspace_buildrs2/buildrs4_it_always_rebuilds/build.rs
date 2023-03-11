@@ -29,11 +29,14 @@ fn main() {
           //println!("cargo:rustc-env=GIT_HASH={:?}", e);
       }
   }
-  let tm = time::now();
+  //let tm = time::now();
+  let tm = time::OffsetDateTime::now_utc();
+  let tmf=tm.format(&time::format_description::well_known::Rfc2822).unwrap();
   //nvmFIXME: why is there an empty line between the above and next println! ? oh it's from `git` ffs FIXME: but it really shouldn't be!
   println!("cargo:rustc-env=BUILD_DATE={}", 
            //1 //XXX: even with just this(aka non-changing build date), build.rs gets run every time! like nothing's cached! if and only if, a touch build.rs happened, as opposed to a `cargo check`! FIXME: why no caching of build.rs ?
-           tm.to_utc().rfc822()
+           //tm.to_utc().rfc822()
+           tmf
            ); 
   //^ nvmFIXME: so this is being cached and depending strictly upon when the last change to build.rs was made! ie. if you touch src/main.rs but not build.rs the BUILD_DATE is the stale cached one from before! XXX: no, actually it was cargo:rerun-if-env-changed see above! So this is always run now, unless you do a `cargo check` which will update the build.rs cached output, and any further make build will never compile&run build.rs , see: https://github.com/rust-lang/cargo/issues/4901
   //println!("cargo:warning=Hey, here's a warning from build.rs, for a reason! noting that BUILD_DATE is {}",tm.to_utc().rfc822()); //is a message that will be printed to the main console after a build script has finished running.

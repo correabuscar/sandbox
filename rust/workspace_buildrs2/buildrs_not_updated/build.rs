@@ -17,6 +17,9 @@ fn main() {
           //println!("cargo:rustc-env=GIT_HASH={:?}", e);
       }
   }
-  let tm = time::now();
-  println!("cargo:rustc-env=BUILD_DATE={}", tm.to_utc().rfc822()); //used by src/main.rs
+  //let tm = time::now();
+  let tm = time::OffsetDateTime::now_utc();
+  let tmf=tm.format(&time::format_description::well_known::Rfc2822).unwrap();
+  //println!("cargo:rustc-env=BUILD_DATE={}", tm.to_utc().rfc822()); //used by src/main.rs
+  println!("cargo:rustc-env=BUILD_DATE={}", tmf); //used by src/main.rs
 }
