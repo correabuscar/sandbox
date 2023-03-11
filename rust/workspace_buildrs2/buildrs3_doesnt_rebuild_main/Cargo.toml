@@ -10,7 +10,7 @@ build = "build.rs"
 filetime = "0.1"
 #^ for file timestamp
 log = "0.4"
-env_logger = "0.3"
+env_logger = "0.10"
 #^ for logging msgs
 
 [build-dependencies]

@@ -52,7 +52,7 @@ fn main() {
     //
     // Select env_logger, one possible logger implementation
     // (see https://doc.rust-lang.org/log/env_logger/index.html)
-    env_logger::init().unwrap();//required to show log msgs! in executables! (not for libs tho!)   XXX: Note: execute like: RUST_LOG=debug ./$0  now you can see the debug!() messages too! (warn ones are shown also, but not by default! so you need to spec. a RUST_LOG=warn at least)
+    env_logger::init();//required to show log msgs! in executables! (not for libs tho!)   XXX: Note: execute like: RUST_LOG=debug ./$0  now you can see the debug!() messages too! (warn ones are shown also, but not by default! so you need to spec. a RUST_LOG=warn at least)
     info!("Starting up... BUILD_DATE={}",BUILD_DATE);
     let for_info_only_output_exe_at_compiletime: &'static str = OPTION_OUTPUT_EXE_AT_COMPILETIME.unwrap_or_else(|| { 
         warn!("!! You are not using my modified cargo, ergo when using hardlinked binaries I won't be able to tell you which is the real exe fullpath filename after it got recompiled/updated! See: https://github.com/rust-lang/cargo/issues/2841#issuecomment-354932455 for the cargo patch or fname need_this_env_var.patch"); //to see this warning, run with: RUST_LOG=warn ./$0
