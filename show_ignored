@@ -1,0 +1,1 @@
+git status --ignored | grep -vE '/target/$'|grep -vE '/__pycache__/$' |grep -vE '/.mypy_cache/$'
