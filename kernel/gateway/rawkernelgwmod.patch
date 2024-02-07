@@ -1,0 +1,120 @@
+this is for when PC's ip is /32 (like 192.168.1.2/32) but gw's is /16 on different subnet (like 192.168.4.5/16)
+but you need to manually firewall on PC, so it won't send any non own IP but local LAN IPs to the gw itself
+and firewall(verb) on PC the gw ip itself ie. DROP
+datagrams are sent to mac of gw anyway, for inet IPs
+
+Index: /usr/src/linux-6.5.7-gentoo/net/ipv4/fib_semantics.c
+===================================================================
+--- .orig/usr/src/linux-6.5.7-gentoo/net/ipv4/fib_semantics.c
++++ /usr/src/linux-6.5.7-gentoo/net/ipv4/fib_semantics.c
+@@ -1142,7 +1142,7 @@ static int fib_check_nh_v4_gw(struct net
+ 		}
+ 		addr_type = inet_addr_type_dev_table(net, dev, nh->fib_nh_gw4);
+ 		if (addr_type != RTN_UNICAST) {
+-			NL_SET_ERR_MSG(extack, "Nexthop has invalid gateway");
++			NL_SET_ERR_MSG(extack, "Nexthop has invalid gateway1");
+ 			return -EINVAL;
+ 		}
+ 		if (!netif_carrier_ok(dev))
+@@ -1152,6 +1152,7 @@ static int fib_check_nh_v4_gw(struct net
+ 		nh->fib_nh_scope = RT_SCOPE_LINK;
+ 		return 0;
+ 	}
++	bool shie=false;
+ 	rcu_read_lock();
+ 	{
+ 		struct fib_table *tbl = NULL;
+@@ -1169,34 +1170,58 @@ static int fib_check_nh_v4_gw(struct net
+ 		if (table && table != RT_TABLE_MAIN)
+ 			tbl = fib_get_table(net, table);
+ 
+-		if (tbl)
++		if (tbl) {
+ 			err = fib_table_lookup(tbl, &fl4, &res,
+ 					       FIB_LOOKUP_IGNORE_LINKSTATE |
+ 					       FIB_LOOKUP_NOREF);
++//      if (err) {
++//        NL_SET_ERR_MSG(extack, "Nexthop has invalid gateway5");
++//        goto out;
++//      }
++		}
+ 
+ 		/* on error or if no table given do full lookup. This
+ 		 * is needed for example when nexthops are in the local
+ 		 * table rather than the given table
+ 		 */
+ 		if (!tbl || err) {
++//      if (err) {
++//        NL_SET_ERR_MSG(extack, "Nexthop has invalid gateway4");
++//        goto out;
++//      }
+ 			err = fib_lookup(net, &fl4, &res,
+ 					 FIB_LOOKUP_IGNORE_LINKSTATE);
++//      if (err) {
++//        NL_SET_ERR_MSG(extack, "Nexthop has invalid gateway6");
++//        goto out;
++//      }
++			if (-ENETUNREACH == err) {
++				//shie=true; //XXX: temp disabled, it's not needed; to add default gw, just add it as non-default first! then as default, then del the non-default one.
++				dump_stack();
++			}
+ 		}
+ 
+-		if (err) {
+-			NL_SET_ERR_MSG(extack, "Nexthop has invalid gateway");
++		if ((err) &&(!shie)) {
++			NL_SET_ERR_MSG(extack, "Nexthop has invalid gateway2");
+ 			goto out;
+ 		}
+-	}
++	} // rcu
+ 
+-	err = -EINVAL;
+-	if (res.type != RTN_UNICAST && res.type != RTN_LOCAL) {
+-		NL_SET_ERR_MSG(extack, "Nexthop has invalid gateway");
++	if ((res.type != RTN_UNICAST && res.type != RTN_LOCAL) && (!shie)) {
++		err = -EINVAL;
++		NL_SET_ERR_MSG(extack, "Nexthop has invalid gateway3");
+ 		goto out;
+ 	}
++	err = -EINVAL;
++	if (shie) {
++		nh->fib_nh_scope = scope;
++		dev = __dev_get_by_index(net, nh->fib_nh_oif);
++		nh->fib_nh_dev = dev;
++	} else {
+ 	nh->fib_nh_scope = res.scope;
+ 	nh->fib_nh_oif = FIB_RES_OIF(res);
+ 	nh->fib_nh_dev = dev = FIB_RES_DEV(res);
++	}
+ 	if (!dev) {
+ 		NL_SET_ERR_MSG(extack,
+ 			       "No egress device for nexthop gateway");
+@@ -2268,3 +2293,4 @@ check_saddr:
+ 	if (!fl4->saddr)
+ 		fl4->saddr = fib_result_prefsrc(net, res);
+ }
++// vim: set tabstop=2 shiftwidth=2 noexpandtab :
+Index: /usr/src/linux-6.5.7-gentoo/include/net/ip_fib.h
+===================================================================
+--- .orig/usr/src/linux-6.5.7-gentoo/include/net/ip_fib.h
++++ /usr/src/linux-6.5.7-gentoo/include/net/ip_fib.h
+@@ -315,8 +315,17 @@ static inline int fib_lookup(struct net
+ 	rcu_read_lock();
+ 
+ 	tb = fib_get_table(net, RT_TABLE_MAIN);
+-	if (tb)
++	if (tb) {
++    printk(KERN_INFO "got a RT_TABLE_MAIN, ");
+ 		err = fib_table_lookup(tb, flp, res, flags | FIB_LOOKUP_NOREF);
++    if (err) {
++      printk(KERN_INFO "and fib_table_lookup errored.\n");
++    } else {
++      printk(KERN_INFO "and fib_table_lookup OKed.\n");
++    }
++  } else {
++    printk(KERN_INFO "got no RT_TABLE_MAIN, which means we'll -ENETUNREACH");
++  }
+ 
+ 	if (err == -EAGAIN)
+ 		err = -ENETUNREACH;

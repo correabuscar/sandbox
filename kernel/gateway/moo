@@ -1,0 +1,15 @@
+#!/bin/bash
+#must run as root
+
+
+#works if my ip is 192.168.0.2/32 and that's the gw below:
+gw="192.168.3.4" #has to be /16 in the gw(router), on its iface.
+#your PC's ip is assumed to be 192.168.x.y/32 different x.y than gw ip
+
+#someip="1.1.1.1" #XXX: must be gw ip else if not, back to square 1 and thus causes any IP to be arp lookedup! (see: arp -an)
+someip="$gw" #must be gw ip else back to square 1
+#XXX: metric is not important.
+ip route add "$someip" metric 2 dev em1; echo $?
+#ip route del default via inet "$gw" metric 2 dev em1; echo $? # this line needed only if my kernel patch is in.
+ip route add default via inet "$gw" metric 2 dev em1; echo $?
+ip route del "$someip" metric 2 dev em1; echo $?
