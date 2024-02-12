@@ -1,0 +1,41 @@
+$ ./go
+   Compiling larger_lint v0.1.0 (/home/user/sandbox/rust/copy_trait/larger_lint)
+warning: function `a_copy` is never used
+ --> /home/user/sandbox/rust/copy_trait/larger_lint/src/main.rs:6:4
+  |
+6 | fn a_copy(x: u32) {
+  |    ^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+error: moving 4 bytes
+  --> /home/user/sandbox/rust/copy_trait/larger_lint/src/main.rs:11:11
+   |
+11 |     let x=1000;
+   |           ^^^^ value moved from here
+   |
+   = note: The current maximum size is 1, but it can be customized with the move_size_limit attribute: `#![move_size_limit = "..."]`
+note: the lint level is defined here
+  --> /home/user/sandbox/rust/copy_trait/larger_lint/src/main.rs:1:9
+   |
+1  | #![deny(large_assignments)]
+   |         ^^^^^^^^^^^^^^^^^
+
+error: moving 4 bytes
+  --> /home/user/sandbox/rust/copy_trait/larger_lint/src/main.rs:13:11
+   |
+13 |     let y=x;
+   |           ^ value moved from here
+   |
+   = note: The current maximum size is 1, but it can be customized with the move_size_limit attribute: `#![move_size_limit = "..."]`
+
+error: moving 8 bytes
+  --> /home/user/sandbox/rust/copy_trait/larger_lint/src/main.rs:15:14
+   |
+15 |     println!("Hello, world!{y}");
+   |              ^^^^^^^^^^^^^^^^^^ value moved from here
+   |
+   = note: The current maximum size is 1, but it can be customized with the move_size_limit attribute: `#![move_size_limit = "..."]`
+
+warning: `larger_lint` (bin "larger_lint") generated 1 warning
+error: could not compile `larger_lint` (bin "larger_lint") due to 3 previous errors; 1 warning emitted
