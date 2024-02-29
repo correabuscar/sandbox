@@ -25,7 +25,7 @@ fn main() {
           println!("cargo:rustc-env=GIT_HASH={}", git_hash);
       }
       Err(e) => {
-          panic!(format!("{}",e));
+          panic!("{}",e);
           //println!("cargo:rustc-env=GIT_HASH={:?}", e);
       }
   }

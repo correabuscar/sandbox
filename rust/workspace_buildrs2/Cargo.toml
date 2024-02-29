@@ -1,6 +1,7 @@
 [workspace]
 members = ["**/src/.."]
 exclude = ["helper_scripts", ".git", "**/.git", "target", "**/target"]
+resolver = "2"
 
 #Careful, these profile sections only have effect in here! so,
 #warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
