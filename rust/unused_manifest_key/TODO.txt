@@ -1,0 +1,7 @@
+warning: unused manifest key: dependencies.gl.problem
+
+make this err instead of warn!
+otherwise, this won't be the last one: https://github.com/rust-lang/rust/security/advisories/GHSA-phjm-8x66-qw4r
+
+done as:
+1500_error_on_unused_manifest_key.patch

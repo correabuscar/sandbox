@@ -1,0 +1,19 @@
+[package]
+name = "unused_manifest_key"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+nonexistent636926912="wtw"
+
+[dependencies]
+gl = { version="0.14", problem="moo" }
+winit = { version="0.28", problem2="moo2" }
+
+[well.hello]
+there="ok"
+
+[hi]
+
+[build]
+rustflags = ["-D", "warnings"]
