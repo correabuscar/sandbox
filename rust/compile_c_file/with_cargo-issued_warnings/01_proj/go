@@ -1,0 +1,3 @@
+#
+#cargo clean; CC=x86_64-pc-linux-gnu-gcc CARGO_PEDANTIC=off cargo build
+cargo clean; CC=x86_64-pc-linux-gnu-gcc cargo build ; cargo clean

@@ -1,0 +1,14 @@
+$ ./go_bypass
+     Removed 0 files
+   Compiling cc v1.0.89
+   Compiling libc v0.2.153
+   Compiling proj v0.1.0 (/home/user/sandbox/rust/compile_c_file/with_cargo-issued_warnings/01_proj)
+warning: proj@0.1.0: Compiler version doesn't include clang or GCC: "x86_64-pc-linux-gnu-gcc" "--version"
+warning: proj@0.1.0: In file included from src/lib.c:6:
+warning: proj@0.1.0: src/lib.h:8:2: warning: #warning "manual warning since the deprecated one won't trigger" [-Wcpp]
+warning: proj@0.1.0:     8 | #warning "manual warning since the deprecated one won't trigger"
+warning: proj@0.1.0:       |  ^~~~~~~
+warning: proj@0.1.0: src/lib.h:9:9: note: '#pragma message: This is a custom warning message, too'
+warning: proj@0.1.0:     9 | #pragma message "This is a custom warning message, too"
+warning: proj@0.1.0:       |         ^~~~~~~
+    Finished dev [unoptimized + debuginfo] target(s) in 1.00s
