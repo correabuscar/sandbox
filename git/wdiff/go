@@ -1,7 +1,17 @@
 #!/bin/bash
-git diff --no-index --word-diff=plain --word-diff-regex='\s*[a-zA-Z0-9]+\s*' --color=always -- ./{1,3}.log
-git diff --no-index --word-diff=plain --word-diff-regex='[[:space:]]*[[:alnum:]]+[[:space:]]*' --color=always -- ./{1,3}.log
-git diff --no-index --word-diff=plain --word-diff-regex='\s+[a-zA-Z0-9]+\s+' --color=always -- ./{1,3}.log #this works only for this specific case, can't use it in general tho!
+git diff --no-index --word-diff=plain --word-diff-regex='\s*[a-zA-Z0-9]+\s*' --color=always -- ./{1,3}.log | cat
+git diff --no-index --word-diff=plain --word-diff-regex='[[:space:]]*[[:alnum:]]+[[:space:]]*' --color=always -- ./{1,3}.log | cat 
+git diff --no-index --word-diff=plain --word-diff-regex='\s+[a-zA-Z0-9]+\s+' --color=always -- ./{1,3}.log | cat
+#^ this works only for this specific case, can't use it in general tho!
 
-git diff --no-index --word-diff=plain --word-diff-regex='[[:alnum:]]+|[^[:alnum:][:space:]]+' --color=always -- ./{1,3}.log #presumably this is the default --word-diff-regex= that git uses! aka broken see ./go_fail
+
+git diff --no-index --word-diff=plain --word-diff-regex='[^[:alnum:]]*[[:alnum:]]+[^[:alnum:]]*' --color=always -- ./{1,3}.log | cat
+
+#preferred: (for all cases)
+git diff --no-index --word-diff=plain --word-diff-regex='[[:alnum:]]+|[^[:alnum:][:space:]]|[[:space:]]' --color=always --  {1,3}.log | cat
+
+echo "bad:"
+git diff --no-index --word-diff=plain --word-diff-regex='[[:alnum:]]+|[^[:alnum:][:space:]]+' --color=always -- ./{1,3}.log | cat
+#^ presumably(chatgpt guessed) this is the default --word-diff-regex= that git uses! aka broken see ./go_fail
+
 #git diff --no-index --word-diff=plain --word-diff-regex='(^[^a-zA-Z0-9]+[^\s]+)?[a-zA-Z0-9]+([^[\s]+[^a-zA-Z0-9]+$)?' --color=always -- ./{1,3}.log
