@@ -1,0 +1,5 @@
+#!/bin/bash
+
+#git versions tested 2.43.1 and 2.44.0
+#XXX: that's a git word diff fail to account for whitespace
+git diff --no-index --word-diff=plain --color=always -- ./{1,3}.log
