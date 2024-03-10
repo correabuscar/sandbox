@@ -1,0 +1,14 @@
+so an echo ']' or '[' 1>&2 in extraConfig of ccache (nixpkgs's /etc/nixos/nixpkgs/nixos/modules/programs/ccache.nix )
+will make keepassxc compile but fail to run the exe!
+
+due to unpaired square brackets treating multiple lines as one big line due to https://gitlab.kitware.com/cmake/cmake/-/issues/19156 and thus `warn: unable to parse implicit include dirs!` so this cmake var CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES has only one include dir instead of tens of them, thus the resulting keepassxc binary somehow getting `keepassxc: error while loading shared libraries: libQt5Svg.so.5: cannot open shared object file: No such file or directory` because of all that, so build doesn't fail but the exe does! see also: https://cmake.org/cmake/help/v3.0/manual/cmake-language.7.html#lists and https://cmake.org/cmake/help/v3.0/manual/cmake-language.7.html#bracket-argument
+
+so at the very least this is bugged in how it's processing lines:
+https://gitlab.kitware.com/cmake/cmake/-/blob/master/Modules/CMakeParseImplicitIncludeInfo.cmake?ref_type=heads#L185-186
+  # go through each line of output...
+  string(REGEX REPLACE "\r*\n" ";" output_lines "${text}")
+  foreach(line IN LISTS output_lines)
+    if(state STREQUAL start)
+
+a more stable link: https://gitlab.kitware.com/cmake/cmake/-/commit/4b46523d905451ebdcf0ef8476ebe875945b3a62
+
