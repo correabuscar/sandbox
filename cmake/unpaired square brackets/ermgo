@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+diff -up <(cat erm.log) <(CLICOLOR_FORCE= cmake -P erm.cmake 2>&1)
+if test "$?" == 0; then
+  echo "success, outputs are the same"
+else
+  echo "failed, different outputs"
+fi
+

@@ -1,0 +1,2 @@
+#
+cmake -P c.cmake
