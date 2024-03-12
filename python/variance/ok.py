@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# src: chatgpt generated
+
 class WrappedString:
     def __init__(self, value: str):
         self.value = value

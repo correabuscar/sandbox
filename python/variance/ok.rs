@@ -1,3 +1,5 @@
+// src: chatgpt generated
+
 // Define a wrapper trait for WrappedString that erases the size of Self
 trait WrappedStringDyn {
     fn to_string_dyn(&self) -> String;
