@@ -16,4 +16,4 @@ futures-preview = { version = "=0.3.0-alpha.17", features = ["async-await", "nig
 
 # Hyper is an asynchronous HTTP library. We'll use it to power our HTTP
 # server and to make HTTP requests.
-hyper = "0.12.9"
+hyper = "1.2.0"
