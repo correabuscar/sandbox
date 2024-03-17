@@ -2,6 +2,9 @@
 name = "rebuilds_when_symlink"
 version = "0.1.0"
 authors = ["none <none>"]
-exclude = [ "rebuilds_when_symlink" ]
+exclude = [
+ "rebuilds_when_symlink",
+# "see_also", #else you get: error: two packages named `recompile_self` in this workspace: (nvm, this doesn't happen here, and this doesn't fix it!)
+]
 
 [dependencies]

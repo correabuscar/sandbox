@@ -2,8 +2,12 @@
 name = "recompile_self"
 version = "0.1.0"
 authors = ["none <none>"]
+exclude = [
+# "see_also", #else you get: error: two packages named `recompile_self` in this workspace: (nvm, this doesn't fix it here)
 #exclude = [ "run_exe_debug" ]
+# "run_exe_debug",
 #XXX: ^ workaround for constant rebuilding: uncomment this! (see rme.txt too)
+]
 
 build = "build.rs"
 #^implied if not specified; aka the default!
