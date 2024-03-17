@@ -121,7 +121,7 @@ FIXME:        ["match_this", second] => println!("The second element is {}", sec
     let (x, y): (i32, i32) = (5, 6); //src: https://rust-lang.github.io/book/ch03-02-variable-bindings.html
     println!("x={} y={}",x,y);
 
-    //src: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/book/first-edition/book/patterns.html#ignoring-bindings
+    //src: file://${HOME}/build/2nonpkgs/rust.stuff/book/first-edition/book/patterns.html#ignoring-bindings
     //It’s worth noting that using _ never binds the value in the first place, which means that the value does not move:
 
 
@@ -158,7 +158,7 @@ FIXME:        ["match_this", second] => println!("The second element is {}", sec
 
     //let's test that! with the destructor:
     #[derive(Debug)]
-    struct Echo(u32); //this is called: tupple struct, src: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/book/second-edition/book/ch06-01-defining-an-enum.html
+    struct Echo(u32); //this is called: tupple struct, src: file://${HOME}/build/2nonpkgs/rust.stuff/book/second-edition/book/ch06-01-defining-an-enum.html
     impl Drop for Echo {
         fn drop(&mut self) {
             println!("Dropping {:?}", self);

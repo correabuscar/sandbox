@@ -1,4 +1,4 @@
-//src: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/book/second-edition/book/ch10-02-traits.html#fixing-the-largest-function-with-trait-bounds
+//src: file://${HOME}/build/2nonpkgs/rust.stuff/book/second-edition/book/ch10-02-traits.html#fixing-the-largest-function-with-trait-bounds
 // implemented ^ without the Copy trait!!
 
 //with Copy trait:

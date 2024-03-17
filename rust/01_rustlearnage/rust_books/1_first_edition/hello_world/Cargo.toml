@@ -10,7 +10,7 @@ authors = [ "CExftNSroxORgpxED" ]
 name = "hello-world_differentnamehere"
 #^ that alone yields a warning:
 #
-#warning: path `/home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/hello_world/src/main.rs` was erroneously implicitly accepted for binary `hello-world_differentnamehere`,
+#warning: path `${HOME}/build/2nonpkgs/rust.stuff/rustlearnage/rust_books/1_first_edition/hello_world/src/main.rs` was erroneously implicitly accepted for binary `hello-world_differentnamehere`,
 #please set bin.path in Cargo.toml
 #
 #see: https://github.com/rust-lang/cargo/issues/4293#issuecomment-323600836

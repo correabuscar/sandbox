@@ -1,4 +1,4 @@
-//src: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/book/second-edition/book/ch10-01-syntax.html#in-method-definitions
+//src: file://${HOME}/build/2nonpkgs/rust.stuff/book/second-edition/book/ch10-01-syntax.html#in-method-definitions
 #[derive(Debug)]
 struct Moo<T>(T);
 

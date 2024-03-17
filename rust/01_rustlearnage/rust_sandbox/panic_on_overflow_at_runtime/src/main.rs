@@ -1,4 +1,5 @@
-// see TODO here: https://gist.github.com/xftroxgpx/c34b67bb43ef3ca6fbd75971c460f541
+// see TODO here: https://gist.github.com/CExftNSroxORgpxED/c34b67bb43ef3ca6fbd75971c460f541
+// prepend this https://web.archive.org/web/20191018200449/ tot he url and remove the CENSORED
 fn main() {
 //    let in_num:i32=1289346750; // 4CD9DEBE
 //    println!("{:?}", 2*in_num);

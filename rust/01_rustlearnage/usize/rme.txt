@@ -2,14 +2,14 @@ so this is wrong:
 
 "[...]the isize and usize types depend on the kind of computer your program is running on: 64-bits if you’re on a 64-bit architecture and 32-bits if you’re on a 32-bit architecture."
 
-src: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/book/second-edition/book/ch03-02-data-types.html
+src: file://${HOME}/build/2nonpkgs/rust.stuff/book/second-edition/book/ch03-02-data-types.html
 
 --------
 and this is wrong also:
 
 "Rust also provides types whose particular size depends on the underlying machine architecture. Their range is sufficient to express the size of any collection, so these types have ‘size’ as the category. They come in signed and unsigned varieties which account for two types: isize and usize."
 
-src: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/book/first-edition/book/primitive-types.html#variable-size-types
+src: file://${HOME}/build/2nonpkgs/rust.stuff/book/first-edition/book/primitive-types.html#variable-size-types
 
 because it simply depends on the target arch that it was compiled for, not the arch that you run it on!
 

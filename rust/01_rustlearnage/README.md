@@ -1,4 +1,4 @@
-# rustLearnage [![Build Status](https://travis-ci.org/xftroxgpx/rustlearnage.svg?branch=master)](https://travis-ci.org/xftroxgpx/rustlearnage)
+# rustLearnage  
 This is a sandbox/playground to help me learn rust and experiment.  
 Don't expect anything here to be consistent and up to date!  
 Outdated code should be common.  
@@ -6,7 +6,7 @@ Outdated code should be common.
 
 ## Authors
 
-Currently almost everything (all functions, files, text) in this repository are made by me @xftroxgpx and I've dedicated this repository to public domain. Code taken from elsewhere(such as the rustbook(s)) should either be obvious(due to directory names or the code within) or (if I don't forget) will be prefixed by `src: ` and the url of its origin.
+Currently almost everything (all functions, files, text) in this repository are made by me Emanuel Czirai and I've dedicated this repository to public domain. Code taken from elsewhere(such as the rustbook(s)) should either be obvious(due to directory names or the code within) or (if I don't forget) will be prefixed by `src: ` and the url of its origin.
 
 This readme is originally from: https://github.com/davispuh/CLI-Console/blob/master/README.md
 

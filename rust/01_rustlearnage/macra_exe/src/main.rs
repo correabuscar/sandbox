@@ -23,7 +23,7 @@ fn main() {
         use std::io::Write; //XXX: needed for flush() to be seen in scope!
         moosh!(std::io::stdout().flush().ok());
     }
-    trace_macros!(true); //src: file:///home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/book/first-edition/macros.html#debugging-macro-code
+    trace_macros!(true); //src: file://${HOME}/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/book/first-edition/macros.html#debugging-macro-code
 	fflush!();
     trace_macros!(false);
 	log_syntax!(fflush!());//FIXME: looks like this does nothing?

@@ -9,7 +9,7 @@ exclude = ["helper_scripts", ".git", "**/.git", "target", "**/target"]
 
 #Careful, these profile sections only have effect in here! so,
 #warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
-#package:   /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/recompile_self/Cargo.toml
+#package:   ${HOME}/build/2nonpkgs/rust.stuff/rustlearnage/recompile_self/Cargo.toml
 
 #doc: https://doc.crates.io/manifest.html#the-profile-sections
 #https://doc.rust-lang.org/cargo/reference/manifest.html

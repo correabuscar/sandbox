@@ -26,7 +26,7 @@ time = "0.1"
 
 #oh fml:
 #XXX: warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
-#package:   /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/recompile_self/Cargo.toml
+#package:   ${HOME}/build/2nonpkgs/rust.stuff/rustlearnage/recompile_self/Cargo.toml
 #so the following has no effect while in workspace!!!
 ##doc: https://doc.crates.io/manifest.html#the-profile-sections
 ## The development profile, used for `cargo build`.

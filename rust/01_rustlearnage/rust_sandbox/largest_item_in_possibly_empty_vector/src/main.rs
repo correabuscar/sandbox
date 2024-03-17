@@ -1,4 +1,4 @@
-// also posted in https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340?u=xftroxgpx
+// also posted in https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340
 #![allow(dead_code)]
 #[derive(Debug, PartialOrd, PartialEq, Ord, Eq, Clone)]
 struct NonCopyI32(i32);
@@ -35,7 +35,7 @@ fn largest_1(list: &[NonCopyI32]) -> Option<&NonCopyI32> {
 }
 
 fn largest_1_2(list: &[NonCopyI32]) -> Option<NonCopyI32> {
-    //using Clone instead of ref to it, idea from: https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340/10?u=xftroxgpx
+    //using Clone instead of ref to it, idea from: https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340/10
     if list.is_empty() {
         return None;
     }
@@ -64,7 +64,7 @@ fn largest0(list: &[NonCopyI32]) -> Option<&NonCopyI32> {
 
 //#[derive(Debug)] //error: `derive` may only be applied to structs, enums and unions
 fn largest1(list: &[NonCopyI32]) -> Option<&NonCopyI32> {
-    //genius-level from: https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340/2?u=xftroxgpx
+    //genius-level from: https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340/2
     list.iter().fold(None, |largest, item| match largest {
         // if `item` is bigger as `largest` return `item`
         Some(largest) if item > largest => Some(item),
@@ -175,7 +175,7 @@ fn largest4_1(list: &[NonCopyI32]) -> Option<&NonCopyI32> {
         //println!("!! {:?}",item);
         match item {
             i @ Some(_) => {
-                // thanks for the '@' to: https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340/7?u=xftroxgpx
+                // thanks for the '@' to: https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340/7
                 if i > largest {
                     largest = item;
                 }
@@ -188,7 +188,7 @@ fn largest4_1(list: &[NonCopyI32]) -> Option<&NonCopyI32> {
 }
 
 fn largest5(list: &[NonCopyI32]) -> Option<&NonCopyI32> {
-    // from: https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340/5?u=xftroxgpx
+    // from: https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340/5
     let mut largest = None;
 
     for item in list.iter() {
@@ -199,11 +199,11 @@ fn largest5(list: &[NonCopyI32]) -> Option<&NonCopyI32> {
     largest
 }
 
-fn largest6(list: &[NonCopyI32]) -> Option<&NonCopyI32> { // from: https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340/11?u=xftroxgpx
+fn largest6(list: &[NonCopyI32]) -> Option<&NonCopyI32> { // from: https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340/11
     list.iter().max()
 }
 
-fn largest7(list: &[NonCopyI32]) -> Option<&NonCopyI32> { // from: https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340/11?u=xftroxgpx
+fn largest7(list: &[NonCopyI32]) -> Option<&NonCopyI32> { // from: https://users.rust-lang.org/t/solved-largest-item-in-a-possibly-empty-vector-without-early-return/24340/11
     let mut iter = list.iter();
     iter.next().map(|first| {
         iter.fold(first, |a, b| a.max(b))

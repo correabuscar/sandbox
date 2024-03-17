@@ -1,4 +1,4 @@
-//src: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/book/second-edition/book/ch07-03-importing-names-with-use.html#bringing-names-into-scope-with-the-use-keyword
+//src: file://${HOME}/build/2nonpkgs/rust.stuff/book/second-edition/book/ch07-03-importing-names-with-use.html#bringing-names-into-scope-with-the-use-keyword
 
 pub mod a {
     pub mod series {

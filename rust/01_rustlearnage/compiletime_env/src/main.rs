@@ -1,6 +1,6 @@
 //use std::env;
 
-// eg. /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/compiletime_env
+// eg. ${HOME}/build/2nonpkgs/rust.stuff/rustlearnage/compiletime_env
 // aka current dir (coincidentally)
 const PWD_AT_COMPILETIME: &'static str = env!("CARGO_MANIFEST_DIR");
 

@@ -6,7 +6,7 @@ use std::str::FromStr;
 fn borrow_test(string: &mut String) -> &str {
     {
         let str = string.as_mut_str();
-        if str.starts_with('H') {//workaround here: https://users.rust-lang.org/t/why-does-return-extend-borrowing-to-the-entire-function/5101/5?u=xftroxgpx
+        if str.starts_with('H') {//workaround here: https://users.rust-lang.org/t/why-does-return-extend-borrowing-to-the-entire-function/5101/5
             //XXX uncomment this:
             //return str;//"Why does returning the str extend the borrowing scope to the entire function?"
             //commented out so travis doesn't fail!

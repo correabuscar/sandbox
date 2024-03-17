@@ -1,4 +1,4 @@
-//src: file:///home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/book/first-edition/method-syntax.html#builder-pattern
+//src: file://${HOME}/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/book/first-edition/method-syntax.html#builder-pattern
 struct Circle {
     x: f64,
     y: f64,

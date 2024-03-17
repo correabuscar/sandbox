@@ -1,4 +1,4 @@
-#[macro_use] //doc: file:///home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/book/first-edition/macros.html#scoping-and-macro-importexport
+#[macro_use] //doc: file://${HOME}/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/book/first-edition/macros.html#scoping-and-macro-importexport
 extern crate log;// ^ #[macro_use] is for this!
 
 extern crate env_logger;
@@ -9,7 +9,7 @@ extern crate filetime;
 
 const BUILD_DATE: &'static str = env!("BUILD_DATE"); //set by build.rs
 const GIT_HASH: &'static str = env!("GIT_HASH"); //set by build.rs latest commit hash (ie. of HEAD)
-// eg. /home/xftroxgpx/build/2nonpkgs/rust.stuff/rustlearnage/compiletime_env
+// eg. ${HOME}/build/2nonpkgs/rust.stuff/rustlearnage/compiletime_env
 const PROJECT_DIR_AT_COMPILETIME: &'static str = env!("CARGO_MANIFEST_DIR");
 //const OUTPUT_EXE_AT_COMPILETIME: &'static str = env!("CARGO_PKG_NAME2"); //not seen if set by build.rs , kinda obvious, but still!
 const OPTION_OUTPUT_EXE_AT_COMPILETIME: Option<&'static str> = option_env!("CARGO_TARGET_BINFILE_FULLPATH");
@@ -26,7 +26,7 @@ const CARGO_MODE: &'static str = //this repetition is necessary
 const CARGO_MODE: &'static str = env!("CARGO_PROFILE");
 //^ env var set by my build.rs
 
-//lol my first macro, without reading the docs for how to macro, but used: file:///home/xftroxgpx/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/src/std/macros.rs.html#315
+//lol my first macro, without reading the docs for how to macro, but used: file://${HOME}/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/src/std/macros.rs.html#315
 //macro_rules! fflush { ($name:expr) => ({ $name.flush().ok().expect(stringify!(Could not flush $name)); }) }
 //"Could not flush $name");}) }
 

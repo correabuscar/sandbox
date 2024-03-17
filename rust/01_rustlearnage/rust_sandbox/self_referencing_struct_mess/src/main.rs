@@ -1,6 +1,6 @@
 // see also:
-// https://users.rust-lang.org/t/beginner-fighting-with-lifetimes/24292/2?u=xftroxgpx
-// and a later comment: https://users.rust-lang.org/t/beginner-fighting-with-lifetimes/24292/5?u=xftroxgpx
+// https://users.rust-lang.org/t/beginner-fighting-with-lifetimes/24292/2
+// and a later comment: https://users.rust-lang.org/t/beginner-fighting-with-lifetimes/24292/5
 //
 struct Data<'a> {
     data_ref: Option<&'a String>,

@@ -6,5 +6,5 @@ authors = [ "CExftNSroxORgpxED" ]
 [dependencies]
 #cursive = "0.2"
 cursive = { git = "https://github.com/gyscos/Cursive" }
-#cursive = { path = "/home/xftroxgpx/build/2nonpkgs/rust.stuff/Cursive" }
+#cursive = { path = "/home/user/build/2nonpkgs/rust.stuff/Cursive" }
 

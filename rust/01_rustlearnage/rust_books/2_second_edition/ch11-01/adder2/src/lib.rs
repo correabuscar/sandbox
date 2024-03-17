@@ -1,4 +1,4 @@
-//src: file:///home/xftroxgpx/build/2nonpkgs/rust.stuff/book/second-edition/book/ch11-01-writing-tests.html#the-anatomy-of-a-test-function
+//src: file://${HOME}/build/2nonpkgs/rust.stuff/book/second-edition/book/ch11-01-writing-tests.html#the-anatomy-of-a-test-function
 #[cfg(test)]
 mod tests {
     #[test]
