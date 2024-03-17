@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+#unset RUST_BACKTRACE
+#workaround issue: 29293 https://github.com/rust-lang/rust/issues/29293
+echo "RUST_BACKTRACE=$RUST_BACKTRACE"
+echo "RUST_LOG=$RUST_LOG"
+if test -z "$RUST_LOG"; then
+  export RUST_LOG=warn
+fi
+time cargo run -vv -- "$@"
+#the second 'v' aka verbose shows the output from build.rs ! Thanks JP-Ellis !
+
+

@@ -1,0 +1,12 @@
+* this .wofl file type is readable in vim with this plugin https://github.com/lukaszkorecki/workflowish.git
+
+* TODO:
+* default-features = false
+  \ see in: https://doc.crates.io/manifest.html
+
+* clippy-as-a-plugin was deprecated/removed on May 11th 2018
+  \ https://github.com/rust-lang-nursery/rust-clippy/commit/654ff185881b6f5ab7048ed2b0c02227323fe0df#diff-04c6e90faac2675aa89e2176d2eec7d8
+  \ https://github.com/rust-lang-nursery/rust-clippy/commit/fd8a1d20ccad8a2dd7b95a9a9a6fe94048a74d5f#diff-04c6e90faac2675aa89e2176d2eec7d8
+  * fix all stuff
+    - fix some projects
+

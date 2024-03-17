@@ -1,0 +1,5 @@
+main
+target/
+
+#Cargo.lock should only ignore if the project is a lib! not a bin
+

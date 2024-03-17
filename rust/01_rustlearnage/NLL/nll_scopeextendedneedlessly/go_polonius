@@ -1,0 +1,4 @@
+#!/bin/bash
+
+time cargo rustc -- -Z polonius
+#fixed by polonius, as per next comment: https://github.com/rust-lang/rust/issues/54663#issuecomment-458270735 and also a prev. one which I either missed or didn't know how to use polonius https://github.com/rust-lang/rust/issues/54663#issuecomment-425640881

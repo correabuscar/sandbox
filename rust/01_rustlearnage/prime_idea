@@ -1,0 +1,5 @@
+#!/bin/bash
+
+time cargo metadata --verbose --format-version 1 --all-features
+#now you can run `idea` and it won't stall trying to download stuff from the internet (which it doesn't have access to!)
+

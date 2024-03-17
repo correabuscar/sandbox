@@ -1,0 +1,9 @@
+[package]
+name = "implied_copy2"
+version = "0.1.0"
+authors = ["xftroxgpx <xftroxgpx@protonmail.com>"]
+
+[dependencies]
+clippy = "*"
+
+

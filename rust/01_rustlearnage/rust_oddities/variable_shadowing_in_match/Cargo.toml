@@ -1,0 +1,12 @@
+[package]
+name = "match0"
+version = "0.0.1"
+authors = [ "xftroxgpx <xftroxgpx@protonmail.com>" ]
+
+[[bin]]
+
+name = "match0"
+
+[dependencies]
+#clippy = "*"
+

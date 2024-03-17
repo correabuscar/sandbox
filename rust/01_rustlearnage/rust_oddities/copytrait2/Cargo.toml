@@ -1,0 +1,6 @@
+[package]
+name = "copytrait2"
+version = "0.1.0"
+authors = ["xftroxgpx <xftroxgpx@protonmail.com>"]
+
+[dependencies]

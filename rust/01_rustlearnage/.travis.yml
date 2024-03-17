@@ -1,0 +1,22 @@
+#src: https://docs.travis-ci.com/user/languages/rust/
+#XXX: note travis for this repo is currently disabled!
+
+language: rust
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+matrix:
+  allow_failures:
+    - rust: stable
+    - rust: beta
+  fast_finish: true
+before_script:
+  - rustup component add clippy
+  - rustup component add clippy --toolchain=nightly || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
+script:
+  - helper_scripts/travis_script.sh
+
+

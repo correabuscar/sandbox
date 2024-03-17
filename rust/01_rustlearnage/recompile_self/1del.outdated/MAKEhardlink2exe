@@ -1,0 +1,5 @@
+#!/bin/bash
+
+rm -v -- hardlink_{debug,release}
+ln ../target/debug/recompile_self hardlink_debug
+ln ../target/release/recompile_self hardlink_release

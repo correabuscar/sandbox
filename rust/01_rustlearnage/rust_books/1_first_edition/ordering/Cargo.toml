@@ -1,0 +1,9 @@
+[package]
+name = "ordering"
+version = "0.0.1"
+authors = [ "xftroxgpx <xftroxgpx@protonmail.com>" ]
+
+[[bin]]
+
+name = "ordering"
+

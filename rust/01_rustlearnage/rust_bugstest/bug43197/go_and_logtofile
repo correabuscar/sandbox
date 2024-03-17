@@ -1,0 +1,6 @@
+#!/bin/bash
+export RUST_BACKTRACE=full
+export RUST_LOG=debug
+./go2 >/tmp/out.log 2>&1
+
+

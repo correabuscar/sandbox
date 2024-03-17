@@ -1,0 +1,21 @@
+#!/bin/bash
+fail() {
+  echo "!! Failed!"
+}
+trap fail exit 
+set -ex
+time cargo build #aka debug
+time cargo build --release
+#okFIXME: ^ why tef do these always rebuild something as if one file's changed!
+#exit 
+echo "!! emulating source change"
+./touch_source
+#export RUST_LOG=debug #XXX never use debug here, gigabytes of output and high cpu usage!
+export RUST_LOG=info
+#./run_exe_release
+#./run_exe_debug
+./symlink_run_exe_release #doneFIXME: with RUST_LOG=debug this never finishes!!!! ok it does but the amount of output is so crazy large - gigabytes!!
+./symlink_run_exe_debug
+set +x
+echo "Success"
+trap - exit

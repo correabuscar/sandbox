@@ -1,0 +1,7 @@
+[package]
+name = "cfg_attributes_on_macros"
+version = "0.1.0"
+authors = ["xftroxgpx <xftroxgpx@protonmail.com>"]
+
+[dependencies]
+clippy = "*"
