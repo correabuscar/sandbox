@@ -1,0 +1,4 @@
+#!/bin/bash
+#^ syntax highlighting
+
+time vim ./Cargo.toml
