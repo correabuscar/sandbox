@@ -6,4 +6,4 @@ echo execute ./go from vim by typing:   :!./go
 #or else it will hang on each file write (when rust.vim and syntactic!)
 
 fil="./src/lib.rs"
-time vim -- "$fil" && rustfmt -- "$fil"
+time "${EDITOR:-nvim}" -- "$fil" && cargo fmt -- "$fil" && cargo check

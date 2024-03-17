@@ -1,4 +1,4 @@
 #!/bin/bash
 #^ syntax highlighting
 
-time vim ./Cargo.toml
+time "${EDITOR:-nvim}" ./Cargo.toml
