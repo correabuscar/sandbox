@@ -7,4 +7,4 @@ https://doc.rust-lang.org/cargo/reference/build-scripts.html
 https://github.com/rust-lang/cargo/issues/4907
 
 workaround:
-the exclude line in Cargo.tml!
+the exclude line in Cargo.toml!
