@@ -1,0 +1,35 @@
+[package]
+#name = "collision_and_cargo_features_test"
+#version = "0.1.0"
+#authors = ["CxEfNtSrOoRxEgDpx <CxEfNtSrOoRxEgDpx@CpErNoStOoRnEmDail.com>"]
+#shhh, secret! :P
+name = "getuniqid3"
+version = "0.1.0"
+authors = ["howaboutsynergy <howaboutsynergy@pm.me>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+uuid = { version = "0.7.4", features = [#"serde", #do i need serde here? copied from an example
+"v4", "v5"], default-features = false, optional = true }
+rand = { version = "0.4.2", optional = true }
+libxid = { version = "0.1.5", optional = true }
+num-format = "0.4.0" #for showing numbers like "1,000,000" for US English  Thanks go to <sumeet> on irc.mozilla.org #rust-beginners channel, for telling me about this crate!
+
+[features] #see docs https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
+default = ["uuid"]  #can use "uuid" instead (even tho it's a package!)
+#default = ["rand_num"]  #can use "uuid" instead (even tho it's a package!)
+#thanks sebk on irc for: cargo build --no-default-features  equivalent of "default-features = false" in packages that use this package (if any, ever); it's mentioned here too https://doc.rust-lang.org/cargo/reference/manifest.html#usage-in-end-products  but i didn't see it before!
+
+rand_num = ["rand"] #the rand_num feature, depends on the "rand" package!
+
+xid = [ "libxid" ]
+
+# Features can be used to reexport features of other packages. The `session`
+# feature of package `awesome` will ensure that the `session` feature of the
+# package `cookie` is also enabled.
+#session = ["cookie/session"]
+#src: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
+
+

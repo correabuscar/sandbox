@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+#unset RUST_BACKTRACE
+#workaround issue: 29293 https://github.com/rust-lang/rust/issues/29293
+echo "RUST_BACKTRACE=$RUST_BACKTRACE"
+echo "RUST_LOG=$RUST_LOG"
+time cargo run -v --no-default-features --features "rand" -- "$@"
+#thanks sebk on irc for --no-default-features
+
+

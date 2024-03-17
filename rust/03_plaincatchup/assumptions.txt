@@ -1,0 +1,12 @@
+this assumes that your ~/.cargo/config has the following contents (mainly the -Z flag):
+----contents start-------
+[target.'cfg(any(windows, unix))']
+rustflags = ["-C", "target-cpu=native"
+, "-Z", "treat-err-as-bug=1"
+]
+# src: https://users.rust-lang.org/t/auto-vectorization-in-rust/24379/4
+# for -Z treat-err-as-bug=1 see: https://github.com/rust-lang/rust/issues/27189#issuecomment-509898987
+# thanks to Mutabah on #rust on irc.mozilla.org irc for pointing me to issue 27189 ^
+
+-------end----
+

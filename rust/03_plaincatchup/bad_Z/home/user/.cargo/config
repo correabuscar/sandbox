@@ -1,0 +1,11 @@
+[target.'cfg(any(windows, unix))']
+rustflags = ["-C", "target-cpu=native"
+, "-Z", "treat-err-as-bug=1"
+#XXX: ok `-Z treat-err-as-bug=1` is bad https://github.com/rust-lang/rust/issues/27189#issuecomment-512126528
+]
+# src: https://users.rust-lang.org/t/auto-vectorization-in-rust/24379/4
+# for -Z treat-err-as-bug=1 see: https://github.com/rust-lang/rust/issues/27189#issuecomment-509898987
+# thanks to Mutabah on #rust on irc.mozilla.org irc for pointing me to issue 27189 ^
+
+
+#TODO: if you put secret token here (for crates.io publishing) remember to either ensure this file isn't rsank-saved by adding it to /home/user/bin/rsank/rsank.lst OR censor the key in ~/rsank/4copytogit

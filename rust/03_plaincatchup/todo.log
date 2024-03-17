@@ -1,0 +1,16 @@
+-------
+<howaboutsynergy> is there something else that I could use to choose only one implementation of something?
+(else other than features I meant)
+<howaboutsynergy> for example, suppose I have 3 ways to generate random unique IDs and I want to choose only one of them, at compile time
+danieldg> the other way is to make your type a generic (like HashMap is from the std library)
+--------
+
+use one of the libs:
+ctrlc
+graceful (last update 3years ago)
+signal
+signal-hook
+
+to exit gracefully
+------
+

@@ -1,0 +1,35 @@
+#!/bin/bash
+#
+#unset RUST_BACKTRACE
+#workaround issue: 29293 https://github.com/rust-lang/rust/issues/29293
+echo "RUST_BACKTRACE=$RUST_BACKTRACE"
+echo "RUST_LOG=$RUST_LOG"
+if test -x ./prereq; then
+  ./prereq
+fi
+if test "$1" != "noclippy"; then
+  if clippy-driver; then
+    set -e
+    time cargo clippy --all-targets --all-features --verbose --all "$@"
+  else
+    echo "Skipping clippy because clippy-driver failed to load .so (guessing)" >&2
+    #/home/user/.cargo/bin/clippy-driver: error while loading shared libraries: librustc_driver-62440e4dfa357b84.so: cannot open shared object file: No such file or directory
+    #^ no idea why that happens!
+    #$ l `find . -name librustc_driver-62440e4dfa357b84.so`
+    #-rw-r--r-- 1 user user 61284080 28.09.2019 15:46 ./toolchains/nightly-x86_64-unknown-linux-gnu/lib/librustc_driver-62440e4dfa357b84.so
+    #-rwxr-xr-x 1 user user 61284080 28.09.2019 15:46 ./toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc_driver-62440e4dfa357b84.so*
+
+  fi
+else
+  shift 1
+fi
+set +e
+time cargo run -v -- "$@" ; ec="$?"
+if test "0" == "$ec"; then
+  echo 'Success'
+else
+  echo "Fail, exit code: '$ec'"
+  exit "$ec"
+fi
+
+

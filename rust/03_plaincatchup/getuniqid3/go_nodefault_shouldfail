@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+#unset RUST_BACKTRACE
+#workaround issue: 29293 https://github.com/rust-lang/rust/issues/29293
+way=3 #way=1 for -Z treat-err-as-bug=1, or way=2 for 'less', or way=3 for you added the -Z in ~/.cargo/config
+#export RUST_BACKTRACE=1 #temp
+export RUST_BACKTRACE=0 # or else the first error will be delayed and dump the stack!
+echo "RUST_BACKTRACE=$RUST_BACKTRACE"
+echo "RUST_LOG=$RUST_LOG"
+if test "$way" == "1"; then
+  cmd1=(
+    cargo rustc
+  )
+elif test "$way" == "2" -o "$way" == "3"; then
+  cmd1=(
+    cargo build
+  )
+fi
+#time cargo rustc --verbose --release -- -C incremental=incremental.compilation.storage.dir -C lto=off -Z borrowck=mir -v "$@"
+cmdrun=(
+  cargo run
+)
+cmd2=(
+  -v
+  --no-default-features
+  #--features "uuid"  #uncomment to not compile-fail
+  --
+)
+if test "$way" == "1"; then
+  cmd2+=(
+    -Z "treat-err-as-bug=1" #stop after the first 1 errors
+    -v
+  )
+fi
+cmd3=(
+  "$@"
+)
+#FIXME: I'm losing 'time'-ing information when compile fails
+time "${cmd1[@]}" "${cmd2[@]}" "${cmd3[@]}" || if test "$way" == "1"; then
+"${cmd1[@]}" --color=always "${cmd2[@]}" "${cmd3[@]}" 2>&1 | less -R
+fi ; pipes=( "${PIPESTATUS[@]}" )
+#^ piping to 'less'(with color) to see the first error, nicely - thanks danieldg ##rust freenode irc
+#FIXME: way==3 (or 2 too?) will exit code 1 instead of 101
+exitcodes="$(echo "${pipes[@]}" | tr -d ' ')"
+if test "$exitcodes" -ne "0"; then
+  #preserve exit code from the second build failure! which should be 101
+  exit "${pipes[0]}"
+fi
+#only run when no compile failure above:
+time "${cmdrun[@]}" "${cmd2[@]}" "${cmd3[@]}"
+#thanks sebk on irc for --no-default-features
+
