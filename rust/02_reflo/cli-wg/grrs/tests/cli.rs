@@ -2,7 +2,7 @@ use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*;
 use std::process::Command; // Run programs // Used for writing assertions
 
-use std::io::{self, Write};
+use std::io::{Write};
 use tempfile::NamedTempFile;
 
 #[test]
