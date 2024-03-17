@@ -1,2 +1,1 @@
-see updated:
-https://github.com/CExftNSroxORgpxED/buildrs_not_updated
+see updated version in ../buildrs_not_updated/ dir

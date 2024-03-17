@@ -1,7 +1,7 @@
 [package]
 name = "self_referencing_struct_mess"
 version = "0.1.0"
-authors = ["xftroxgpx <xftroxgpx@protonmail.com>"]
+authors = [ "CExftNSroxORgpxED" ]
 edition = "2018"
 
 [dependencies]

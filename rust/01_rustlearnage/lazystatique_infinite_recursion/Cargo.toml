@@ -1,7 +1,7 @@
 [package]
 name = "lazystatique_infinite_recursion"
 version = "0.1.0"
-authors = ["xftroxgpx <xftroxgpx@protonmail.com>", "Timofey Martynov feymartynov" ]
+authors = ["CExftNSroxORgpxED", "Timofey Martynov feymartynov" ]
 edition = "2018"
 
 [dependencies]
