@@ -1,1 +1,2 @@
 moved to /home/user/sandbox/rust/workspace_buildrs3/recompile_self
+in 2024 it's: /home/user/sandbox/rust/05_sandbox/workspace_buildrs3
