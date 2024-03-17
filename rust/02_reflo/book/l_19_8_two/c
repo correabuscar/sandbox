@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rm -v -- ./a.out ./blah.h
+../../helper_scripts/c

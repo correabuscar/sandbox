@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#thanks for the info Yatekii on #rust irc.mozilla.org
+perf stat ../../target/debug/sighooksample1
+
+#$ perf stat ../../target/debug/sighooksample1  #when CPU usage is 100%
+#^C../../target/debug/sighooksample1: Interrupt
+#
+# Performance counter stats for '../../target/debug/sighooksample1':
+#
+#          3,752.12 msec task-clock:u              #    1.000 CPUs utilized          
+#                 0      context-switches:u        #    0.000 K/sec                  
+#                 0      cpu-migrations:u          #    0.000 K/sec                  
+#                90      page-faults:u             #    0.024 K/sec                  
+#    16,786,953,652      cycles:u                  #    4.474 GHz                    
+#    31,844,264,317      instructions:u            #    1.90  insn per cycle         
+#     5,572,169,122      branches:u                # 1485.071 M/sec                  
+#         1,144,759      branch-misses:u           #    0.02% of all branches        
+#
+#       3.753401357 seconds time elapsed
+#
+#       3.708919000 seconds user
+#       0.034863000 seconds sys
+#
+
+
+#$ perf record ../../target/debug/sighooksample1
+#^C[ perf record: Woken up 3 times to write data ]
+#[ perf record: Captured and wrote 0.523 MB perf.data (13668 samples) ]
+#
+#-----------
+#user@i87k 2019/07/12 19:10:20 -bash5.0.7 t:12 j:0 d:3 pp:1177 p:14639 ut7151
+#!38900 23 130  5.2.0-g0ecfebd2b524 #20 SMP Tue Jul 9 15:30:24 CEST 2019
+#/home/user/build/2nonpkgs/rust.stuff/reflo/others/sighooksample1 
+#$ perf annotate
+

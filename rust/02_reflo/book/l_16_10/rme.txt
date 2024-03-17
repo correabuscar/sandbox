@@ -1,0 +1,10 @@
+note to self: the ./target/ dir in this `pwd` (as opposed to ../ aka workspace root dir) is created by:
+/home/user/.vim/bundle/ale/ale_linters/rust/rls.vim
+somehow! I can't reproduce it manually, I tried.
+but setting
+let g:ale_linters = {'rust': ['rls']}
+in ~/.vimrc
+is enough
+which is replacing the current:
+let g:ale_linters = {'rust': ['rls', 'rustfmt', 'cargo']}
+

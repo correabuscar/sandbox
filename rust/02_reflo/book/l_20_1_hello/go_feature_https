@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+#unset RUST_BACKTRACE
+#workaround issue: 29293 https://github.com/rust-lang/rust/issues/29293
+RUST_BACKTRACE=1
+echo "RUST_BACKTRACE=$RUST_BACKTRACE"
+echo "RUST_LOG=$RUST_LOG"
+if test -x ./prereq; then
+  ./prereq
+fi
+if test "$1" != "noclippy"; then
+  set -e
+  time cargo clippy "$@"
+else
+  shift 1
+fi
+set +e
+time cargo run -v --no-default-features --features "https" -- "$@" ; ec="$?"
+if test "0" == "$ec"; then
+  echo 'Success'
+else
+  echo "Fail, exit code: '$ec'"
+  exit "$ec"
+fi
+
+
