@@ -1,7 +1,8 @@
 #!/bin/bash
 
 
-#that target cpu "intel" is bad arg, but just testing! `'intel' is not a recognized processor for this target (ignoring processor)`
+#XXX: that target cpu "intel" is bad arg, but just testing! `'intel' is not a recognized processor for this target (ignoring processor)`
+#do this to see list of processors: rustc -C target-cpu=help|less   but what u want is probably 'native' instead of the default 'x86-64', well unless planning to dist the binary, I guess.
 
 #time cargo rustc --verbose --release -- -v "$@"
 export RUSTFLAGS="$RUSTFLAGS -Z treat-err-as-bug=3000" #this works, it's appended!
