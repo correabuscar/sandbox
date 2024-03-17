@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+git push backupto
+/usr/bin/sync || time '/home/user/bin/sync'
+if [[ "$1" =~ back ]]; then
+  echo 'Done pushing only backup'
+  exit 0
+fi
+time git push -u --all origin
+#the -u is only needed the first time, or if you've use -u for other remotes like backupto!
+/usr/bin/sync || time '/home/user/bin/sync'
+gpgconf --kill gpg-agent
+echo "All done"
