@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+#if you're wondering "wait a minute!", this is just because I don't want to associate my new nick(s) or alias, with the old ones!
 
 #XXX: uncomment when needed:
 #find . -name "Cargo.toml" -type f -print0 | xargs --replace='{}' --max-args=1 -0 -- sed -e 's/authors = \[ "Your name <you@example.com>" \]/authors = [ "" ]/g' -i {}

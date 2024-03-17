@@ -28,3 +28,6 @@ tags
 incremental.compilation.storage.dir
 /.gitinfo.log
 #^ auto added by bash script '/home/user/bin/gengitinfo' - do not commit this file in order to avoid re-generating '.gitinfo.log' on each run due to 'git diff' placing its output into '.gitinfo.log', thus detecting more stuff on the next 'git diff' run!
+
+/.gitinfo.log~
+

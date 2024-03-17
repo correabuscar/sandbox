@@ -1,5 +1,5 @@
 # rustLearnage [![Build Status](https://travis-ci.org/xftroxgpx/rustlearnage.svg?branch=master)](https://travis-ci.org/xftroxgpx/rustlearnage)
-this will help me learn rust and experiment here  
+This is a sandbox/playground to help me learn rust and experiment.  
 Don't expect anything here to be consistent and up to date!  
 Outdated code should be common.  
 
