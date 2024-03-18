@@ -1,0 +1,16 @@
+     Running `target/debug/contains_only_once`
+thread 'main' panicked at /rustc/82e1608dfa6e0b5569232559e3d385fea5a93112/library/core/src/ops/range.rs:523:13:
+Called contains(..) on an exhaused range! Programmer-logic bug detected!
+stack backtrace:
+   0: rust_begin_unwind
+             at /rustc/82e1608dfa6e0b5569232559e3d385fea5a93112/library/std/src/panicking.rs:645:5
+   1: core::panicking::panic_fmt
+             at /rustc/82e1608dfa6e0b5569232559e3d385fea5a93112/library/core/src/panicking.rs:72:14
+   2: core::ops::range::RangeInclusive<Idx>::contains
+             at /rustc/82e1608dfa6e0b5569232559e3d385fea5a93112/library/core/src/ops/range.rs:523:13
+   3: contains_only_once::main
+             at ./src/main.rs:32:26
+   4: core::ops::function::FnOnce::call_once
+             at /rustc/82e1608dfa6e0b5569232559e3d385fea5a93112/library/core/src/ops/function.rs:250:5
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+Press any key to continue...

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -e
+export RUST_BACKTRACE=1
+cargo clippy
+cargo run #debug

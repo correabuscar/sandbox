@@ -1,0 +1,15 @@
+[package]
+name = "contains_only_once"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+#this is so dumb, Gemini!
+#[dependencies]
+#std = { version="1", optional = true }
+#
+#[features]
+#default = ["std"]  # This line might already be present
+#debug = ["std/debug"]
+#debug_assertions = ["std/debug"]
