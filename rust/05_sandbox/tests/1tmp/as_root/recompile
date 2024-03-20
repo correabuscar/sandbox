@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+source "/swcode/swcode.bash"
+
+rerunasroot "$@"
+
+time ebuild `equery w rust` compile > /tmp/compile.output || less /tmp/compile.output
