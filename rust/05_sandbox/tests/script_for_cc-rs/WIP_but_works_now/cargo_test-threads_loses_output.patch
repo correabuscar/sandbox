@@ -147,12 +147,12 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
  fn run_test_in_process(
      id: TestId,
      desc: TestDesc,
-@@ -640,29 +670,199 @@ fn run_test_in_process(
+@@ -640,29 +670,201 @@ fn run_test_in_process(
      monitor_ch: Sender<CompletedTest>,
      time_opts: Option<time::TestTimeOptions>,
  ) {
 +    let tid=thread::current().id();
-+    println!("!!!!! Running test in process(tid={:?}) test={:?} testid={:?}", tid, &desc.name, id);
++    println!("!!!!! Running test in process(tid={:?}) test={:?} testid={:?} pid={}", tid, &desc.name, id, std::process::id());
      // Buffer for capturing standard I/O
      let data = Arc::new(Mutex::new(Vec::new()));
  
@@ -160,7 +160,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
 +//    let _=stdout().flush();
 +    //use std::io::stdout;
 +//    let _=stdout().flush();
-+    println!("!!!!!!! before calling .run() for test={:?}", &desc.name);
++    //println!("!!!!!!! way before calling .run() for test={:?} pid={}", &desc.name, std::process::id());
 +
 +    //use libc::atexit;//TODO: ideally use libc which is in ../../vendor/libc/Cargo.toml (from libtest's project root) - don't know how yet without needing Cargo.lock modification which is forbidden from this gentoo .ebuild due to --locked
 +
@@ -184,17 +184,19 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
 +    }
 +    #[allow(dead_code)]
 +    extern "C" fn cleanup() {
++        //once you hit this point it means u're in atexit hook so it won't run again on
++        //panic!+unwind_catch, thus need to "say" it's deregistered as hook:
++        REGISTERED_HOOKS_SO_FAR.fetch_sub(1, Ordering::SeqCst);
 +        //if SHOULD_CLEANUP.with(|flag| *flag.borrow()) {
 +        //if SHOULD_CLEANUP.load(Ordering::Relaxed) {
 +
 +        // Check if any threads were still active when this std::process:exit(?) happened.
 +        let active_threads = SHOULD_CLEANUP.load(Ordering::SeqCst);
 +        if active_threads > 0 {
-+            println!("!!!! atexit HOOK hit!");
++            println!("!!!! atexit HOOK hit! pid={}",std::process::id());
 +            io::set_output_capture(None);//FIXME: this can't exec after we've paniced(when we return
 +                                         //from run() below, else it will double panic)
 +            //DID_REGISTER.store(false, Ordering::SeqCst);
-+            REGISTERED_HOOKS_SO_FAR.fetch_sub(1, Ordering::SeqCst);
 +            //this next panic + catch_unwind below acts like an unregistering of this atexit hook.
 +            panic!("!!!! Test has issued a std::process::exit(?), we're panicking to allow the test harness to catch this and properly report the test results. If you used --test-threads=1 you can still see which test caused this even without this workaround implemented!");
 +        } else {
@@ -355,7 +357,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
  }
  
  fn fold_err<T, E>(
-@@ -687,6 +887,7 @@ fn spawn_test_subprocess(
+@@ -687,6 +889,7 @@ fn spawn_test_subprocess(
      time_opts: Option<time::TestTimeOptions>,
      bench_benchmarks: bool,
  ) {
@@ -363,7 +365,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
      let (result, test_output, exec_time) = (|| {
          let args = env::args().collect::<Vec<_>>();
          let current_exe = &args[0];
-@@ -756,9 +957,12 @@ fn run_test_in_spawned_subprocess(desc:
+@@ -756,9 +959,12 @@ fn run_test_in_spawned_subprocess(desc:
          }
  
          if let TrOk = test_result {
