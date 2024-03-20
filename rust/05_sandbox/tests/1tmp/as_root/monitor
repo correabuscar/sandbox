@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+#cd /tmp || cd / #XXX to avoid this spam: shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+
+source "/swcode/swcode.bash"
+
+rerunasroot "$@"
+
+libtests=0
+while test "$libtests" -ne "6"; do
+  libtests="$(find /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/build/ -iname \*libtest\* 2>/dev/null |grep stage1|wc -l)"
+  sleep 2
+  echo -n "$libtests"
+done
+echo
+
+chmod o+rx,g+rx /var/tmp/portage/dev-lang/rust-1.75.0-r1{,/work}
+pkill --echo -u portage -- 'rustc'
