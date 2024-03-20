@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#export LD_LIBRARY_PATH="/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/build/x86_64-unknown-linux-gnu/stage1/lib:/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/build/x86_64-unknown-linux-gnu/stage1/lib/rustlib/x86_64-unknown-linux-gnu/lib"
+#export RUSTC="/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/build/x86_64-unknown-linux-gnu/stage1/bin/rustc"
+
+export RUST_BACKTRACE=1
+export RUSTC="$(realpath ./myrust)"
+if test -n "$1"; then
+  shift 1
+  add="--test-threads 1"
+else
+  add="--test-threads 44"
+fi
+./gotest $add "$@"
+

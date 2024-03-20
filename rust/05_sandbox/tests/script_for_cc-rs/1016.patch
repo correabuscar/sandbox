@@ -1,0 +1,23 @@
+From 8182fa6246c815dda4ef425cd0995d6053008029 Mon Sep 17 00:00:00 2001
+From: Daniel Paoliello <danpao@microsoft.com>
+Date: Tue, 19 Mar 2024 10:28:19 -0700
+Subject: [PATCH] Also shim llvm-ar in the clang_android test on non-Windows
+
+---
+ tests/test.rs | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/tests/test.rs b/tests/test.rs
+index f48e05d9..cd306896 100644
+--- a/tests/test.rs
++++ b/tests/test.rs
+@@ -642,7 +642,8 @@ fn clang_android() {
+     {
+         let test = Test::new();
+         test.shim("arm-linux-androideabi-clang")
+-            .shim("arm-linux-androideabi-ar");
++            .shim("arm-linux-androideabi-ar")
++            .shim("llvm-ar");
+         test.gcc().target(target).file("foo.c").compile("foo");
+         test.cmd(0).must_not_have("--target=arm-linux-androideabi");
+     }

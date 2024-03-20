@@ -1,0 +1,25 @@
+diff --git a/tests/test.rs b/tests/test.rs
+index cd30689..ab85b48 100644
+--- a/tests/test.rs
++++ b/tests/test.rs
+@@ -618,6 +618,10 @@ fn compile_intermediates() {
+     assert!(intermediates[2].display().to_string().contains("x86_64"));
+ }
+ 
++#[test]
++fn clang_androif() {
++    //std::thread::sleep(std::time::Duration::from_secs(10));
++}
+ #[test]
+ fn clang_android() {
+     let target = "arm-linux-androideabi";
+@@ -643,7 +647,8 @@ fn clang_android() {
+         let test = Test::new();
+         test.shim("arm-linux-androideabi-clang")
+             .shim("arm-linux-androideabi-ar")
+-            .shim("llvm-ar");
++            //.shim("llvm-ar")
++            ;
+         test.gcc().target(target).file("foo.c").compile("foo");
+         test.cmd(0).must_not_have("--target=arm-linux-androideabi");
+     }

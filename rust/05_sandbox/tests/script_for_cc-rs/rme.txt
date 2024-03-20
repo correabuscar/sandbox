@@ -1,0 +1,4 @@
+ie. git clone https://github.com/rust-lang/cc-rs.git
+then use these scripts in that ./cs-rs/ dir!
+
+undo the 1016.patch (manually maybe), to get one of the tests to fail ("clang_android", that is)

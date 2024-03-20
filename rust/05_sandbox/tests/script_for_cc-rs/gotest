@@ -1,0 +1,6 @@
+
+export RUST_TEST_THREADS=2
+cargo clean
+foo="--nocapture"
+foo=""
+cargo test -- $foo "$@" --format pretty #--nocapture #|grep --color=always -i clang_android

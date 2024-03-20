@@ -33,10 +33,10 @@ fn main() {
 
 
 #[test]
-fn test_ok1() {
+fn test_aaok1() {
     set_exit_hook();
     thread::sleep(Duration::from_millis(1000));
-    println!("Hello from the invisible test* named test_ok1! *unless you used 1 test thread");
+    println!("Hello from the invisible test* named test_aaok1! *unless you used 1 test thread");
 }
 
 #[test]

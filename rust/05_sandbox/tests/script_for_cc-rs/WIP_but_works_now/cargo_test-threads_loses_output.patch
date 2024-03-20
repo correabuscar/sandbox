@@ -1,0 +1,379 @@
+Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/test/src/formatters/pretty.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/test/src/formatters/pretty.rs
++++ /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/test/src/formatters/pretty.rs
+@@ -91,7 +91,10 @@ impl<T: Write> PrettyFormatter<T> {
+     pub fn write_plain<S: AsRef<str>>(&mut self, s: S) -> io::Result<()> {
+         let s = s.as_ref();
+         self.out.write_all(s.as_bytes())?;
+-        self.out.flush()
++        let res=self.out.flush();
++        use std::io::stdout;
++        stdout().flush()?;
++        return res;
+     }
+ 
+     fn write_time(
+@@ -173,6 +176,9 @@ impl<T: Write> PrettyFormatter<T> {
+         if let Some(test_mode) = desc.test_mode() {
+             self.write_plain(format!("test {name} - {test_mode} ... "))?;
+         } else {
++            for i in 1..=5 {
++                self.write_plain(format!("test {name} ... {i}\n"))?;
++            }
+             self.write_plain(format!("test {name} ... "))?;
+         }
+ 
+Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/test/src/lib.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/test/src/lib.rs
++++ /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/test/src/lib.rs
+@@ -380,6 +380,7 @@ where
+     }
+ 
+     if concurrency == 1 {
++        println!("!!!!!!!!!!! concurrency==1");
+         while !remaining.is_empty() {
+             let (id, test) = remaining.pop_front().unwrap();
+             let event = TestEvent::TeWait(test.desc.clone());
+@@ -402,11 +403,28 @@ where
+             }
+         }
+     } else {
++        //println!("!!!!!!!!!!! some else");
+         while pending > 0 || !remaining.is_empty() {
++            /*let mut which_test:TestDesc=TestDesc { name:types::TestName::StaticTestName("not yet"),
++
++    ignore: true,
++    ignore_message: None,
++    source_file: "meh",
++    start_line: 0,
++    start_col: 0,
++    end_line: 0,
++    end_col: 0,
++    should_panic: options::ShouldPanic::Yes,
++    compile_fail: true,
++    no_run: true,
++    test_type: TestType::Unknown,
++            };*/
+             while pending < concurrency && !remaining.is_empty() {
+                 let (id, test) = remaining.pop_front().unwrap();
++                //println!("!!!!!!!!!!! first while for test={:?}",test.desc.name);
+                 let timeout = time::get_default_test_timeout();
+                 let desc = test.desc.clone();
++                //which_test=desc.clone();
+ 
+                 let event = TestEvent::TeWait(desc.clone());
+                 notify_about_test_event(event)?; //here no pad
+@@ -422,7 +440,8 @@ where
+                 if let Some(timeout) = calc_timeout(&timeout_queue) {
+                     res = rx.recv_timeout(timeout);
+                     for test in get_timed_out_tests(&running_tests, &mut timeout_queue) {
+-                        let event = TestEvent::TeTimeout(test);
++                        let event = TestEvent::TeTimeout(test.clone());
++                        //println!("!!!!!!! Got event={:?} for test={:?}", &event, &test);
+                         notify_about_test_event(event)?;
+                     }
+ 
+@@ -437,6 +456,7 @@ where
+                     }
+                 } else {
+                     res = rx.recv().map_err(|_| RecvTimeoutError::Disconnected);
++                    //println!("!!!!!!! Got disconnect");
+                     break;
+                 }
+             }
+@@ -444,23 +464,28 @@ where
+             let mut completed_test = res.unwrap();
+             let running_test = running_tests.remove(&completed_test.id).unwrap();
+             running_test.join(&mut completed_test);
++            println!("!!!!!!!!!!! completed_test={:?}", &completed_test.desc.name);
+ 
+             let fail_fast = match completed_test.result {
+                 TrIgnored | TrOk | TrBench(_) => false,
+                 TrFailed | TrFailedMsg(_) | TrTimedFail => opts.fail_fast,
+             };
+ 
+-            let event = TestEvent::TeResult(completed_test);
++            let event = TestEvent::TeResult(completed_test.clone());
+             notify_about_test_event(event)?;
+             pending -= 1;
+ 
+             if fail_fast {
+                 // Prevent remaining test threads from panicking
++                //println!("!!!!!!!!!!!1 Failing fast");
+                 std::mem::forget(rx);
+                 return Ok(());
++            //} else {
++            //    println!("!!!!!!!!!!! NOT Failing fast for test={:?}",&completed_test.desc.name);
+             }
+-        }
+-    }
++        }  //while
++        println!("!!!!!!!!!!! while is done with pending={} and remaining.is_empty()={}",pending , remaining.is_empty());
++    } //else concurrent!
+ 
+     if opts.bench_benchmarks {
+         // All benchmarks run at the end, in serial.
+@@ -559,11 +584,14 @@ pub fn run_test(
+     match testfn.into_runnable() {
+         Runnable::Test(runnable_test) => {
+             if runnable_test.is_dynamic() {
++                //println!("!!!!!! is dynamic for test={:?}",&desc.name);
+                 match strategy {
+                     RunStrategy::InProcess => (),
+                     _ => panic!("Cannot run dynamic test fn out-of-process"),
+                 };
+-            }
++            //} else {
++            //    println!("!!!!!! is NOT dynamic for test={:?}",&desc.name);
++            }//if
+ 
+             let name = desc.name.clone();
+             let nocapture = opts.nocapture;
+@@ -596,6 +624,7 @@ pub fn run_test(
+             // level.
+             let supports_threads = !cfg!(target_os = "emscripten") && !cfg!(target_family = "wasm");
+             if supports_threads {
++                println!("!!!!!!!!! spawning test thread for {:?}",&name);
+                 let cfg = thread::Builder::new().name(name.as_slice().to_owned());
+                 let mut runtest = Arc::new(Mutex::new(Some(runtest)));
+                 let runtest2 = runtest.clone();
+@@ -631,6 +660,7 @@ fn __rust_begin_short_backtrace<T, F: Fn
+     black_box(result)
+ }
+ 
++
+ fn run_test_in_process(
+     id: TestId,
+     desc: TestDesc,
+@@ -640,29 +670,199 @@ fn run_test_in_process(
+     monitor_ch: Sender<CompletedTest>,
+     time_opts: Option<time::TestTimeOptions>,
+ ) {
++    let tid=thread::current().id();
++    println!("!!!!! Running test in process(tid={:?}) test={:?} testid={:?}", tid, &desc.name, id);
+     // Buffer for capturing standard I/O
+     let data = Arc::new(Mutex::new(Vec::new()));
+ 
++//    use std::io::stdout;
++//    let _=stdout().flush();
++    //use std::io::stdout;
++//    let _=stdout().flush();
++    println!("!!!!!!! before calling .run() for test={:?}", &desc.name);
++
++    //use libc::atexit;//TODO: ideally use libc which is in ../../vendor/libc/Cargo.toml (from libtest's project root) - don't know how yet without needing Cargo.lock modification which is forbidden from this gentoo .ebuild due to --locked
++
++    // Declare the external C function atexit
++    use std::os::raw::c_int;
++    // Thread-local flag to determine whether cleanup should be performed
++    use std::cell::RefCell;
++    //thread_local! {
++    //    static SHOULD_CLEANUP: RefCell<bool> = RefCell::new(true);
++    //}
++    // Atomic flag to determine whether cleanup should be performed
++    //use std::sync::atomic::AtomicBool;//,Ordering};
++    use std::sync::atomic::{AtomicU64,Ordering};
++    //static SHOULD_CLEANUP: AtomicBool = AtomicBool::new(true);
++    static REGISTERED_HOOKS_SO_FAR: AtomicU64 = AtomicU64::new(0);
++    //presumably you can't/shouldn't register more than 32 (man 3 atexit) and there may
++    //already be user set ones TODO: test for this, see how this behaves!
++    static SHOULD_CLEANUP: AtomicU64 = AtomicU64::new(0);
++    extern "C" {
++        pub fn atexit(callback: extern "C" fn()) -> c_int;
++    }
++    #[allow(dead_code)]
++    extern "C" fn cleanup() {
++        //if SHOULD_CLEANUP.with(|flag| *flag.borrow()) {
++        //if SHOULD_CLEANUP.load(Ordering::Relaxed) {
++
++        // Check if any threads were still active when this std::process:exit(?) happened.
++        let active_threads = SHOULD_CLEANUP.load(Ordering::SeqCst);
++        if active_threads > 0 {
++            println!("!!!! atexit HOOK hit!");
++            io::set_output_capture(None);//FIXME: this can't exec after we've paniced(when we return
++                                         //from run() below, else it will double panic)
++            //DID_REGISTER.store(false, Ordering::SeqCst);
++            REGISTERED_HOOKS_SO_FAR.fetch_sub(1, Ordering::SeqCst);
++            //this next panic + catch_unwind below acts like an unregistering of this atexit hook.
++            panic!("!!!! Test has issued a std::process::exit(?), we're panicking to allow the test harness to catch this and properly report the test results. If you used --test-threads=1 you can still see which test caused this even without this workaround implemented!");
++        } else {
++            println!("!!!! nothing to clean up, test(s) behaved. hooks so far={}", REGISTERED_HOOKS_SO_FAR.load(Ordering::SeqCst));
++        }
++    }
++
++    SHOULD_CLEANUP.fetch_add(1, Ordering::SeqCst);
++
++    //FIXME: this check then add should be atomic, maybe use .with() ? what about the other
++    //places?!
++    let hooks_so_far=REGISTERED_HOOKS_SO_FAR.load(Ordering::SeqCst);
++    let active_test_threads_currently=SHOULD_CLEANUP.load(Ordering::SeqCst);
++    if hooks_so_far < active_test_threads_currently {
++//    if ! DID_REGISTER.load(Ordering::SeqCst) {
++    //TODO: each concurrent running test thread needs one atexit hook, because we're assuming worst
++    //case scenario that all currently running test threads will exit() so they'll each enter one
++    //hook and then the panic!+catch_unwind will deregister the hook so to speak and the test
++    //thread will continue to live and report as failed.
++    //FIXME: problem is, we're not supposed to have more than 32 tops (man 3 atexit) and that's not
++    //counting user-set ones! so this is very hacky at best!
++    //XXX: should only register X max atexit hooks, where X is the max number of concurrent
++    //possible tests, eg. maybe from --test-threads=X arg. to the test harness!
++    //All these registered hooks cumulate and are run at main process exit, or when any test thread tries to
++    //abort() or exit(), but not when they just end normally!
++        // Register the exit handler
++        unsafe {
++            let result = atexit(cleanup);
++            if result != 0 {
++                //FIXME: test how this panic behaves here.
++                panic!("Failed to register exit handler(for test='{:?}') which would handle the case when a test used std::process::exit(?) instead of panic!()", &desc.name);
++            } else {
++                //DID_REGISTER.store(true, Ordering::SeqCst);
++                println!("!!!!! REGISTERed atexit handler, for test={:?} tid={:?}", &desc.name, tid);
++                REGISTERED_HOOKS_SO_FAR.fetch_add(1, Ordering::SeqCst);
++            }
++        }
++    } else {
++        println!("!!!!! ALREADY registered {hooks_so_far}/{active_test_threads_currently} atexit handlers, for test={:?} tid={:?}, not registering a new one.", &desc.name, tid);
++    }
++
++    //println!("!!!! BEFORE RUN, should={}", SHOULD_CLEANUP.with(|flag| *flag.borrow()));
++    println!("!!!! BEFORE RUN, should={} tid={:?}", SHOULD_CLEANUP.load(Ordering::SeqCst),tid);
+     if !nocapture {
+         io::set_output_capture(Some(data.clone()));
++    //} else {
++    //io::set_output_capture(None);
+     }
+ 
++    //let old_hook = panic::take_hook();
++    // Install a custom panic handler
++    panic::set_hook(Box::new(move |panic_info| { //XXX: this was only needed to temporarily find a
++                                                 //double panic caused by io::set_output_capture(None);
++        // Track whether panic handler has been called once
++        //let panic_handler_called_once = AtomicBool::new(false);
++        thread_local! {
++            static CALLED_ONCE: RefCell<bool> = RefCell::new(false);
++        }
++        let double_panic=
++        // Check if CALLED_ONCE is true, if yes, abort, otherwise set it to true
++            CALLED_ONCE.with(|called_once| {
++            let mut called_once = called_once.borrow_mut();
++            if *called_once {
++                true
++            } else {
++                *called_once = true;
++                false
++            }
++        });
++
++        let double_text=
++            if double_panic {
++                "double "
++            } else {
++                ""
++            };
++        // Print the panic message
++        if let Some(message) = panic_info.payload().downcast_ref::<&str>() {
++            println!("Custom panic handler caught {}panic: {}", double_text,message);
++        } else {
++            println!("Custom panic handler caught {}panic",double_text);
++        }
++
++        // Print a backtrace if available
++        if let Some(location) = panic_info.location() {
++            println!("Panic occurred in file '{}' at line {}", location.file(), location.line());
++        }
++
++        if double_panic {
++            println!("Aborting the process due to double panic detected...");
++            println!("{}", std::backtrace::Backtrace::capture());
++            // Deregister the current panic hook to let the normal panic hook take over
++                //panic::set_hook(old_hook);
++                //process::abort();
++                //let _ = panic::take_hook(); //Unregisters the current panic hook and returns it, registering the default hook in its place. If the default hook is registered it will be returned, but remain registered.
++                //panic!("{}", panic_info);
++                //let def_hook = panic::take_hook();
++                //def_hook(panic_info);
++        }
++            //// Check if panic handler has been called once before
++        ////if panic_handler_called_once.load(Ordering::Relaxed) {
++
++        //    // This is a double panic, abort the process
++        //    process::abort();
++        //} else {
++        //    // This is the first panic, mark panic handler as called
++        //    //panic_handler_called_once.store(true, Ordering::Relaxed);
++        //    // Set CALLED_ONCE to true
++        //    CALLED_ONCE.with(|called_once| {
++        //        *called_once.borrow_mut() = true;
++        //    });
++        //}
++    }));
++
+     let start = report_time.then(Instant::now);
+     let result = fold_err(catch_unwind(AssertUnwindSafe(|| runnable_test.run())));
++    //SHOULD_CLEANUP.with(|flag| *flag.borrow_mut() = false);//test is done, don't panic anymore after this
++    //SHOULD_CLEANUP.store(false, Ordering::Relaxed);
++    SHOULD_CLEANUP.fetch_sub(1, Ordering::SeqCst);
+     let exec_time = start.map(|start| {
+         let duration = start.elapsed();
+         TestExecTime(duration)
+     });
++    //io::set_output_capture(None);//this causes double panic hmmm, first being in atexit hook!
++    println!("!!!!!!! returned from .run() of test={:?}", &desc.name);
++    //println!("!!!! AFTER RUN, should={}", SHOULD_CLEANUP.with(|flag| *flag.borrow()));
++    println!("!!!! AFTER RUN, should={} tid={:?}", SHOULD_CLEANUP.load(Ordering::SeqCst),tid);
++    //let result = fold_err(catch_unwind(|| runnable_test.run()));
++    //cleanup();
+ 
+-    io::set_output_capture(None);
+ 
+-    let test_result = match result {
+-        Ok(()) => calc_result(&desc, Ok(()), &time_opts, &exec_time),
+-        Err(e) => calc_result(&desc, Err(e.as_ref()), &time_opts, &exec_time),
+-    };
+-    let stdout = data.lock().unwrap_or_else(|e| e.into_inner()).to_vec();
+-    let message = CompletedTest::new(id, desc, test_result, exec_time, stdout);
+-    monitor_ch.send(message).unwrap();
++        let test_result = match result {
++            Ok(()) => {
++                io::set_output_capture(None);
++                let tid_after=thread::current().id();//this panics if it was a test that used
++                                                     //abort() or process::exit()
++                if tid != tid_after {
++                    println!("!!!! thread ID before/after run differ {:?}!={:?}",tid, tid_after);
++                }
++                assert_eq!(tid, tid_after);
++                //hmm can't really know, tid would be same if forked.
++                calc_result(&desc, Ok(()), &time_opts, &exec_time)
++            },
++            Err(e) => calc_result(&desc, Err(e.as_ref()), &time_opts, &exec_time),
++        };
++        let stdout = data.lock().unwrap_or_else(|e| e.into_inner()).to_vec();
++        let message = CompletedTest::new(id, desc, test_result, exec_time, stdout);
++        println!("!!!!!!! message={:?}", String::from_utf8_lossy(&message.stdout));
++        monitor_ch.send(message).unwrap();
+ }
+ 
+ fn fold_err<T, E>(
+@@ -687,6 +887,7 @@ fn spawn_test_subprocess(
+     time_opts: Option<time::TestTimeOptions>,
+     bench_benchmarks: bool,
+ ) {
++    println!("!!!!! Running test in SUBprocess test={:?}", &desc);
+     let (result, test_output, exec_time) = (|| {
+         let args = env::args().collect::<Vec<_>>();
+         let current_exe = &args[0];
+@@ -756,9 +957,12 @@ fn run_test_in_spawned_subprocess(desc:
+         }
+ 
+         if let TrOk = test_result {
++            println!("!!!!!!!!!! OK test={:?}", desc);
+             process::exit(test_result::TR_OK);
+         } else {
+-            process::exit(test_result::TR_FAILED);
++            println!("!!!!!!!!!! boom test failed test={:?}", desc);
++            process::abort();
++            //process::exit(test_result::TR_FAILED);
+         }
+     });
+     let record_result2 = record_result.clone();
