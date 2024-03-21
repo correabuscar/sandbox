@@ -1,0 +1,25 @@
+$ TEAPANICHOOK=1 TEADEBUG=99 ./gomy jdshkj
+     Removed 30 files, 16.1MiB total
+   Compiling ri97181 v0.1.0 (/home/user/sandbox/rust/05_sandbox/tests/ri97181)
+    Finished test [unoptimized + debuginfo] target(s) in 0.23s
+     Running unittests src/main.rs (target/debug/deps/ri97181-904750bc45741091)
+
+running 1 test
+!!!!!!!!!!! concurrency==1
+test test::struct_does_stuff ... 1
+test test::struct_does_stuff ... 2
+test test::struct_does_stuff ... 3
+test test::struct_does_stuff ... 4
+test test::struct_does_stuff ... 5
+test test::struct_does_stuff ... !!!!!! is NOT dynamic for test=AlignedTestName("test::struct_does_stuff", PadNone)
+!!!!!!!!! spawning test thread for AlignedTestName("test::struct_does_stuff", PadNone)
+!!!!! Running test in process(tid=ThreadId(2)) test=AlignedTestName("test::struct_does_stuff", PadNone) testid=TestId(0) pid=44226
+!!!!! REGISTERed atexit handler, for test=AlignedTestName("test::struct_does_stuff", PadNone) tid=ThreadId(2)
+!!!! BEFORE RUN, should=1 tid=ThreadId(2)
+thread panicked while processing panic. aborting. msg='Some(not yet implemented)' loc='Location { file: "/home/user/sandbox/rust/05_sandbox/tests/ri97181/src/main.rs", line: 7, col: 9 }'
+disabled backtrace
+error: test failed, to rerun pass `--bin ri97181`
+
+Caused by:
+  process didn't exit successfully: `/home/user/sandbox/rust/05_sandbox/tests/ri97181/target/debug/deps/ri97181-904750bc45741091 --nocapture --test-threads 1 --format pretty` (signal: 6, SIGABRT: process abort signal)
+Press any key to continue...

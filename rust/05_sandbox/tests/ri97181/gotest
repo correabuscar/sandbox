@@ -1,0 +1,4 @@
+
+export RUST_TEST_THREADS=2
+cargo clean
+cargo test -- --nocapture "$@" --format pretty #--nocapture #|grep --color=always -i clang_android
