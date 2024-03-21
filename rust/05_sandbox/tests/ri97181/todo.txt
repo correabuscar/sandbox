@@ -1,0 +1,6 @@
+I'm stuck on:
+needing to get the prev. panic behavior which would run my own hook (eg. rustc 1.71.0-nightly (a2b1646c5 2023-05-25) )
+else it's breaking the test harness and you won't know which test did it.
+
+only then can progress on main patch that tries to workaround the issue of
+tests calling exit() and test harness not getting it.

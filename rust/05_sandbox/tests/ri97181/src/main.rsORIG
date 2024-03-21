@@ -1,0 +1,18 @@
+//src: https://github.com/rust-lang/rust/issues/97181
+//this double panic no longer shows stacktrace due to https://github.com/rust-lang/rust/pull/110975
+
+use std::fmt::{Display, self};
+
+struct MyStruct;
+
+impl Display for MyStruct {
+    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+        todo!()
+    }
+}
+
+fn main() {
+    let instance = MyStruct;
+
+    assert!(false, "oh no, '{}' was unexpected", instance);
+}
