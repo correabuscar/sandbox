@@ -14,7 +14,16 @@ struct MyStruct;
 
 impl Display for MyStruct {
     fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
-        todo!()
+        //todo!(); // good but let's try infinite panics:
+        let instance = MyStruct;
+
+        //this double panic used to be catchable, ie. https://github.com/rust-lang/rust/issues/97181#issuecomment-1132157218
+        //println!("{} {} {}", false, "oh no, '{}' was unexpected", instance); //this is caught
+        static BEEN_HERE_TIMES:AtomicU64=AtomicU64::new(0);
+        BEEN_HERE_TIMES.fetch_add(1, Ordering::SeqCst);
+        let i = BEEN_HERE_TIMES.load(Ordering::SeqCst);
+        assert!(false, "oh no displaynum={:?}, '{}' was unexpected", i,instance);
+        panic!("unreachable");
     }
 }
 
