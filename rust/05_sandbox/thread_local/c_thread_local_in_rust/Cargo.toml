@@ -1,0 +1,12 @@
+[package]
+name = "c_thread_local_in_rust"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[build-dependencies]
+#cc = { version="1", path = "/tmp/cc-rs"  } #used this because it doesn't do this warn: warning: c_thread_local_in_rust@0.1.0: Compiler version doesn't include clang or GCC: "cc" "--version"
+cc = "1.0.90" #otherwise, using this is preferred
