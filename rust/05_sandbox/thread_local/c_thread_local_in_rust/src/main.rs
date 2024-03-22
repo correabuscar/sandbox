@@ -2,6 +2,10 @@
 use std::thread;
 use std::time::Duration;
 
+//so, unlike thread_local!() in rust which supposedly somehow does memory allocation(s) on heap
+//upon first access of the var, this in .c file thread local does not, but cannot guarantee it
+//doesn't on all other platforms
+
 fn main() {
     println!("Hello, world!");
     let value = access_thread_local_var();
