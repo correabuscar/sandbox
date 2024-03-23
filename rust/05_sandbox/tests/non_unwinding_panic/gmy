@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+export RUSTC="$(realpath ./myrust)"
+#export RUST_BACKTRACE=1
+cargo clean
+cargo test
+#cargo run
