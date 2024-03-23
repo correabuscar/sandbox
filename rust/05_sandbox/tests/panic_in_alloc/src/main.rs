@@ -54,6 +54,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
                 "Allocating {} bytes at {:?}", layout.size(), ptr);
             let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
         }
+        panic!("panic in alloc, on purpose");
 
         // Return the allocated pointer
         ptr
@@ -76,6 +77,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
                 "Deallocating {} bytes at {:?}", layout.size(), ptr);
             let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
         }
+        panic!("panic in dealloc, on purpose");
         self.inner.dealloc(ptr, layout);
 
         // Print a message indicating the deallocation
@@ -91,7 +93,7 @@ static GLOBAL_ALLOCATOR: PrintingAllocator<std::alloc::System> = PrintingAllocat
 //    println!("Hello, world!");//allocates 1024 bytes the first time
 //}
 fn main() {
-    //let mut o=std::io::stdout();//XXX: allocates 1024 bytes
+    let mut o=std::io::stdout();//XXX: allocates 1024 bytes
     //let e=std::os::unix::stdio::StdErr::new();
     let mut e=std::io::stderr();//XXX: doesn't alloc any bytes!
     //println!("Hello, world!");//allocates 1024 bytes the first time

@@ -1,0 +1,2 @@
+a test that causes infinitely nested panics in main(or in a cargo test)(from display)
+but also causes them from within the alloc of the global allocator

@@ -1,0 +1,11 @@
+this will show(me) what happens if a panic happens inside the alloc of the
+global allocator
+
+Currently (with my rust patch) it hangs, ie. waiting on a lock that's already
+locked! (so not with 100% cpu usage)
+even if std::io::stdout();//XXX: allocates 1024 bytes
+was called before. This is because I used println! which attempts to alloc
+stdout() 1024 bytes buffer again because the prior alloc of it is in progress!
+
+Normal rust correctly aborts though!
+
