@@ -440,7 +440,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
      time_opts: Option<time::TestTimeOptions>,
      bench_benchmarks: bool,
  ) {
-+    //tea!(5,{ 
++    //tea!(5,{
 +    //since this isn't reached in my so-far tests, i wanna see it always:
 +        println!("!!!!! Running test in SUBprocess test={:?}", &desc);
 +    //});
@@ -465,13 +465,104 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
 ===================================================================
 --- .orig/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/panicking.rs
 +++ /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/panicking.rs
-@@ -746,7 +746,8 @@ fn rust_panic_with_hook(
+@@ -739,6 +739,7 @@ fn rust_panic_with_hook(
+     force_no_backtrace: bool,
+ ) -> ! {
+     let must_abort = panic_count::increase(true);
++    rtprintpanic!("must_abort={:?}\n", must_abort);
+ 
+     // Check if we need to abort immediately.
+     if let Some(must_abort) = must_abort {
+@@ -746,9 +747,22 @@ fn rust_panic_with_hook(
              panic_count::MustAbort::PanicInHook => {
                  // Don't try to print the message in this case
                  // - perhaps that is causing the recursive panics.
 -                rtprintpanic!("thread panicked while processing panic. aborting.\n");
-+                rtprintpanic!("thread panicked while processing panic. aborting. msg='{:?}' loc='{:?}'\n",message, location);
-+                println!("{}", crate::backtrace::Backtrace::capture());
-             }
-             panic_count::MustAbort::AlwaysAbort => {
+-            }
+-            panic_count::MustAbort::AlwaysAbort => {
++                //rtprintpanic!("thread panicked while processing panic. aborting. msg='{:?}' loc='{:?}'\n",message, location);
++                //FIXME: I need thread local(that doesn't do allocations when accessing it) and
++                //which will let me progressively remove things from the output which might panic
++                //like the 'message' at first, then 'location', then the backtrace dump?
++                rtprintpanic!("thread panicked while processing panic. aborting. msg='not shown' loc='{:?}'\n", location);
++                //let panicinfo = PanicInfo::internal_constructor(
++                //    message,//this would infinite panic
++                //    location,
++                //    can_unwind,
++                //    force_no_backtrace,
++                //);
++                //rtprintpanic!("{panicinfo}\nhere's a stacktrace attempt:\n");
++                rtprintpanic!("{}\n", crate::backtrace::Backtrace::force_capture());
++             }
++             panic_count::MustAbort::AlwaysAbort => {
++                rtprintpanic!("in panic_count::MustAbort::AlwaysAbort\n");
                  // Unfortunately, this does not print a backtrace, because creating
+                 // a `Backtrace` will allocate, which we must to avoid here.
+                 let panicinfo = PanicInfo::internal_constructor(
+@@ -760,11 +774,14 @@ fn rust_panic_with_hook(
+                 rtprintpanic!("{panicinfo}\npanicked after panic::always_abort(), aborting.\n");
+             }
+         }
++        rtprintpanic!("about to abort_internal()\n");
+         crate::sys::abort_internal();
+     }
+ 
++    rtprintpanic!("about to mut info\n");
+     let mut info =
+         PanicInfo::internal_constructor(message, location, can_unwind, force_no_backtrace);
++    rtprintpanic!("about to hook read\n");
+     let hook = HOOK.read().unwrap_or_else(PoisonError::into_inner);
+     match *hook {
+         // Some platforms (like wasm) know that printing to stderr won't ever actually
+@@ -773,31 +790,48 @@ fn rust_panic_with_hook(
+         // methods, this means we avoid formatting the string at all!
+         // (The panic runtime might still call `payload.take_box()` though and trigger
+         // formatting.)
+-        Hook::Default if panic_output().is_none() => {}
++        Hook::Default if panic_output().is_none() => {
++            rtprintpanic!("1\n");
++        }
+         Hook::Default => {
+-            info.set_payload(payload.get());
++            rtprintpanic!("2\n");
++            let p=payload.get();
++            rtprintpanic!("22\n");
++            info.set_payload(p);
++            rtprintpanic!("222\n");
+             default_hook(&info);
+         }
+         Hook::Custom(ref hook) => {
+-            info.set_payload(payload.get());
++            rtprintpanic!("3\n");
++            let p=payload.get();
++            rtprintpanic!("33\n");
++            info.set_payload(p);
++            //info.set_payload(payload.get());
++            rtprintpanic!("333\n");
+             hook(&info);
+         }
+     };
++    rtprintpanic!("4\n");
+     drop(hook);
+ 
++    rtprintpanic!("5\n");
+     // Indicate that we have finished executing the panic hook. After this point
+     // it is fine if there is a panic while executing destructors, as long as it
+     // it contained within a `catch_unwind`.
+     panic_count::finished_panic_hook();
+ 
++    rtprintpanic!("6\n");
+     if !can_unwind {
++        rtprintpanic!("7\n");
+         // If a thread panics while running destructors or tries to unwind
+         // through a nounwind function (e.g. extern "C") then we cannot continue
+         // unwinding and have to abort immediately.
+         rtprintpanic!("thread caused non-unwinding panic. aborting.\n");
++        rtprintpanic!("8ai\n");
+         crate::sys::abort_internal();
+     }
+ 
++    rtprintpanic!("9rp\n");
+     rust_panic(payload)
+ }
+ 
