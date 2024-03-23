@@ -44,6 +44,9 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
         //so if it was false set it to true, then do this block:
         //this compare_exchange is atomic (chatgpt confused me before about it not being so)
         //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        //FIXME: need mutex protected block? eg. enter it if not held, skip it if held, but if
+        //concurrent threads want to get in, they should wait in line, not one get in and other
+        //skip!
         if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
         //if let(_prev)=BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
 
