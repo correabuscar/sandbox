@@ -2,4 +2,5 @@
 export RUSTC="$(realpath ./myrust)"
 #export RUST_BACKTRACE=1
 cargo clean
-cargo run
+cargo run ; ec="$?"
+echo "exit code: $ec"

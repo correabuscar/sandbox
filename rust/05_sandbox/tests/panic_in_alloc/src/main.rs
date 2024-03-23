@@ -1,4 +1,5 @@
 //src: chatgpt 3.5 generated initial example!
+use std::io::Write;
 use std::alloc::{GlobalAlloc, Layout};
 use std::sync::atomic::{AtomicBool, Ordering};
 //use std::ptr;
@@ -20,6 +21,7 @@ impl<A: GlobalAlloc> PrintingAllocator<A> {
 // - the standard error output
 // - some dedicated platform specific output
 // - nothing (so this macro is a no-op)
+#[allow(unused_macros)]
 macro_rules! rtprintpanic { //src: https://stdrs.dev/nightly/x86_64-pc-windows-gnu/src/std/rt.rs.html#34-40
     ($out:expr, $($t:tt)*) => {
         //let mut out=std::io::stdout();
@@ -41,7 +43,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
                                                            //encountered!
         //so if it was false set it to true, then do this block:
         //this compare_exchange is atomic (chatgpt confused me before about it not being so)
-        if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
         //if let(_prev)=BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
 
             //println!("Allocating");
@@ -51,10 +54,14 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
             //println!(
             eprintln!(
 //                "allocating");
-                "Allocating {} bytes at {:?}", layout.size(), ptr);
-            let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+                "Allocating {} bytes at {:?} (+sleeping)", layout.size(), ptr);
+            std::thread::sleep(std::time::Duration::from_millis(100));
+//            let backtrace=std::backtrace::Backtrace::force_capture();
+//            let frames=backtrace.frames();//needs nightly
+            //eprintln!("bt={}",std::backtrace::Backtrace::force_capture());
+            BEEN_HERE.store(false, Ordering::SeqCst);
         }
-        panic!("panic in alloc, on purpose");
+        //panic!("panic in alloc, on purpose");
 
         // Return the allocated pointer
         ptr
@@ -64,7 +71,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
         static BEEN_HERE:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
                                                            //encountered!
         //so if it was false set it to true, then do this block:
-        if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
         // Call the inner allocator's dealloc function
             //XXX: can't use println! because it tries to re acquire lock ? ie. println within
             //println? i guess?
@@ -75,9 +83,10 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
                       //alloc those 1024 bytes buffer!
             //dbg!( //works, somehow
                 "Deallocating {} bytes at {:?}", layout.size(), ptr);
-            let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            //let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            BEEN_HERE.store(false, Ordering::SeqCst);
         }
-        panic!("panic in dealloc, on purpose");
+        //panic!("panic in dealloc, on purpose");
         self.inner.dealloc(ptr, layout);
 
         // Print a message indicating the deallocation
@@ -96,7 +105,7 @@ fn main() {
     let mut o=std::io::stdout();//XXX: allocates 1024 bytes
     //let e=std::os::unix::stdio::StdErr::new();
     let mut e=std::io::stderr();//XXX: doesn't alloc any bytes!
-    //println!("Hello, world!");//allocates 1024 bytes the first time
+    println!("Hello, world!");//allocates 1024 bytes the first time
     //let foo="some formatting";
     //let one=1;
     //println!("Hello, world! {}{}", foo,one);
@@ -106,4 +115,21 @@ fn main() {
     //rtprintpanic!(e, "Hi");
     //rtprintpanic!(o, "Hi");
     //let a=1;
+    //eprintln!("bt={}",std::backtrace::Backtrace::force_capture());
+    let handler = std::thread::spawn(|| {
+        // thread code
+        // Create a dynamic integer variable
+        let dynamic_int = Box::new(42);
+
+        // Print the value stored in the dynamic integer
+        println!("Dynamic integer value: {}", dynamic_int);
+
+        // You can also use the dereference operator (*) to access the value inside the box
+        println!("Dereferenced dynamic integer value: {}", *dynamic_int);
+    });
+
+    handler.join().unwrap();
+    let _ = e.flush();
+    let _ = o.flush();
+    println!("Bye from main!");
 }
