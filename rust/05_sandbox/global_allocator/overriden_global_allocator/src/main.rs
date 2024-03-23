@@ -21,11 +21,11 @@ impl<A: GlobalAlloc> PrintingAllocator<A> {
 // - some dedicated platform specific output
 // - nothing (so this macro is a no-op)
 macro_rules! rtprintpanic { //src: https://stdrs.dev/nightly/x86_64-pc-windows-gnu/src/std/rt.rs.html#34-40
-    ($($t:tt)*) => {
-        let mut out=std::io::stdout();
+    ($out:expr, $($t:tt)*) => {
+        //let mut out=std::io::stdout();
         //if let Some(mut out) = std::io::stdout { // std::sys::stdio::panic_output() {
-            let _ = std::io::Write::write_fmt(&mut out, format_args!($($t)*));
-            let _ = std::io::Write::write_fmt(&mut out, format_args!("\n")); //FIXME: find a better
+            let _ = std::io::Write::write_fmt(&mut $out, format_args!($($t)*));
+            let _ = std::io::Write::write_fmt(&mut $out, format_args!("\n")); //FIXME: find a better
                                                                              //way
         //}
     }
@@ -40,8 +40,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
         static BEEN_HERE:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
                                                            //encountered!
         //so if it was false set it to true, then do this block:
-        //FIXME: this compare_exchange isn't atomic itself, hence can return Err() and we'd miss an
-        //alloc this way!
+        //this compare_exchange is atomic (chatgpt confused me before about it not being so)
         if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
         //if let(_prev)=BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
 
@@ -51,6 +50,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
             //rtprintpanic!( //same as println! so far.
             //println!(
             eprintln!(
+//                "allocating");
                 "Allocating {} bytes at {:?}", layout.size(), ptr);
             let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
         }
@@ -69,7 +69,9 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
             //println? i guess?
             //rtprintpanic!( //won't work, panic
             //println!(//same, panic
-            eprintln!(//wtf, eprintln works here, hmm!
+            eprintln!(//wtf, eprintln works here, hmm! ok now we know why: XXX: doesn't alloc 1024
+                      //bytes like println! does! because std::io::stdout() but not ::stderr() does
+                      //alloc those 1024 bytes buffer!
             //dbg!( //works, somehow
                 "Deallocating {} bytes at {:?}", layout.size(), ptr);
             let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
@@ -85,8 +87,20 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
 #[global_allocator]
 static GLOBAL_ALLOCATOR: PrintingAllocator<std::alloc::System> = PrintingAllocator::new(std::alloc::System);
 
+//fn one() {
+//    println!("Hello, world!");//allocates 1024 bytes the first time
+//}
 fn main() {
-    let foo="some formatting";
-    println!("Hello, world! {}", foo);
+    //let mut o=std::io::stdout();//XXX: allocates 1024 bytes
+    //let e=std::os::unix::stdio::StdErr::new();
+    let mut e=std::io::stderr();//XXX: doesn't alloc any bytes!
+    //println!("Hello, world!");//allocates 1024 bytes the first time
+    //let foo="some formatting";
+    //let one=1;
+    //println!("Hello, world! {}{}", foo,one);
+    //println!("Hello, world2!");
     //println!("Hello, world!");
+    //let mut o=std::io::stdout();
+    //rtprintpanic!(o, "Hi");
+    //let a=1;
 }
