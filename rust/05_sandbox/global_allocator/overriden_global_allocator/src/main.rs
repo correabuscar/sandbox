@@ -41,7 +41,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
                                                            //encountered!
         //so if it was false set it to true, then do this block:
         //this compare_exchange is atomic (chatgpt confused me before about it not being so)
-        if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
         //if let(_prev)=BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
 
             //println!("Allocating");
@@ -52,7 +53,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
             eprintln!(
 //                "allocating");
                 "Allocating {} bytes at {:?}", layout.size(), ptr);
-            let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            //let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            BEEN_HERE.store(false, Ordering::SeqCst);
         }
 
         // Return the allocated pointer
@@ -63,7 +65,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
         static BEEN_HERE:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
                                                            //encountered!
         //so if it was false set it to true, then do this block:
-        if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
         // Call the inner allocator's dealloc function
             //XXX: can't use println! because it tries to re acquire lock ? ie. println within
             //println? i guess?
@@ -74,7 +77,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
                       //alloc those 1024 bytes buffer!
             //dbg!( //works, somehow
                 "Deallocating {} bytes at {:?}", layout.size(), ptr);
-            let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            //let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            BEEN_HERE.store(false, Ordering::SeqCst);
         }
         self.inner.dealloc(ptr, layout);
 
@@ -91,7 +95,7 @@ static GLOBAL_ALLOCATOR: PrintingAllocator<std::alloc::System> = PrintingAllocat
 //    println!("Hello, world!");//allocates 1024 bytes the first time
 //}
 fn main() {
-    //let mut o=std::io::stdout();//XXX: allocates 1024 bytes
+    let mut o=std::io::stdout();//XXX: allocates 1024 bytes
     //let e=std::os::unix::stdio::StdErr::new();
     let mut e=std::io::stderr();//XXX: doesn't alloc any bytes!
     //println!("Hello, world!");//allocates 1024 bytes the first time

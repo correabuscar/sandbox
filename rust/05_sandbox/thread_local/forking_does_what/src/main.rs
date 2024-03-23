@@ -6,18 +6,16 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 // Define a newtype wrapper around AtomicUsize
 struct TrackedAtomic {
     inner: AtomicUsize,
-    initialized: bool,
 }
 
 impl TrackedAtomic {
     // Constructor function for TrackedAtomic
-    const fn new(value: usize) -> TrackedAtomic {
-    //fn new(value: usize) -> TrackedAtomic {
-        //println!("allocation in pid={:?} tid={:?}", std::process::id(), std::thread::current());
+    //const fn new(value: usize) -> TrackedAtomic {
+    fn new(value: usize) -> TrackedAtomic {
+        eprintln!("allocation(is it tho?) in pid={:?} tid={:?}", std::process::id(), std::thread::current());
         //dbg!("alloc!");
         TrackedAtomic {
             inner: AtomicUsize::new(value),
-            initialized: false,
         }
     }
 
@@ -35,7 +33,6 @@ impl TrackedAtomic {
 // Define a newtype wrapper around Cell
 struct TrackedCell<T: Copy + Clone> {
     inner: Cell<T>,
-    initialized: bool,
 }
 
 impl<T: Copy + Clone> TrackedCell<T> {
@@ -46,7 +43,6 @@ impl<T: Copy + Clone> TrackedCell<T> {
         println!("allocation in pid={:?} tid={:?}", std::process::id(), std::thread::current());
         TrackedCell {
             inner: Cell::new(value),
-            initialized: false,
         }
     }
 
@@ -66,8 +62,8 @@ impl<T: Copy + Clone> TrackedCell<T> {
 thread_local! {
     //static LOCAL_PANIC_COUNT: Cell<usize> = Cell::new(0);
     //static LOCAL_PANIC_COUNT: TrackedCell<usize> = TrackedCell::new(0);
-    //static LOCAL_PANIC_COUNT: TrackedAtomic = TrackedAtomic::new(0);
-    static LOCAL_PANIC_COUNT: TrackedAtomic = const { TrackedAtomic::new(0) };//TODO: does this
+    static LOCAL_PANIC_COUNT: TrackedAtomic = TrackedAtomic::new(0);
+    //static LOCAL_PANIC_COUNT: TrackedAtomic = const { TrackedAtomic::new(0) };//TODO: does this
     //one do any new allocations or what? ie. is this true: https://github.com/rust-lang/rust/commit/8e70c82f572be26a9d838e52f451b270160ffdba#diff-88e2a536317b831c2e958b9205fde12f5edaabefba963bdd3a7503bbdedf8da9R300-R315
     //that "Accessing LOCAL_PANIC_COUNT in a child created by `libc::fork` would lead to a memory allocation."
     //even tho there's a 'const' there.
@@ -81,6 +77,7 @@ fn main() {
         libc::fork();
     }
     let who=if main!=std::process::id() {
+        std::thread::sleep(std::time::Duration::from_millis(200));
         "fork"
     } else {
         "main"
@@ -113,6 +110,8 @@ fn main() {
         //count.set(current_count + 1);
         println!("Panic count state in {who} process: {} pid={:?} tid={:?}", count.get(), std::process::id(), std::thread::current());
     });
+    println!("{who} is done!");
+    std::thread::sleep(std::time::Duration::from_millis(1000));
 }
 
 use std::alloc::{GlobalAlloc, Layout};
@@ -140,7 +139,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
                                                            //encountered!
         //so if it was false set it to true, then do this block:
         //this compare_exchange is atomic (chatgpt confused me before about it not being so)
-        if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
         //if let(_prev)=BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
 
             //println!("Allocating");
@@ -153,7 +153,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
                 "Allocating {} bytes at {:?}", layout.size(), ptr);
             use std::io::Write;
             let _=std::io::stderr().flush(); //needs: use std::io::Write; else no method found!
-            let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            //let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            BEEN_HERE.store(false, Ordering::SeqCst);
         }
         //panic!("intentional");
         //let instance = MyStruct;
@@ -168,7 +169,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
         static BEEN_HERE:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
                                                            //encountered!
         //so if it was false set it to true, then do this block:
-        if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
         // Call the inner allocator's dealloc function
             //XXX: can't use println! because it tries to re acquire lock ? ie. println within
             //println? i guess?
@@ -179,7 +181,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
                       //alloc those 1024 bytes buffer!
             //dbg!( //works, somehow
                 "Deallocating {} bytes at {:?}", layout.size(), ptr);
-            let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            //let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            BEEN_HERE.store(false, Ordering::SeqCst);
         }
         self.inner.dealloc(ptr, layout);
 

@@ -64,7 +64,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
             //eprintln!("bt={}",std::backtrace::Backtrace::force_capture());
             BEEN_HERE.store(false, Ordering::SeqCst);
         }
-        //panic!("panic in alloc, on purpose");
+        panic!("panic in alloc, on purpose");
 
         // Return the allocated pointer
         ptr

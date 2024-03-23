@@ -1,4 +1,3 @@
-FAIL;
 //use std::cell::Cell;
 //use std::thread::LocalKey;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -6,6 +5,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 //static COUNTER_KEY: LocalKey<Cell<usize>> = LocalKey::new(Cell::new(0)); // Allocation happens here (outside function)
 thread_local! {
   static COUNTER: AtomicUsize = AtomicUsize::new(0);
+
 }
 
 fn increment_counter() {
@@ -16,115 +16,84 @@ fn get_counter_value() -> usize {
   COUNTER.with(|counter| counter.load(Ordering::Relaxed))
 }
 
-
-//fn get_thread_local_cell() -> &'static LocalKey<Cell<usize>> {
-//  &COUNTER_KEY
-//}
-
-//fn increment_counter() {
-//  let key = get_thread_local_cell();
-//  key.with(|cell| cell.get().set(cell.get() + 1)); // No allocation here (uses existing Cell)
-//}
-//
-//fn get_counter_value() -> usize {
-//  let key = get_thread_local_cell();
-//  key.with(|cell| cell.get()) // No allocation here (uses existing Cell)
-//}
-
-//use std::alloc::{Layout, System, GlobalAlloc};
-//
-//struct MockAllocator;
-//
-//unsafe impl System for MockAllocator {
-//    fn alloc(self, layout: Layout) -> Result<*mut u8, std::alloc::Error> {
-//    // Track allocation attempts (fail the test here for verification)
-//    panic!("Allocation attempted during counter access!");
-//    // In a real implementation, you might return a placeholder or handle differently
-//  }
-//
-//  fn dealloc(self, _ptr: *mut u8, _layout: Layout) {}
-//
-//  fn realloc(self, _ptr: *mut u8, _layout: Layout, _new_layout: Layout) -> Result<*mut u8, std::alloc::Error> {
-//    panic!("Reallocation attempted during counter access!");
-//    // Similar handling as alloc
-//  }
-//}
-//
-//fn with_mock_allocator<F>(f: F)
-//where
-//  F: FnOnce(),
-//{
-//  let original_alloc = GlobalAlloc::get();
-//  GlobalAlloc::set(Box::new(MockAllocator));
-//  f();
-//  GlobalAlloc::set(original_alloc);
-//}
-
-//use std::alloc::System;
+//src: chatgpt 3.5 generated initial example!
 use std::alloc::{GlobalAlloc, Layout};
+use std::sync::atomic::AtomicBool;
+//use std::ptr;
 
-//static ALLOCATION_ATTEMPTED: AtomicBool = AtomicBool::new(false);
-pub struct Mockalloc;//<GlobalAlloc>;
-
-unsafe impl GlobalAlloc for Mockalloc {
-  unsafe fn alloc(&self, _layout: Layout) -> *mut u8 {
-     //ALLOCATION_ATTEMPTED.store(true, Ordering::Relaxed);
-    panic!("Allocation attempted during counter access!");
-  }
-
-  unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {}
-
-
-  unsafe fn realloc(&self, _ptr: *mut u8, _layout: Layout, _new_size: usize) -> *mut u8 {
-     //ALLOCATION_ATTEMPTED.store(true, Ordering::Relaxed);
-    panic!("Reallocation attempted during counter access!");
-  }
-
-  unsafe fn alloc_zeroed(&self, _layout: Layout) -> *mut u8 {
-     //ALLOCATION_ATTEMPTED.store(true, Ordering::Relaxed);
-    panic!("Zeroed allocation attempted during counter access!");
-  }
+// Define a custom allocator wrapper struct
+pub struct PrintingAllocator<A: GlobalAlloc> {
+    inner: A,
 }
 
-
-//fn with_mock_allocator<F>(f: F)
-//where
-//  F: FnOnce(),
-//{
-//  let old_alloc = <dyn GlobalAlloc>::get();
-//  <dyn GlobalAlloc>::set(Box::new(Mockalloc));
-//  f();
-//  GlobalAlloc::set(old_alloc);
-//
-//  // Check for allocation attempts after test execution
-//  //assert!(!ALLOCATION_ATTEMPTED.load(Ordering::Relaxed), "Allocation attempted during counter access!");
-//}
-//use std::cell::Cell;
-//static ALLOCATOR: Cell<Option<Box<dyn GlobalAlloc>>> = Cell::new(None);
-//
-//fn set_global_allocator(alloc: Box<dyn GlobalAlloc>) {
-//  ALLOCATOR.set(Some(alloc));
-//}
-//
-//fn with_mock_allocator<F>(f: F)
-//where
-//  F: FnOnce(),
-//{
-//  let old_alloc = ALLOCATOR.get().take();
-//  set_global_allocator(Box::new(Mockalloc));
-//  f();
-//  if let Some(alloc) = old_alloc {
-//    set_global_allocator(alloc);
-//  }
-//}
-
-fn with_mock_allocator<F>(f: F)
-where
-  F: FnOnce(),
-{
-    todo!();
-  f();
+// Implement the custom allocator wrapper
+impl<A: GlobalAlloc> PrintingAllocator<A> {
+    // Create a new instance of the wrapper
+    pub const fn new(inner: A) -> Self {
+        PrintingAllocator { inner }
+    }
 }
+
+// Implement the GlobalAlloc trait for the custom allocator wrapper
+unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        // Call the inner allocator's alloc function
+        let ptr = self.inner.alloc(layout);
+
+        static BEEN_HERE:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
+                                                           //encountered!
+        //so if it was false set it to true, then do this block:
+        //this compare_exchange is atomic (chatgpt confused me before about it not being so)
+        //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
+        //if let(_prev)=BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+
+            //println!("Allocating");
+            // Print a message indicating the allocation
+            //std::rt::
+            //rtprintpanic!( //same as println! so far.
+            //println!(
+            eprintln!(
+//                "allocating");
+                "Allocating {} bytes at {:?}", layout.size(), ptr);
+            //let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            BEEN_HERE.store(false, Ordering::SeqCst);
+        }
+
+        // Return the allocated pointer
+        ptr
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        static BEEN_HERE:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
+                                                           //encountered!
+        //so if it was false set it to true, then do this block:
+        //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
+        // Call the inner allocator's dealloc function
+            //XXX: can't use println! because it tries to re acquire lock ? ie. println within
+            //println? i guess?
+            //rtprintpanic!( //won't work, panic
+            //println!(//same, panic
+            eprintln!(//wtf, eprintln works here, hmm! ok now we know why: XXX: doesn't alloc 1024
+                      //bytes like println! does! because std::io::stdout() but not ::stderr() does
+                      //alloc those 1024 bytes buffer!
+            //dbg!( //works, somehow
+                "Deallocating {} bytes at {:?}", layout.size(), ptr);
+            //let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            BEEN_HERE.store(false, Ordering::SeqCst);
+        }
+        self.inner.dealloc(ptr, layout);
+
+        // Print a message indicating the deallocation
+        //println!("Deallocating {} bytes at {:?}", layout.size(), ptr);
+    }
+}
+
+// Define a global instance of the printing allocator
+#[global_allocator]
+static GLOBAL_ALLOCATOR: PrintingAllocator<std::alloc::System> = PrintingAllocator::new(std::alloc::System);
+
 //#[test]
 //fn test_counter_no_allocations() {
 //  with_mock_allocator(|| {
@@ -135,7 +104,7 @@ where
 //}
 #[test]
 fn test_no_allocations_on_counter_access() {
-  with_mock_allocator(|| {
+  //with_mock_allocator(|| { // yeah, i wish this was a thing!
     // Code using the thread-local counter (functions like increment_counter and get_counter_value)
     increment_counter();
     let count = get_counter_value();
@@ -148,26 +117,35 @@ fn test_no_allocations_on_counter_access() {
     });
 
     counter_thread.join().unwrap();
-  });
+  //});
 }
 
 fn main() {
+    let mut o=std::io::stdout();//XXX: allocates 1024 bytes
 //  // Example usage
 //  increment_counter();
 //  let count = get_counter_value();
 //  println!("Thread local counter: {}", count);
 
+  // Main thread also increments and prints counter
+    println!("Main started");
+    std::thread::sleep(std::time::Duration::from_secs(1));
+  increment_counter();
+  println!("Main thread 0+1 counter value: {}", get_counter_value());
+
   let counter_thread = std::thread::spawn(|| {
+    println!("Thread started");
+    std::thread::sleep(std::time::Duration::from_secs(1));
     increment_counter();
     std::thread::sleep(std::time::Duration::from_secs(1));
-    println!("Thread counter value: {}", get_counter_value());
+    println!("Thread counter +1 value: {}", get_counter_value());
   });
 
   // Main thread also increments and prints counter
   increment_counter();
-  println!("Main thread counter value: {}", get_counter_value());
+  println!("Main thread +1 counter value: {}", get_counter_value());
 
   counter_thread.join().unwrap();
-  println!("Main thread counter value: {}", get_counter_value());
+  println!("Main thread counter value after join: {}", get_counter_value());
 }
 
