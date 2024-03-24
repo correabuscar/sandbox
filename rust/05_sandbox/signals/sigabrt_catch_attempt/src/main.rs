@@ -1,48 +1,48 @@
-FAIL; thx chatgpt 3.5 
-extern crate nix;
+extern crate libc;
 
-use nix::libc;
-use crate::libc::sigaction;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::ffi::CString;
+use std::ptr;
 
-// Atomic boolean to indicate whether the signal has been caught
-static SIGNAL_CAUGHT: AtomicBool = AtomicBool::new(false);
+use std::fmt::{Display, self};
+
+struct MyStruct;
+impl Display for MyStruct {
+    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+        todo!()
+        //let instance = MyStruct;
+        //panic!("oh1 no, '{}' was unexpected", instance);
+    }
+}
+// Custom signal handler for SIGABRT
+extern "C" fn handle_abort(signal: libc::c_int) {
+    println!("Custom abort handler called");
+
+    // Add your custom handling logic here
+    let inst = MyStruct;
+    panic!("from within my custom abort handler");
+    //panic!("from within my custom abort handler {}", inst); // infinite recursion panic
+
+    // Terminate the process
+    unsafe { libc::_exit(128+6) };
+}
+
+
 
 fn main() {
-    // Set up a signal handler for SIGABRT
-    setup_signal_handler();
-
-    // Simulate an abort
+    // Install a signal handler for SIGABRT
     unsafe {
-        libc::abort();
+        libc::signal(libc::SIGABRT, handle_abort as usize);
     }
 
-    // Check if the signal has been caught
-    if SIGNAL_CAUGHT.load(Ordering::Relaxed) {
-        println!("SIGABRT signal caught!");
-    } else {
-        println!("SIGABRT signal not caught!");
-    }
-}
-
-// Signal handler function
-extern "C" fn signal_handler(_: libc::c_int) {
-    // Set the atomic boolean to indicate that the signal has been caught
-    SIGNAL_CAUGHT.store(true, Ordering::Relaxed);
-}
-
-// Function to set up signal handler for SIGABRT
-fn setup_signal_handler() {
-    // Set up signal handler using nix
-    let sig_action = nix::sys::signal::SigAction::new(
-        nix::sys::signal::SigHandler::Handler(signal_handler),
-        nix::sys::signal::SaFlags::empty(),
-        nix::sys::signal::SigSet::empty(),
-    );
-
-    // Register the signal handler for SIGABRT
-    unsafe {
-        sigaction(libc::SIGABRT, &sig_action).expect("Failed to set up signal handler");
-    }
+    // Trigger an abort
+    println!("Triggering abort");
+    let e=std::panic::catch_unwind(|| { // because this is planned for libtest which wraps every
+                                        // in-process test thread in this.
+        unsafe {
+        //libc::abort();//caught
+        std::process::abort(); // caught
+    };
+    });
+    println!("Bye from main. {:?}",e);
 }
 
