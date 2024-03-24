@@ -69,6 +69,7 @@ fn set_panic_hook_too() {
             println!("Aborting the process due to double panic detected...");
             println!("{}", std::backtrace::Backtrace::capture());
         }
+        CALLED_ONCE.with(|c| *c.borrow_mut() = false);
         println!("Custom panic handler finished.");
     }));
 }
