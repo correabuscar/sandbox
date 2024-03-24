@@ -14,7 +14,8 @@ impl Display for MyStruct {
     }
 }
 // Custom signal handler for SIGABRT
-extern "C" fn handle_abort(signal: libc::c_int) {
+//extern "C" fn handle_abort(signal: libc::c_int) {
+extern "C" fn handle_abort(_: libc::c_int, _: *mut libc::siginfo_t, _: *mut libc::c_void) {
     println!("Custom abort handler called");
 
     // Add your custom handling logic here
@@ -75,9 +76,29 @@ fn set_panic_hook_too() {
 }
 
 fn main() {
+    // Set up signal handling for SIGABRT
+    // way1:
+    let mut sigset: libc::sigset_t = unsafe { std::mem::zeroed() }; // sets it to 0
+    unsafe {
+        libc::sigemptyset(&mut sigset as *mut libc::sigset_t); //redundant since this set it to 0
+    }
+    let sig_action = libc::sigaction {
+        sa_sigaction: handle_abort as usize, // when you cast a function to usize you're "getting" the memory address of the function; it's common to use usize for function pointers to maintain compatibility with C's function pointer representation.
+        //sa_mask: 0, //whoops?
+        //sa_mask: sigset,
+        sa_mask: unsafe { std::mem::zeroed() }, // No signals blocked during handler execution
+        sa_flags: libc::SA_SIGINFO,
+        sa_restorer: None,
+    };
+    //way2: (less clear which fields and why are zeroed) XXX: also assumes None is first variant in Option which if I recompile rust with them swapped would break this! and anything that assumes None is 0 in memory, so other projects, maybe even within rust itself, TODO: for fun, at some point, if ever.
+    //let mut sig_action: libc::sigaction = unsafe { std::mem::zeroed() }; //sa_mask and sa_restorer are to be 0 and None
+    //sig_action.sa_sigaction = handle_abort as usize;
+    //sig_action.sa_flags = libc::SA_SIGINFO;
     // Install a signal handler for SIGABRT
     unsafe {
-        libc::signal(libc::SIGABRT, handle_abort as usize);
+        //libc::signal(libc::SIGABRT, handle_abort as usize);
+        // WARNING: the behavior of signal() varies across UNIX versions, and has also varied historically across different versions of Linux.  Avoid its use: use sigaction(2) instead.  See Portability below.
+        libc::sigaction(libc::SIGABRT, &sig_action, ptr::null_mut());
     }
 
     set_panic_hook_too();
@@ -86,10 +107,11 @@ fn main() {
     println!("Triggering abort");
     let e=std::panic::catch_unwind(|| { // because this is planned for libtest which wraps every
                                         // in-process test thread in this.
+        #[allow(unused_unsafe)]
         unsafe {
-        //libc::abort();//caught
-        std::process::abort(); // caught
-    };
+            //libc::abort();//caught
+            std::process::abort(); // caught
+        };
     });
     println!("Bye from main. {:?}",e);
 }
