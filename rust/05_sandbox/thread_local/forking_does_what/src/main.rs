@@ -60,16 +60,25 @@ impl<T: Copy + Clone> TrackedCell<T> {
 
 // Define the static thread-local variable outside of any function
 thread_local! {
-    //static LOCAL_PANIC_COUNT: Cell<usize> = Cell::new(0);
-    //static LOCAL_PANIC_COUNT: TrackedCell<usize> = TrackedCell::new(0);
-    static LOCAL_PANIC_COUNT: TrackedAtomic = TrackedAtomic::new(0);
-    //static LOCAL_PANIC_COUNT: TrackedAtomic = const { TrackedAtomic::new(0) };//TODO: does this
+    //static ATOMIC_COUNT: Cell<usize> = Cell::new(0);
+    //static ATOMIC_COUNT: TrackedCell<usize> = TrackedCell::new(0);
+    static ATOMIC_COUNT: TrackedAtomic = TrackedAtomic::new(0);
+    //static ATOMIC_COUNT: TrackedAtomic = const { TrackedAtomic::new(0) };//TODO: does this
     //one do any new allocations or what? ie. is this true: https://github.com/rust-lang/rust/commit/8e70c82f572be26a9d838e52f451b270160ffdba#diff-88e2a536317b831c2e958b9205fde12f5edaabefba963bdd3a7503bbdedf8da9R300-R315
-    //that "Accessing LOCAL_PANIC_COUNT in a child created by `libc::fork` would lead to a memory allocation."
+    //that "Accessing ATOMIC_COUNT in a child created by `libc::fork` would lead to a memory allocation."
     //even tho there's a 'const' there.
 }
 
+//static GLOBAL_PANIC_COUNT: AtomicUsize = AtomicUsize::new(0);
+
 fn main() {
+//    let _=catch_unwind(|| {
+//
+//        panic!("panic1");
+//    });
+//    let _=catch_unwind(|| {
+//        panic!("panic2");
+//    });
     let o = std::io::stdout();//allocate 1024 bytes before fork. (println!() does this first time)
     let main=std::process::id();
     // Fork the process before any inits!
@@ -83,11 +92,11 @@ fn main() {
         "main"
     };
     // Accessing the thread-local variable from the main function
-    LOCAL_PANIC_COUNT.with(|count| {
+    ATOMIC_COUNT.with(|count| {
         // Modify or access the value of the thread-local variable
         let current_count = count.get();
         count.set(current_count + 1);
-        println!("Panic count in {who} process: {} pid={:?} tid={:?}", count.get(), std::process::id(), std::thread::current());
+        println!("Atomic count in {who} process: {} pid={:?} tid={:?}", count.get(), std::process::id(), std::thread::current());
     });
 
     // Fork the process
@@ -96,19 +105,19 @@ fn main() {
 //    }
 
     // Accessing the thread-local variable from the child process
-    LOCAL_PANIC_COUNT.with(|count| {
+    ATOMIC_COUNT.with(|count| {
         // Modify or access the value of the thread-local variable
         let current_count = count.get();
         count.set(current_count + 1);
-        //println!("Panic count in child thread: {} tid={:?}", count.get(), std::thread::current());
-        println!("Panic count+1 in {who} process: {} pid={:?} tid={:?}", count.get(), std::process::id(), std::thread::current());
+        //println!("Atomic count in child thread: {} tid={:?}", count.get(), std::thread::current());
+        println!("Atomic count+1 in {who} process: {} pid={:?} tid={:?}", count.get(), std::process::id(), std::thread::current());
     });
     // Accessing the thread-local variable from the main function
-    LOCAL_PANIC_COUNT.with(|count| {
+    ATOMIC_COUNT.with(|count| {
         // Modify or access the value of the thread-local variable
         //let current_count = count.get();
         //count.set(current_count + 1);
-        println!("Panic count state in {who} process: {} pid={:?} tid={:?}", count.get(), std::process::id(), std::thread::current());
+        println!("Atomic count state in {who} process: {} pid={:?} tid={:?}", count.get(), std::process::id(), std::thread::current());
     });
     println!("{who} is done!");
     std::thread::sleep(std::time::Duration::from_millis(1000));
