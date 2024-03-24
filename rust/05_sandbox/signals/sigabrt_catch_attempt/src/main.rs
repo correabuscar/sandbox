@@ -90,7 +90,7 @@ fn main() {
         sa_flags: libc::SA_SIGINFO,
         sa_restorer: None,
     };
-    //way2: (less clear which fields and why are zeroed) XXX: also assumes None is first variant in Option which if I recompile rust with them swapped would break this! and anything that assumes None is 0 in memory, so other projects, maybe even within rust itself, TODO: for fun, at some point, if ever.
+    //way2: (less clear which fields and why are zeroed) XXX: also assumes None is first variant in Option which if I recompile rust with them swapped would break this! and anything that assumes None is 0 in memory, so other projects, maybe even within rust itself, TODO: for fun, at some point, if ever. Set as todo in: https://github.com/correabuscar/knowhow_and_TODO/blob/main/rust/todo_rust.wofl
     //let mut sig_action: libc::sigaction = unsafe { std::mem::zeroed() }; //sa_mask and sa_restorer are to be 0 and None
     //sig_action.sa_sigaction = handle_abort as usize;
     //sig_action.sa_flags = libc::SA_SIGINFO;
