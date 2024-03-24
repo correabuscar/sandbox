@@ -1,0 +1,20 @@
+[package]
+name = "abort_hook"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+#[lib]
+#name = "custom_abort" #makes it a .rlib but that already happens anyway
+#path = "src/lib.rs"
+
+#[[bin]]
+#name = "main"
+#path = "src/main.rs"  # Path to your main binary source file
+
+#[build]
+#"cargo:rustc-link-lib" = "custom_abort"
+
+[dependencies]
+libc = "0.2"
