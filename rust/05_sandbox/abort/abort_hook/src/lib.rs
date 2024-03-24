@@ -70,9 +70,10 @@ pub extern "C" fn abort() {
     //panic!("panicking due to abort intercepted"); // this will infinite recuse, without a parent
                                                  // catch_unwind()! and even then FIXME
     // allowing this to fallthrough is bad, illegal instruction (if lucky)
-    std::process::abort();//infinite recursion, FIXME: call the original one?
+    //std::process::abort();//infinite recursion, FIXME: call the original one?
     //unsafe {
     //    libc::abort();
     //}
+    std::process::exit(128+6); //134 is SIGABRT's exit code 128+6
 }
 

@@ -1,1 +1,3 @@
-vim src/main.rs
+#!/usr/bin/env bash
+
+"${EDITOR:-vim}" src/main.rs
