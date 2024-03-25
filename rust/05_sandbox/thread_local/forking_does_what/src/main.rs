@@ -137,6 +137,8 @@ impl<A: GlobalAlloc> PrintingAllocator<A> {
         PrintingAllocator { inner }
     }
 }
+const SHOW_ALLOCS:bool=true;
+const SHOW_DEALLOCS:bool=true;
 
 // Implement the GlobalAlloc trait for the custom allocator wrapper
 unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
@@ -144,7 +146,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
         // Call the inner allocator's alloc function
         let ptr = self.inner.alloc(layout);
 
-        static BEEN_HERE:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
+        static BEEN_HERE:AtomicBool=AtomicBool::new(!SHOW_ALLOCS);//inited to false the first time it's
                                                            //encountered!
         //so if it was false set it to true, then do this block:
         //this compare_exchange is atomic (chatgpt confused me before about it not being so)
@@ -163,7 +165,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
             use std::io::Write;
             let _=std::io::stderr().flush(); //needs: use std::io::Write; else no method found!
             //let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
-            BEEN_HERE.store(false, Ordering::SeqCst);
+            BEEN_HERE.store(!SHOW_ALLOCS, Ordering::SeqCst);
         }
         //panic!("intentional");
         //let instance = MyStruct;
@@ -175,7 +177,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        static BEEN_HERE:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
+        static BEEN_HERE:AtomicBool=AtomicBool::new(!SHOW_DEALLOCS);//inited to false the first time it's
                                                            //encountered!
         //so if it was false set it to true, then do this block:
         //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
@@ -191,7 +193,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
             //dbg!( //works, somehow
                 "Deallocating {} bytes at {:?}", layout.size(), ptr);
             //let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
-            BEEN_HERE.store(false, Ordering::SeqCst);
+            BEEN_HERE.store(!SHOW_DEALLOCS, Ordering::SeqCst);
         }
         self.inner.dealloc(ptr, layout);
 
