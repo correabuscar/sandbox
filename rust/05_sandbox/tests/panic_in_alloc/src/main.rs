@@ -64,9 +64,11 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
             //eprintln!("bt={}",std::backtrace::Backtrace::force_capture());
             BEEN_HERE.store(false, Ordering::SeqCst);
         }
-        //let i=10;
-        //panic!("panic in alloc, on purpose i={}",i);
-        panic!("panic in alloc, on purpose (without formatting)");
+        let i=10;
+//        panic!("panic in alloc, on purpose i={} j={}",i,i);
+//        panic!("panic in alloc, on purpose (without formatting)");
+        None::<u32>.expect("didn't expect None"); //FIXME: this message doesn't show
+        //None::<u32>.expect("didn't expect None, i={}",i); // doesn't do formatting!
 
         // Return the allocated pointer
         ptr
