@@ -5,6 +5,7 @@
 source "/swcode/swcode.bash"
 
 rerunasroot "$@"
+while true; do
 
 libtests=0
 while test "$libtests" -ne "6"; do
@@ -16,3 +17,12 @@ echo
 
 chmod o+rx,g+rx /var/tmp/portage/dev-lang/rust-1.75.0-r1{,/work}
 pkill --echo -u portage -- 'rustc'
+
+echo "Waiting for next recompilation...C-c if not."
+while test "$libtests" -eq "6"; do
+  libtests="$(find /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/build/ -iname \*libtest\* 2>/dev/null |grep stage1|wc -l)"
+  sleep 5
+  echo -n "$libtests"
+done
+
+done
