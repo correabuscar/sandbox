@@ -1,0 +1,8 @@
+this is obvious that it wouldn't be 1 if forked from a thread and other
+threads are currently within the handling of their own panics
+
+I'm not exactly sure why I wanted to test this, iirc there was a comment but
+wasn't about this, that said something that if this is 1 then it's in fork.
+but i remembered it wrongly!
+
+
