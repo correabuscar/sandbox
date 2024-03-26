@@ -5,6 +5,7 @@
 source "/swcode/swcode.bash"
 
 rerunasroot "$@"
+
 while true; do
 
 libtests=0

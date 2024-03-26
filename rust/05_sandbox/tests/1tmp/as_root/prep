@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source "/swcode/swcode.bash"
+
+rerunasroot "$@"
+
+ebuild `equery w rust` clean prepare
+dir="/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/"
+cd "$dir"
+patch -p8 -i /quilt_patches/cargo_test-threads_loses_output.patch
+echo "$dir"
