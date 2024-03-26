@@ -1,5 +1,8 @@
 //chatgpt 3.5 generated code, initially.
 
+//TODO: maybe allow a start index arg
+//TODO: maybe allow the use of a separator
+
 /// Fills up the buffer up until the last complete grapheme
 /// So buffer may or may not be filled fully in the end
 /// but you won't have incomplete graphemes aka invalid utf8
