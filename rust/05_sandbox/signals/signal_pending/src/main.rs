@@ -2,6 +2,9 @@ extern crate libc;
 
 //made with the help of chatgpt 3.5
 
+
+//#[cfg(not(debug_assertions))]
+
 use std::ptr;
 
 // Signal handler function
@@ -32,11 +35,23 @@ fn is_signal_pending(who:&str, signal_to_check: i32) {
     }
 }
 
+#[test]
+fn test_assertions_are_enabled_in_cargo_toml_for_test_profile() {
+    assert!(cfg!(debug_assertions));
+}
+
 fn main() {
     println!("Hello, world!");
+    if cfg!(debug_assertions) {
+        println!("Debugging enabled");
+    } else {
+        panic!("Debugging disabled");
+    }
+    assert!(cfg!(debug_assertions));
+
     let rtmin =  libc::SIGRTMIN();
     let rtmax =  libc::SIGRTMAX();
-    assert!(rtmin <= rtmax);
+    assert!(rtmin <= rtmax); // this gets removed on 'cargo run --release' unless... Cargo.toml change ... 
 
     let halfway_signal = rtmin + ((rtmax - rtmin) / 2);
     println!("Halfway Signal Number: {}", halfway_signal);

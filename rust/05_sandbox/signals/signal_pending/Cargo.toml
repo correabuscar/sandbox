@@ -7,3 +7,29 @@ edition = "2021"
 
 [dependencies]
 libc = "0.2"
+
+
+[profile.all] #despite the name it's just a custom profile name, not auto-inherited by the base profiles!
+inherits="dev"
+
+[profile.dev]
+#inherits = "all" #error: `inherits` must not be specified in root profile `dev`
+debug-assertions = true #Debug assertions are checks placed in your code to verify assumptions during development and testing. They are typically removed from release builds to improve performance, but enabling them in release builds can help catch logical errors and bugs that might otherwise go unnoticed until runtime.
+debug = true # Cargo generates debug information that includes symbols, line numbers, and other metadata to aid in debugging the program. This information is useful for tools like debuggers and profilers, as it allows them to map machine instructions back to the original source code, making it easier to understand and debug the program's behavior.
+
+[profile.release]
+#inherits = "all" #error: `inherits` must not be specified in root profile `release`
+debug-assertions = true #Debug assertions are checks placed in your code to verify assumptions during development and testing. They are typically removed from release builds to improve performance, but enabling them in release builds can help catch logical errors and bugs that might otherwise go unnoticed until runtime.
+debug = true # Cargo generates debug information that includes symbols, line numbers, and other metadata to aid in debugging the program. This information is useful for tools like debuggers and profilers, as it allows them to map machine instructions back to the original source code, making it easier to understand and debug the program's behavior.
+
+
+[profile.test]
+inherits="all"
+
+[profile.bench]
+inherits="all"
+
+[profile.cross]
+inherits="all"
+
+
