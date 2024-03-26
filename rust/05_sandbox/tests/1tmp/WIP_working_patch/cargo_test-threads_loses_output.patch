@@ -492,9 +492,11 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
  
      // Increases the global and local panic count, and returns whether an
      // immediate abort is required.
-@@ -739,32 +748,112 @@ fn rust_panic_with_hook(
+@@ -738,33 +747,148 @@ fn rust_panic_with_hook(
+     can_unwind: bool,
      force_no_backtrace: bool,
  ) -> ! {
++    rtprintpanic!("!!!!!!!!!!!!!!! PANIC STARTING !!!!!!!!!!!!!!\n");
      let must_abort = panic_count::increase(true);
 +    rtprintpanic!("!! must_abort={:?}\n", must_abort);
 +    //rtprintpanic!("must_abort={:?} global_panic_count={}\n", must_abort,panic_count::GLOBAL_PANIC_COUNT.load(Ordering::SeqCst));
@@ -509,18 +511,15 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
 -            }
 -            panic_count::MustAbort::AlwaysAbort => {
 +                rtprintpanic!("!!! in panic_count::MustAbort::PanicInHook\n");
-+                //src: https://github.com/rust-lang/rust/pull/122984/files
-+                // Don't try to format the message in this case, perhaps that is causing the
-+                // recursive panics. However if the message is just a string, no user-defined
-+                // code is involved in printing it, so that is risk-free.
-+                // XXX: so this shows the message if it has no formatting, else it doesn't show it
-+                // at all - by design: https://github.com/rust-lang/rust/pull/122984/files#r1536775570
-+                // Not gonna lie, I didn't expect this code would just not show it at all, if it's
-+                // formatted.
-+                let msg_str = message.and_then(|m| m.as_str()).map(|m| [m]);
-+                let message = msg_str.as_ref().map(|m| fmt::Arguments::new_const(m));
++
++                //this is formatted message in a Some() TODO: if let?
++                rtprintpanic!("!!!0of2 message={:?}\n",message);//FIXME: use this first, if it panics in it, skip it next time.
++                let message2=message.map(|m| m.unformat_it()); // call message.unformat_it() only if
++                                                              // message is Some, not when None
++                //rtprintpanic!("!!!0of2 message2={:?}\n",message2);
 +                let panic_info = PanicInfo::internal_constructor(
-+                    message.as_ref(),
++                    message2.as_ref(),
++                    //message_str.as_ref(),
 +                    location,
 +                    can_unwind,
 +                    false,//okTODO: is this actually false here? or is it false only
@@ -529,11 +528,47 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
 +                    //what it does anyway, but know that it is ignored: https://github.com/rust-lang/rust/blob/42198bf562b548015e3eae3926c175c4aabb3a7b/library/core/src/panic/panic_info.rs#L159-L178
 +                );
 +                //rtprintpanic!("thread panicked while processing panic. aborting. msg='{:?}' loc='{:?}'\n",message, location);
++//                let panic_info = PanicInfo {
++//                    payload, // this should already get printed as string: https://github.com/rust-lang/rust/blob/af98101ed89dba94309c64f1fbf37c890d988f9f/library/core/src/panic/panic_info.rs#L168-L171   well this won't work unless i use the payload.get() like below which actually does formatting which isn't what I want
++//                    message:None, // ^ but only if message is None
++//                    location,
++//                    can_unwind,
++//                    force_no_backtrace,
++//                };
 +                //FIXME: I need thread local(that doesn't do allocations when accessing it) and
 +                //which will let me progressively remove things from the output which might panic
 +                //like the 'message'(+loc+backtr) at first, then just 'location'(+backtr), then just the backtrace dump
 +                //but can't guarantee TLS won't alloc atll (which we'd need for the oom case which will panic and get here)
-+                rtprintpanic!("!! {panic_info}\n!! thread panicked while processing panic. aborting. msg was not shown at all if it was formatted(above)\n");//, loc='{:?}'\n", location); location's already shown via panic_info's Display impl as first line.
++                //XXX: this won't show msg for opt.expect("some string") either because is formatted eg. it kinda uses panic!("{}", "some string") internally; https://github.com/rust-lang/rust/pull/122984/files#r1538124227
++                rtprintpanic!("!!!1of2 {panic_info}\n!!! thread panicked while processing panic. aborting. msg was not shown at all if it was formatted(above)\n");//, loc='{:?}'\n", location); location's already shown via panic_info's Display impl as first line.
++
++                //src: https://github.com/rust-lang/rust/pull/122984/files
++                // Don't try to format the message in this case, perhaps that is causing the
++                // recursive panics. However if the message is just a string, no user-defined
++                // code is involved in printing it, so that is risk-free.
++                // XXX: so this shows the message if it has no formatting, else it doesn't show it
++                // at all - by design: https://github.com/rust-lang/rust/pull/122984/files#r1536775570
++                // Not gonna lie, I didn't expect this code would just not show it at all, if it's
++                // formatted.
++                //rtprintpanic!("!!!0of2 message={:?}\n",message);//doneFIXME: remove these
++                let msg_str = message.and_then(|m| m.as_str()).map(|m| [m]);
++                let message1 = msg_str.as_ref().map(|m| fmt::Arguments::new_const(m));
++                //let message_str = match message {
++                //    Some(args) => args.pieces.get(0).copied().map(fmt::Arguments::new_const),
++                //    None => None,
++                //};
++                //rtprintpanic!("!!!0of2 message1={:?}\n",message1);
++                let panic_info = PanicInfo::internal_constructor(
++                    message1.as_ref(),
++                    //message_str.as_ref(),
++                    location,
++                    can_unwind,
++                    false,//okTODO: is this actually false here? or is it false only
++                    //during must abort variant/branch below?! actually this isn't part of its Display
++                    //impl so it doesn't matter its value here, therefore i must use 'false' as it's
++                    //what it does anyway, but know that it is ignored: https://github.com/rust-lang/rust/blob/42198bf562b548015e3eae3926c175c4aabb3a7b/library/core/src/panic/panic_info.rs#L159-L178
++                );
++                rtprintpanic!("!!!2of2 {panic_info}\n!!! thread panicked while processing panic. aborting. msg was not shown at all if it was formatted(above)\n");//, loc='{:?}'\n", location); location's already shown via panic_info's Display impl as first line.
 +                //let panicinfo = PanicInfo::internal_constructor(
 +                //    message,//this would infinite panic
 +                //    location,
@@ -544,7 +579,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
 +                //FIXME: this would alloc here which is bad in oom or fork case(but fork case
 +                //doesn't hit this currently, well unless u forgot to call panic::always_abort()
 +                //in the fork and a double panic occurs)
-+                rtprintpanic!("FIXME: not printing a backtrace here, atm, to avoid alloc or infinite panics due to alloc might've been overriden in global allocator and set to panic!\n");
++                rtprintpanic!("!!! FIXME: not printing a backtrace here, atm, to avoid alloc or infinite panics due to alloc might've been overriden in global allocator and set to panic!\n");
 +                //rtprintpanic!("!! Forcing a backtrace (FIXME: allocs and could thus panic again for infinite panics):\n{}\n", crate::backtrace::Backtrace::force_capture());
 +             }
 +             panic_count::MustAbort::AlwaysAbort => { // this is hit on first and any subseq.
@@ -583,7 +618,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
 +                    //ignored in Display impl anyway! so setting to 'false' to be obvious.
                  );
 -                rtprintpanic!("{panicinfo}\npanicked after panic::always_abort(), aborting.\n");
-+                rtprintpanic!("!! {panic_info}\n!! panicked after panic::always_abort(), aborting.\n");
++                rtprintpanic!("!!! {panic_info}\n!!! panicked after panic::always_abort(), aborting.\n");
 +                //XXX: we'd restore this even if thread local because this whole thing may end up in a
 +                //landing pad and some future new panic(like if this is ran within libtest via
 +                //'cargo test' with --test-threads 1, it could be catch_unwind-ed aka
@@ -604,7 +639,8 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
 +//               }
              }
          }
-+        rtprintpanic!("!! about to abort_internal() which does a libc::abort() in fact.\n");
++        rtprintpanic!("!!! about to abort_internal() which does a libc::abort() in fact.\n");
++        rtprintpanic!(concat!(r"\\\\\\\\\\\\\\ PANIC ENDING (1) //////////","\n"));
          crate::sys::abort_internal();
      }
  
@@ -615,31 +651,31 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
      let hook = HOOK.read().unwrap_or_else(PoisonError::into_inner);
      match *hook {
          // Some platforms (like wasm) know that printing to stderr won't ever actually
-@@ -773,31 +862,48 @@ fn rust_panic_with_hook(
+@@ -773,31 +897,50 @@ fn rust_panic_with_hook(
          // methods, this means we avoid formatting the string at all!
          // (The panic runtime might still call `payload.take_box()` though and trigger
          // formatting.)
 -        Hook::Default if panic_output().is_none() => {}
 +        Hook::Default if panic_output().is_none() => {
-+            rtprintpanic!("!! 1\n");
++            rtprintpanic!("!!! 1\n");
 +        }
          Hook::Default => {
 -            info.set_payload(payload.get());
-+            rtprintpanic!("!! 2\n");
++            rtprintpanic!("!!! 2\n");
 +            let p=payload.get();
-+            rtprintpanic!("!! 22\n");
++            rtprintpanic!("!!! 22\n");
 +            info.set_payload(p);
-+            rtprintpanic!("!! 222\n");
++            rtprintpanic!("!!! 222\n");
              default_hook(&info);
          }
          Hook::Custom(ref hook) => {
 -            info.set_payload(payload.get());
-+            rtprintpanic!("!! 3\n");
++            rtprintpanic!("!!! 3\n");
 +            let p=payload.get();
-+            rtprintpanic!("!! 33\n");
++            rtprintpanic!("!!! 33\n");
 +            info.set_payload(p);
 +            //info.set_payload(payload.get());
-+            rtprintpanic!("!! 333\n");
++            rtprintpanic!("!!! 333\n");
              hook(&info);
          }
      };
@@ -654,17 +690,19 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
  
 +    rtprintpanic!("!! 6\n");
      if !can_unwind {
-+        rtprintpanic!("!! 7\n");
++        rtprintpanic!("!!! 7\n");
          // If a thread panics while running destructors or tries to unwind
          // through a nounwind function (e.g. extern "C") then we cannot continue
          // unwinding and have to abort immediately.
 -        rtprintpanic!("thread caused non-unwinding panic. aborting.\n");
-+        rtprintpanic!("!! thread caused non-unwinding panic. aborting. loc={:?}\n", location);
-+        rtprintpanic!("!! 8ai\n");
++        rtprintpanic!("!!! thread caused non-unwinding panic. aborting. loc={:?}\n", location);
++        rtprintpanic!("!!! 8ai\n");
++        rtprintpanic!(concat!(r"\\\\\\\\\\\\\\ PANIC ENDING (2) //////////","\n"));
          crate::sys::abort_internal();
      }
  
 +    rtprintpanic!("!! 9rp\n");
++    rtprintpanic!(concat!(r"\\\\\\\\\\\\\\ PANIC ENDING (3) //////////","\n"));
      rust_panic(payload)
  }
  
@@ -680,3 +718,79 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
  
  // Explicitly import the prelude. The compiler uses this same unstable attribute
  // to import the prelude implicitly when building crates that depend on std.
+Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/core/src/fmt/mod.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/core/src/fmt/mod.rs
++++ /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/core/src/fmt/mod.rs
+@@ -352,6 +352,20 @@ impl<'a> Arguments<'a> {
+         Arguments { pieces, fmt: Some(fmt), args }
+     }
+ 
++    /// just return the unformatted string
++    /// so this:
++    /// "some formatted string i={} j={}"
++    /// would be seen as:
++    /// "some formatted string i= j="
++    /// because the {}s get removed and transformed into the args array.
++    /// this assumes `pub fn write` was already patched to handle the extra pieces,
++    /// else you only see the first piece like:
++    /// "some formatted string i="
++    #[inline]
++    pub fn unformat_it(&self) -> Arguments<'a> {
++        Arguments { pieces:self.pieces, fmt: None, args: &[] }
++    }
++
+     /// Estimates the length of the formatted text.
+     ///
+     /// This is intended to be used for setting initial `String` capacity
+@@ -434,8 +448,22 @@ impl<'a> Arguments<'a> {
+ 
+ #[stable(feature = "rust1", since = "1.0.0")]
+ impl Debug for Arguments<'_> {
+-    fn fmt(&self, fmt: &mut Formatter<'_>) -> Result {
+-        Display::fmt(self, fmt)
++    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
++        Display::fmt(self, f)
++//        let fmt_display = match &self.fmt {
++//            Some(fmt) => Display::fmt(fmt,f),//format!("{}", fmt),
++//            None => "<no fmt>".to_string(),
++//        };
++//        let args_display = match &self.args {
++//            Some(args) => format!("{}", args),
++//            None => String::from("<no args>"),
++//        };
++//        f.debug_struct("Arguments")
++//            .field("pieces", &self.pieces)
++//            //.field("fmt", &self.fmt)
++//            .field("fmt", &fmt_display)
++//            .field("args", &fmt_display)
++//            .finish()
+     }
+ }
+ 
+@@ -1140,10 +1168,23 @@ pub fn write(output: &mut dyn Write, arg
+     }
+ 
+     // There can be only one trailing string piece left.
+-    if let Some(piece) = args.pieces.get(idx) {
+-        formatter.buf.write_str(*piece)?;
++    //if let Some(piece) = args.pieces.get(idx) {
++    //    formatter.buf.write_str(*piece)?;
++    //}
++    //Maybe there's a ton of pieces*, that had fmt: None and args: &[]
++    //and we wanna print them all, yes they'll be unformatted like due to .unformat_it() function
++    //from Arguments struct.
++    // * not just the one trailing string piece left.
++    if idx < args.pieces.len() {
++        // Iterate over the remaining string pieces starting from idx
++        for piece in &args.pieces[idx..] {
++            // Write each piece to the formatter buffer
++            formatter.buf.write_str(*piece)?;
++        }
+     }
+ 
++
++
+     Ok(())
+ }
+ 
