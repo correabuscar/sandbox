@@ -8,6 +8,8 @@ rerunasroot "$@"
 
 while true; do
 
+echo "Monitoring current (re)compilation...C-c is your friend."
+
 libtests=0
 while test "$libtests" -ne "6"; do
   libtests="$(find /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/build/ -iname \*libtest\* 2>/dev/null |grep stage1|wc -l)"
