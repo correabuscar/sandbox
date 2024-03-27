@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 //initial code via chatgpt 3.5
 
-/// Set it once and read it from anywhere.
+/// Set it once and read it from anywhere(thread safe, i think).
 /// Meant to be static global
 /// with an initial None value
 /// Holds Option<u32> which I need to keep a std::process::id() in.
@@ -21,17 +21,29 @@ impl AtomicOnceOptionU32 {
     }
 
     fn store(&self, value: Option<u32>) {
+        //using 'const's here will show the hidden relationship between the relevant bools below.
+        const IS_VALUE_INITIALIZED: bool = false;
+        const VALUE_IS_ALREADY_INITIALIZED: bool = !IS_VALUE_INITIALIZED;
+        assert_eq!(false, IS_VALUE_INITIALIZED);
+        assert_eq!(true, VALUE_IS_ALREADY_INITIALIZED);
         // Use compare_exchange to set the has_value flag to true only if it's currently false
-        match self.has_value.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
-            Ok(_) => {
+        // If compare_exchange returns Ok(false), it means that the comparison was successful (i.e., has_value was false before) and the value has been successfully set to true atomically by the current thread.
+        // If compare_exchange returns Err(true), it means that the comparison failed because has_value was already true (i.e., it was set to true by another thread before the current thread attempted to set it). This indicates that the value has already been set, and attempting to set it again would be an error.
+        // In both cases, compare_exchange will never return Ok(true) or Err(false). These situations don't occur in our specific usage of the function for ensuring atomic initialization of the static value. Therefore, we handle these two possible outcomes (Ok(false) and Err(true)) appropriately in our implementation of the store function.
+        match self.has_value.compare_exchange(IS_VALUE_INITIALIZED, VALUE_IS_ALREADY_INITIALIZED, Ordering::SeqCst, Ordering::SeqCst) {
+            Ok(IS_VALUE_INITIALIZED) => {
                 // If the flag was false before and successfully set to true, set the data value
                 if let Some(val) = value {
                     self.data.store(val, Ordering::SeqCst);
                 }
             }
-            Err(_) => {
+            Err(VALUE_IS_ALREADY_INITIALIZED) => {
                 // If the flag was already true, panic to indicate that the value has already been set
                 panic!("AtomicOnceOptionU32 already set");
+            }
+            wicked_result => {
+                //if wicked_result == Ok(true) || wicked_result == Err(false) => {
+                panic!("This should never happen, unless AtomicBool::compare_exchange() if bugged or we didn't understand how it works! Got: '{:?}' but we expected only '{:?}' or '{:?}'",wicked_result, Ok::<bool,bool>(IS_VALUE_INITIALIZED), Err::<bool,bool>(VALUE_IS_ALREADY_INITIALIZED));
             }
         }
     }
