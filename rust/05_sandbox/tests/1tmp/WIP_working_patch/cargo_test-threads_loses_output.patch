@@ -492,7 +492,15 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
  
      // Increases the global and local panic count, and returns whether an
      // immediate abort is required.
-@@ -738,33 +747,148 @@ fn rust_panic_with_hook(
+@@ -726,6 +735,7 @@ pub const fn begin_panic<M: Any + Send>(
+     }
+ }
+ 
++
+ /// Central point for dispatching panics.
+ ///
+ /// Executes the primary logic for a panic, including checking for recursive
+@@ -738,33 +748,159 @@ fn rust_panic_with_hook(
      can_unwind: bool,
      force_no_backtrace: bool,
  ) -> ! {
@@ -500,6 +508,17 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
      let must_abort = panic_count::increase(true);
 +    rtprintpanic!("!! must_abort={:?}\n", must_abort);
 +    //rtprintpanic!("must_abort={:?} global_panic_count={}\n", must_abort,panic_count::GLOBAL_PANIC_COUNT.load(Ordering::SeqCst));
++    //use crate::rt;
++    //ie. if we're in a forked process or we're unsure if we are(ie. can't determine) then we assume that we are
++    //so both cases return true.
++    let is_fork_or_cant_tell=crate::rt::isolated_globals::is_fork_or_cant_tell();//matches!(crate::rt::isolated_globals::is_this_fork_process(), None | Some(true));
++    rtprintpanic!("!! is_fork_or_cant_tell={:?}\n", is_fork_or_cant_tell);
++    let must_abort=if is_fork_or_cant_tell {
++        Some(panic_count::MustAbort::AlwaysAbort)
++    } else {
++        must_abort
++    };
++    rtprintpanic!("!! must_abort={:?}\n", must_abort);
  
      // Check if we need to abort immediately.
      if let Some(must_abort) = must_abort {
@@ -651,7 +670,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
      let hook = HOOK.read().unwrap_or_else(PoisonError::into_inner);
      match *hook {
          // Some platforms (like wasm) know that printing to stderr won't ever actually
-@@ -773,31 +897,50 @@ fn rust_panic_with_hook(
+@@ -773,31 +909,50 @@ fn rust_panic_with_hook(
          // methods, this means we avoid formatting the string at all!
          // (The panic runtime might still call `payload.take_box()` though and trigger
          // formatting.)
@@ -794,3 +813,151 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/co
      Ok(())
  }
  
+Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/rt.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/rt.rs
++++ /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/rt.rs
+@@ -68,6 +68,130 @@ macro_rules! rtunwrap {
+     };
+ }
+ 
++pub mod isolated_globals {
++    /// Holds the std::process:id() taken before giving control to main()
++    /// This will be used later to compare to std::process:id() on call, and determine if we're the
++    /// forked process
++    static MAIN_PID: AtomicOnceOptionU32 = AtomicOnceOptionU32::none();
++    //static MAIN_PID: Option<u32> = None;
++
++    use crate::sync::atomic::{AtomicBool, AtomicU32, Ordering};
++    //initial code via chatgpt 3.5
++
++    /// Set it once and read it from anywhere(thread safe, i think).
++    /// Meant to be static global
++    /// with an initial None value
++    /// Holds Option<u32> which I need to keep a std::process::id() in.
++    struct AtomicOnceOptionU32 {
++        has_value: AtomicBool,
++        data: AtomicU32,
++    }
++
++    unsafe impl Sync for AtomicOnceOptionU32 {}
++
++    //u32 because std::process::id() returns u32, even tho later libs::kill expects an i32 as the pid
++    impl AtomicOnceOptionU32 {
++        const fn none() -> Self {
++            AtomicOnceOptionU32 {
++                has_value: AtomicBool::new(false),
++                data: AtomicU32::new(0),
++            }
++        }
++
++        #[track_caller]
++        fn store(&self, value: Option<u32>) {
++            //using 'const's here will show the hidden relationship between the relevant bools below.
++            const IS_VALUE_INITIALIZED: bool = false;
++            const VALUE_IS_ALREADY_INITIALIZED: bool = !IS_VALUE_INITIALIZED;
++            assert_eq!(false, IS_VALUE_INITIALIZED);
++            assert_eq!(true, VALUE_IS_ALREADY_INITIALIZED);
++            // Use compare_exchange to set the has_value flag to true only if it's currently false
++            // If compare_exchange returns Ok(false), it means that the comparison was successful (i.e., has_value was false before) and the value has been successfully set to true atomically by the current thread.
++            // If compare_exchange returns Err(true), it means that the comparison failed because has_value was already true (i.e., it was set to true by another thread before the current thread attempted to set it). This indicates that the value has already been set, and attempting to set it again would be an error.
++            // In both cases, compare_exchange will never return Ok(true) or Err(false). These situations don't occur in our specific usage of the function for ensuring atomic initialization of the static value. Therefore, we handle these two possible outcomes (Ok(false) and Err(true)) appropriately in our implementation of the store function.
++            match self.has_value.compare_exchange(IS_VALUE_INITIALIZED, VALUE_IS_ALREADY_INITIALIZED, Ordering::SeqCst, Ordering::SeqCst) {
++                Ok(IS_VALUE_INITIALIZED) => {
++                    // If the flag was false before and successfully set to true, set the data value
++                    if let Some(val) = value {
++                        self.data.store(val, Ordering::SeqCst);
++                    }
++                }
++                Err(VALUE_IS_ALREADY_INITIALIZED) => {
++                    // If the flag was already true, panic to indicate that the value has already been set
++                    panic!("AtomicOnceOptionU32 already set");
++                }
++                wicked_result => {
++                    //if wicked_result == Ok(true) || wicked_result == Err(false) => {
++                    panic!("This should never happen, unless AtomicBool::compare_exchange() if bugged or we didn't understand how it works! Got: '{:?}' but we expected only '{:?}' or '{:?}'",wicked_result, Ok::<bool,bool>(IS_VALUE_INITIALIZED), Err::<bool,bool>(VALUE_IS_ALREADY_INITIALIZED));
++                }
++                }
++        }
++
++        #[track_caller]
++        pub fn load(&self) -> Option<u32> {
++            if self.has_value.load(Ordering::SeqCst) {
++                Some(self.data.load(Ordering::SeqCst))
++            } else {
++                None
++            }
++        }
++    } // impl
++
++
++
++    #[inline]
++    #[track_caller]
++    pub(super) fn set_main_pid() { // accessible only by the std::rt module ie. by super
++        let pid=get_current_process_id();
++        MAIN_PID.store(Some(pid));
++    }
++
++    #[inline]
++    #[track_caller]
++    fn get_current_process_id() -> u32 {
++        crate::process::id()
++    }
++
++    // None means we can't determine.
++    #[track_caller]
++    pub fn is_main_pid_changed() -> Option<bool> {
++        if let Some(main_pid)=MAIN_PID.load() {
++            if get_current_process_id() != main_pid {
++                return Some(true)
++            } else {
++                return Some(false)
++            }
++        } else { //it wasn't set yet, or maybe because rust was called by something else so it bypassed
++                 //our rt::init(..)
++            return None;
++        }
++    }
++
++    // None means we can't determine.
++    #[track_caller]
++    pub fn is_this_fork_process() -> Option<bool> {
++        return is_main_pid_changed();//FIXME: add the other way too!
++    }
++    pub fn is_fork_or_cant_tell() -> bool {
++        //matches!(crate::rt::isolated_globals::is_this_fork_process(), None | Some(true));
++        match is_this_fork_process() {
++            Some(false) => false,
++            None | Some(true) => true,
++        }
++    }
++
++    // None means we can't determine.
++    #[track_caller]
++    pub fn is_this_main_process() -> Option<bool> {
++        if let Some(impc)=is_main_pid_changed() {
++            Some(!impc)
++        } else {
++            None
++        }
++    }
++
++}//mod
++
+ // One-time runtime initialization.
+ // Runs before `main`.
+ // SAFETY: must be called only once during runtime initialization.
+@@ -94,7 +218,11 @@ macro_rules! rtunwrap {
+ #[cfg_attr(test, allow(dead_code))]
+ unsafe fn init(argc: isize, argv: *const *const u8, sigpipe: u8) {
+     unsafe {
+-        sys::init(argc, argv, sigpipe);
++        sys::init(argc, argv, sigpipe); //TODO: find out where and what this does!
++
++        //let pid=crate::process:id();
++        //MAIN_PID=Some(pid);
++        isolated_globals::set_main_pid();
+ 
+         let main_guard = sys::thread::guard::init();
+         // Next, set up the current Thread with the guard information we just
