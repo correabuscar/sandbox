@@ -27,5 +27,6 @@ while test "$libtests" -eq "6"; do
   sleep 5
   echo -n "$libtests"
 done
+echo
 
 done
