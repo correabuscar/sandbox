@@ -817,7 +817,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
 ===================================================================
 --- .orig/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/rt.rs
 +++ /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/rt.rs
-@@ -68,6 +68,130 @@ macro_rules! rtunwrap {
+@@ -68,6 +68,148 @@ macro_rules! rtunwrap {
      };
  }
  
@@ -923,7 +923,25 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
 +    // None means we can't determine.
 +    #[track_caller]
 +    pub fn is_this_fork_process() -> Option<bool> {
-+        return is_main_pid_changed();//FIXME: add the other way too!
++        //FIXME: if this is called and determined to be true, then reset MAIN_PID to fork's pid for
++        //any future forkings of this fork process to be detectable as forks too compared to this
++        //(forked)process. ie. handle the case when the fork gets forked.
++        //And hold a static(ie. cached value) about this ever having been 'true' and not needing to call the rest of the functions to
++        //determine this is a fork(and always will be)
++        //FIXME: "account for the scenario where a forked process itself forks and possibly inherits the PID of the original main process after it has exited." src: chatgpt 3.5
++        //since "there isn't an inherent mechanism for processes to be notified of when they are forked or to receive direct notifications about forks.",
++        //for example in the case of main->fork1->fork2, if fork1 didn't ever call any of these functions,
++        //it wouldn't get PIDs updated(if we'd implement this), so given that say main exited before fork2 was created,
++        //fork2 could've gained same PID as main(altho very rarely to happend unless sysctl kernel.pid_max is low enough I guess),
++        //thus if fork2 ever calls these functions it would
++        //see it has the same pid as old main, thus think it's not a fork! so wrongly believes it's main() itself,
++        //if it weren't for the case that we're also using pending singnals being cleared to detect
++        //if this is a fork; thus it would see same PID as main but see no pending signals, thus
++        //know it was a fork itself but that something happened to its PID(like the situation I've just
++        //described; or like process migration in distributed system or something like that - ask chatgpt again)
++        //XXX: "A  child  created  via  fork(2) initially has an empty pending signal set; the pending signal set is preserved across an execve(2)." src: `man 2 sigpending` , so then if I wanna detect an execve I'd see the same pending signals from the process that ran execve(2). TODO: if I ever need to detect if my process was execve started by another rust program.
++        return is_main_pid_changed();//FIXME: add the other way too! as this is not good enough to
++                                     //detect if fork!
 +    }
 +    pub fn is_fork_or_cant_tell() -> bool {
 +        //matches!(crate::rt::isolated_globals::is_this_fork_process(), None | Some(true));
@@ -948,7 +966,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
  // One-time runtime initialization.
  // Runs before `main`.
  // SAFETY: must be called only once during runtime initialization.
-@@ -94,7 +218,11 @@ macro_rules! rtunwrap {
+@@ -94,7 +236,11 @@ macro_rules! rtunwrap {
  #[cfg_attr(test, allow(dead_code))]
  unsafe fn init(argc: isize, argv: *const *const u8, sigpipe: u8) {
      unsafe {
