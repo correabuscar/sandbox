@@ -1,0 +1,2 @@
+#cargo build -vv -Z build-std
+cargo build -Z build-std

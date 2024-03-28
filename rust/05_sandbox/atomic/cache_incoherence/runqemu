@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+qemu-system-arm -M virt -cpu cortex-a53 -m 2G -drive file=/path/to/arm-image.img,format=raw
