@@ -37,12 +37,32 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
         // Call the inner allocator's alloc function
         let ptr = self.inner.alloc(layout);
 
-        static BEEN_HERE:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
-                                                           //encountered!
+        //XXX: so this is same var for all threads, not thread-local; TODO: see if this is right
+        //But if thread-local is wanted it should wrap an atomic to ensure thread migration can
+        //still see the correct bool value(it would if atomic), even tho it's rare that it would happen to see it
+        //inconsitently due to thread being moved to different core.
+        //So without a thread local, a thread that's within this alloc block, will cause other
+        //threads that alloc to skip it, so it's clearly not right. FIXME.
+        thread_local! {
+            //XXX:shouldn't need to be atomic except we're trying to prevent the case where same thread
+            //gets migrated between cores at the "right" times to see cache incoherence (ie. it
+            //sees a prev. value not the last one that it set while it was on a diff. core)
+            static BEEN_HERE:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
+                                                               //encountered!
+        }
         //so if it was false set it to true, then do this block:
         //this compare_exchange is atomic (chatgpt confused me before about it not being so)
-        //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
-        if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
+        const WHAT_WAS:bool=false;
+        assert_eq!(false, WHAT_WAS);
+        assert_eq!(true, !WHAT_WAS);
+        BEEN_HERE.with(|been_here| {
+            //XXX: since this is thread local, there's no need for atomic set of
+            //compare-and-exchange
+        //TODO: other places in this repo use .swap() and need to use this .compare_exchange()
+        if Ok(WHAT_WAS)==been_here.compare_exchange(WHAT_WAS, !WHAT_WAS/*true*/, Ordering::SeqCst, Ordering::SeqCst) {
+            // "Yes, that's correct. The core functionality of compare_and-exchange (compare, exchange if match) is achieved as a single atomic operation. This ensures that even in multi-threaded scenarios, the operation appears indivisible to other threads." src: Gemini (Google's LLM) 28 March 2024
+        //if false==BEEN_HERE.swap(true, Ordering::SeqCst) { //XXX: this sets it to true always,
+        //even if it were true.
         //if let(_prev)=BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
 
             //println!("Allocating");
@@ -54,8 +74,10 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
 //                "allocating");
                 "Allocating {} bytes at {:?}", layout.size(), ptr);
             //let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
-            BEEN_HERE.store(false, Ordering::SeqCst);
-        }
+            been_here.store(false, Ordering::SeqCst);
+        } //if
+        }//closure of with()
+        );//with
 
         // Return the allocated pointer
         ptr
@@ -66,7 +88,11 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
                                                            //encountered!
         //so if it was false set it to true, then do this block:
         //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
-        if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
+        const WHAT_WAS:bool=false;
+        assert_eq!(false, WHAT_WAS);
+        assert_eq!(true, !WHAT_WAS);
+        if Ok(WHAT_WAS)==BEEN_HERE.compare_exchange(WHAT_WAS, !WHAT_WAS/*true*/, Ordering::SeqCst, Ordering::SeqCst) {
+        //if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
         // Call the inner allocator's dealloc function
             //XXX: can't use println! because it tries to re acquire lock ? ie. println within
             //println? i guess?
