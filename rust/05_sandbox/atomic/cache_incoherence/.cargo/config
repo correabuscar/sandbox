@@ -19,5 +19,13 @@ rustflags = [
 #linker = "arm-linux-gnueabihf-gcc"
 
 [target.aarch64-unknown-linux-gnu]
+# These two only miss two -l ie. -lrt and -lutil
 linker = "aarch64-unknown-linux-gnu-gcc"
+#linker = "aarch64-unknown-linux-gnu-g++"
+# This misses those 2 and -lgcc_s (iirc)
+#linker = "aarch64-unknown-linux-gnu-ld"
 runner = "runner"
+#rustflags = [ #no effect, tho they're there as .so.1
+#"-L", "/usr/aarch64-unknown-linux-gnu/lib64"
+#]
+
