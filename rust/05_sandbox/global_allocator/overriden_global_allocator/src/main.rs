@@ -47,7 +47,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
             //XXX:shouldn't need to be atomic except we're trying to prevent the case where same thread
             //gets migrated between cores at the "right" times to see cache incoherence (ie. it
             //sees a prev. value not the last one that it set while it was on a diff. core)
-            static BEEN_HERE:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
+            static BEEN_HERE_IN_THIS_THREAD:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
                                                                //encountered!
         }
         //so if it was false set it to true, then do this block:
@@ -55,15 +55,14 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
         const WHAT_WAS:bool=false;
         assert_eq!(false, WHAT_WAS);
         assert_eq!(true, !WHAT_WAS);
-        BEEN_HERE.with(|been_here| {
-            //XXX: since this is thread local, there's no need for atomic set of
-            //compare-and-exchange
+        BEEN_HERE_IN_THIS_THREAD.with(|been_here_in_this_thread| {
+            //TODO: since this is thread local, there's no need for an atomic set of operations compare-and-exchange
         //TODO: other places in this repo use .swap() and need to use this .compare_exchange()
-        if Ok(WHAT_WAS)==been_here.compare_exchange(WHAT_WAS, !WHAT_WAS/*true*/, Ordering::SeqCst, Ordering::SeqCst) {
+        if Ok(WHAT_WAS)==been_here_in_this_thread.compare_exchange(WHAT_WAS, !WHAT_WAS/*true*/, Ordering::SeqCst, Ordering::SeqCst) {
             // "Yes, that's correct. The core functionality of compare_and-exchange (compare, exchange if match) is achieved as a single atomic operation. This ensures that even in multi-threaded scenarios, the operation appears indivisible to other threads." src: Gemini (Google's LLM) 28 March 2024
-        //if false==BEEN_HERE.swap(true, Ordering::SeqCst) { //XXX: this sets it to true always,
+        //if false==BEEN_HERE_IN_THIS_THREAD.swap(true, Ordering::SeqCst) { //XXX: this sets it to true always,
         //even if it were true.
-        //if let(_prev)=BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        //if let(_prev)=BEEN_HERE_IN_THIS_THREAD.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
 
             //println!("Allocating");
             // Print a message indicating the allocation
@@ -73,8 +72,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
             eprintln!(
 //                "allocating");
                 "Allocating {} bytes at {:?}", layout.size(), ptr);
-            //let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
-            been_here.store(false, Ordering::SeqCst);
+            //let _=BEEN_HERE_IN_THIS_THREAD.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            been_here_in_this_thread.store(false, Ordering::SeqCst);
         } //if
         }//closure of with()
         );//with
@@ -84,15 +83,18 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        static BEEN_HERE:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
-                                                           //encountered!
+        thread_local! {
+            static BEEN_HERE_IN_THIS_THREAD:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
+                                                                              //encountered!
+        }
         //so if it was false set it to true, then do this block:
-        //if Ok(false)==BEEN_HERE.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
+        //if Ok(false)==BEEN_HERE_IN_THIS_THREAD.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) {
         const WHAT_WAS:bool=false;
         assert_eq!(false, WHAT_WAS);
         assert_eq!(true, !WHAT_WAS);
-        if Ok(WHAT_WAS)==BEEN_HERE.compare_exchange(WHAT_WAS, !WHAT_WAS/*true*/, Ordering::SeqCst, Ordering::SeqCst) {
-        //if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
+        BEEN_HERE_IN_THIS_THREAD.with(|been_here_in_this_thread| {
+        if Ok(WHAT_WAS)==been_here_in_this_thread.compare_exchange(WHAT_WAS, !WHAT_WAS/*true*/, Ordering::SeqCst, Ordering::SeqCst) {
+        //if false==BEEN_HERE_IN_THIS_THREAD.swap(true, Ordering::SeqCst) {
         // Call the inner allocator's dealloc function
             //XXX: can't use println! because it tries to re acquire lock ? ie. println within
             //println? i guess?
@@ -103,9 +105,10 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
                       //alloc those 1024 bytes buffer!
             //dbg!( //works, somehow
                 "Deallocating {} bytes at {:?}", layout.size(), ptr);
-            //let _=BEEN_HERE.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
-            BEEN_HERE.store(false, Ordering::SeqCst);
+            //let _=BEEN_HERE_IN_THIS_THREAD.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            been_here_in_this_thread.store(false, Ordering::SeqCst);
         }
+        });//with
         self.inner.dealloc(ptr, layout);
 
         // Print a message indicating the deallocation
