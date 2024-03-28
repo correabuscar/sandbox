@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 echo "Runner here, args($#): '$@'"
-#TODO: ./runqemu "$@"
+#TODO: 
+./runqemu "$@"

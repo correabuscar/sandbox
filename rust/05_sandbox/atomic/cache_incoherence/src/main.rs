@@ -3,7 +3,7 @@ use std::thread;
 use std::time::Duration;
 //use std::sync::atomic::{AtomicUsize, Ordering};
 //use std::sync::{Mutex, MutexGuard};
-use std::convert::TryInto;
+//use std::convert::TryInto;
 //use std::ptr::null_mut;
 use libc::{cpu_set_t, sched_setaffinity, CPU_ZERO, CPU_SET};
 

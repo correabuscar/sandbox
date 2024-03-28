@@ -1,3 +1,20 @@
 #!/usr/bin/env bash
 
-qemu-system-arm -M virt -cpu cortex-a53 -m 2G -drive file=/path/to/arm-image.img,format=raw
+#qemu-system-arm -M virt -cpu cortex-a53 -m 2G -drive file=/path/to/arm-image.img,format=raw
+#qemu-system-aarch64 -machine virt -smp 4 ./target/aarch64-unknown-linux-gnu/debug/cache_incoherence
+#qemu-system-aarch64 -machine virt -smp 4 ./script.sh
+qemu-aarch64 -cpu cortex-a57 -- ./target/aarch64-unknown-linux-gnu/debug/cache_incoherence
+#qemu-system-arm -machine virt -smp 4 -m 2G -kernel \
+#  /home/user/sandbox/cache_incoherence/ROOTFS/boot/Image \
+#  -initrd /home/user/sandbox/cache_incoherence/ROOTFS/boot/initramfs-linux.img \
+#  -append "console=ttyAMA0 root=/dev/vda rootfstype=ext4 rw" \
+#  -virtfs local,path=/home/user/sandbox/cache_incoherence/ROOTFS,mount_tag=rootfs,security_model=none \
+#  -display gtk \
+#  -serial stdio
+#  #-display sdl
+#  #
+#  #-device virtio-blk-device,drive=hd0
+#  #-cpu cortex-a53 \
+#
+#  #-drive path=/home/user/sandbox/cache_incoherence/ROOTFS,format=raw,id=hd0 \
+#  #

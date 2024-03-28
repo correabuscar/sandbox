@@ -1,0 +1,1 @@
+nix-shell cross_compile.nix --command "cargo build"
