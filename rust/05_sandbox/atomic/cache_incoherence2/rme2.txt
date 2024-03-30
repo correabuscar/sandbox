@@ -1,0 +1,3 @@
+this uses 2 extra static bools for synchronization between threads, instead of
+channels
+but initially the threads before starting are sync-ed by a barrier

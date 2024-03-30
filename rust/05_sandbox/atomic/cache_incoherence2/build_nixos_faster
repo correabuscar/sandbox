@@ -1,0 +1,4 @@
+#
+#nix-shell cross_compile.nix --command "cargo build && ldd ./target/aarch64-unknown-linux-gnu/debug/cache_incoherence"
+cargo clean
+nix-shell cross_compile.nix --command "cargo build && file ./target/aarch64-unknown-linux-musl/debug/cache_incoherence"

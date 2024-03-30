@@ -1,0 +1,35 @@
+
+[build]
+#target = "aarch64-unknown-linux-gnu"
+target = "aarch64-unknown-linux-musl"
+#target = "arm-unknown-linux-gnueabihf"
+#  "The target specification "arm-unknown-linux-gnueabihf" is for 32-bit ARM (ARMv7) architecture with the GNUEABIHF ABI (hard-float)." - chatgpt 3.5
+
+#[target.'cfg(all(target_arch="arm", any(unix, windows)))']
+[target.'cfg(any(target_arch="arm", target_arch="aarch64")']
+rustflags = [
+#"-C", "target-cpu=native", #can't use native here as it tries to use the one im compiling on ie. skylake
+#"For QEMU emulated ARM targets, you can typically use cortex-a53 or cortex-a57 as a reasonable default CPU target. These are common ARMv8-A (64-bit) architectures and are often used for virtualized ARM environments." - chatgpt 3.5
+#"ARMv8 AArch64 Multi-platform: This image is suitable for ARMv8 processors, which include Cortex-A53. " - chatgpt 3.5
+"-C", "target-cpu=cortex-a53",
+#XXX: ^ it's not in list: $ rustc -C target-cpu=help
+#but also doesn't complain like: 'helpsa' is not a recognized processor for this target (ignoring processor)
+]
+
+#[target.arm-unknown-linux-gnueabihf]
+#linker = "arm-linux-gnueabihf-gcc"
+
+[target.aarch64-unknown-linux-gnu]
+# These two only miss two -l ie. -lrt and -lutil
+linker = "aarch64-unknown-linux-gnu-gcc"
+#linker = "aarch64-unknown-linux-gnu-g++"
+# This misses those 2 and -lgcc_s (iirc)
+#linker = "aarch64-unknown-linux-gnu-ld"
+runner = "runner"
+#rustflags = [ #no effect, tho they're there as .so.1
+#"-L", "/usr/aarch64-unknown-linux-gnu/lib64"
+#]
+
+[target.aarch64-unknown-linux-musl]
+linker = "aarch64-unknown-linux-musl-gcc"
+runner = "./runner"
