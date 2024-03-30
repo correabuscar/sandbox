@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 #cargo build -vv -Z build-std
-#export LIBRARY_PATH=/usr/aarch64-unknown-linux-gnu/lib64/
 #export LD_LIBRARY_PATH=/usr/aarch64-unknown-linux-gnu/lib64/
 #else:
 #  = note: /usr/libexec/gcc/aarch64-unknown-linux-gnu/ld: cannot find -lutil: No such file or directory
 #          /usr/libexec/gcc/aarch64-unknown-linux-gnu/ld: cannot find -lrt: No such file or directory
 #          collect2: error: ld returned 1 exit status
-cargo build -Z build-std --target aarch64-unknown-linux-gnu
+cargo build -Z build-std
+#--target aarch64-unknown-linux-gnu

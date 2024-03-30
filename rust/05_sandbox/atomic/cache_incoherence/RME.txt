@@ -1,0 +1,18 @@
+i failed to get cache incoherence, looks like I misunderstood how it works or something.
+
+
+"
+even with ARM's weaker memory ordering compared to x86-64, reading a static global u64 from a different core will likely return the value written by the other core. Here's why:
+
+    Compiler Optimizations: Modern compilers often perform optimizations to improve performance. In this scenario, the compiler might recognize that the u64 is global and accessed by multiple threads. It might then insert memory fences (instructions that enforce memory ordering) around the write operation to ensure the value is written to main memory before other cores can read it.
+
+    Cache Coherence Protocols: Even without explicit memory fences, cache coherence protocols play a role. These protocols are hardware mechanisms that ensure all cores have a consistent view of data in memory. When a core writes to a memory location, the cache coherence protocol invalidates or updates the copies of that data in other cores' caches.
+
+    Data Visibility Guarantees: While ARM has weaker memory ordering compared to x86-64, it still provides some level of data visibility guarantees. These guarantees aim to prevent programs from seeing stale data due to reordering. In the case of a global variable, most implementations would ensure the reading core eventually sees the written value.
+
+However, there are caveats to consider:
+
+    Non-Guaranteed Behavior: Relying solely on compiler optimizations or cache coherence for thread safety is not recommended. The behavior might not be consistent across different hardware or compiler versions.
+
+" src: Gemini (Google's LLM) 30 March 2024
+

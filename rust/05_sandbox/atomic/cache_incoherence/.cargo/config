@@ -1,6 +1,7 @@
 
 [build]
-target = "aarch64-unknown-linux-gnu"
+#target = "aarch64-unknown-linux-gnu"
+target = "aarch64-unknown-linux-musl"
 #target = "arm-unknown-linux-gnueabihf"
 #  "The target specification "arm-unknown-linux-gnueabihf" is for 32-bit ARM (ARMv7) architecture with the GNUEABIHF ABI (hard-float)." - chatgpt 3.5
 
@@ -29,3 +30,6 @@ runner = "runner"
 #"-L", "/usr/aarch64-unknown-linux-gnu/lib64"
 #]
 
+[target.aarch64-unknown-linux-musl]
+linker = "aarch64-unknown-linux-musl-gcc"
+runner = "./runner"

@@ -3,7 +3,8 @@
 let
   nixpkgs = import <nixpkgs> {};
   cross = import <nixpkgs> {
-    crossSystem = { config = "aarch64-unknown-linux-gnu"; };
+    #crossSystem = { config = "aarch64-unknown-linux-gnu"; };
+    crossSystem = { config = "aarch64-unknown-linux-musl"; };
   };
 in
 nixpkgs.mkShell {
