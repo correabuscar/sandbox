@@ -3,7 +3,8 @@
 #qemu-system-arm -M virt -cpu cortex-a53 -m 2G -drive file=/path/to/arm-image.img,format=raw
 #qemu-system-aarch64 -machine virt -smp 4 ./target/aarch64-unknown-linux-gnu/debug/cache_incoherence
 #qemu-system-aarch64 -machine virt -smp 4 ./script.sh
-qemu-aarch64 -cpu cortex-a57 -- ./target/aarch64-unknown-linux-gnu/debug/cache_incoherence
+#qemu-aarch64 -cpu cortex-a57 -- ./target/aarch64-unknown-linux-gnu/debug/cache_incoherence2
+qemu-aarch64 -cpu cortex-a57 -- ./target/aarch64-unknown-linux-musl/debug/cache_incoherence2
 #qemu-system-arm -machine virt -smp 4 -m 2G -kernel \
 #  /home/user/sandbox/cache_incoherence/ROOTFS/boot/Image \
 #  -initrd /home/user/sandbox/cache_incoherence/ROOTFS/boot/initramfs-linux.img \
