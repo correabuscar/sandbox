@@ -1,0 +1,3 @@
+#
+start_sector=532480
+sudo mount -o loop,offset=$(($start_sector * 512)) 2024-03-12-raspios-bullseye-arm64-lite.img ./img

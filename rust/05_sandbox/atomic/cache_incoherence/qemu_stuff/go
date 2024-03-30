@@ -1,0 +1,19 @@
+img="2024-03-12-raspios-bullseye-arm64-lite.img"
+#XXX howto:
+#^ run: wget -c https://downloads.raspberrypi.com/raspios_oldstable_lite_arm64/images/raspios_oldstable_lite_arm64-2024-03-12/2024-03-12-raspios-bullseye-arm64-lite.img.xz
+#run: unxz -k 2024-03-12-raspios-bullseye-arm64-lite.img.xz
+#run: qemu-img resize 2024-03-12-raspios-bullseye-arm64-lite.img 4G
+
+#img="2024-03-15-raspios-bookworm-arm64-full.img"
+#img="foo.img"
+#qemu-system-aarch64 -M raspi3b -kernel b/kernel8.img -drive "format=raw,file=$img" -append "console=ttyAMA0 root=/dev/mmcblk0p2 rw rootwait" -dtb b/bcm2710-rpi-3-b.dtb -device usb-kbd -netdev user,id=net0,hostfwd=tcp::2222-:22 -device usb-net,netdev=net0
+qemu-system-aarch64 -M raspi3b -kernel b/kernel8.img -drive "format=raw,file=$img" -append "console=ttyAMA0 root=/dev/mmcblk0p2 rw rootwait" -dtb b/bcm2710-rpi-3-b.dtb -device usb-kbd -netdev user,id=net0,hostfwd=tcp::2222-:22 -device usb-net,netdev=net0
+#doesnt work: qemu-system-aarch64 -M raspi3b -kernel b/kernel8.img -drive "format=raw,file=$img" -append "console=ttyAMA0 root=/dev/mmcblk0p2 rw rootwait" -device usb-kbd -netdev user,id=net0,hostfwd=tcp::2222-:22 -device usb-net,netdev=net0
+#doesntwork: qemu-system-aarch64 -M raspi3b -drive "format=raw,file=$img" -dtb b/bcm2710-rpi-3-b.dtb -device usb-kbd -netdev user,id=net0,hostfwd=tcp::2222-:22 -device usb-net,netdev=net0
+#-device i8042-kbd
+#-device qemu-xhci
+#acpi=on kgdboc=ttyAMA0,115200
+#-usb -usbdevice tablet
+#-device usb-mouse -device usb-kbd -usb -usbdevice tablet 
+#-usbdevice keyboard
+#-device virtio-keyboard-pci
