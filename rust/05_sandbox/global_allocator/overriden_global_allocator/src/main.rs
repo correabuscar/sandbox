@@ -47,6 +47,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
             //XXX:shouldn't need to be atomic except we're trying to prevent the case where same thread
             //gets migrated between cores at the "right" times to see cache incoherence (ie. it
             //sees a prev. value not the last one that it set while it was on a diff. core)
+            //TODO: actually I'm not sure cache incoherence would happen, I even tried to test for
+            //in on qemu emulated ARM; need to read more docs, eg. https://marabos.nl/atomics/memory-ordering.html
             static BEEN_HERE_IN_THIS_THREAD:AtomicBool=AtomicBool::new(false);//inited to false the first time it's
                                                                //encountered!
         }
