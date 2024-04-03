@@ -1,0 +1,9 @@
+[package]
+name = "mybin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+#path="../mylib", 
+#mylib = { version="0.1", package = "mylib", dynamic = true  }
+libc = "0.2"

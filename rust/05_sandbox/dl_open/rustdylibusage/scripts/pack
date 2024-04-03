@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+who="$(basename `pwd`)"
+file="${who}-0.1.0.tar.gz"
+
+#git archive --format=tar.gz -o "$file" --prefix=src/ -- HEAD
+#git archive --format=tar.gz -o "$file" -- HEAD
+#these have practically no effect:
+#tar --create --gzip --file "$file" --exclude-vcs-ignores -- *
+#tar --create --gzip --file "$file" --exclude-vcs -- *
+#tar --create --gzip --file "$file" --exclude-from=.gitignore -- *
+tar --create --gzip --file "$file" --exclude-vcs-ignores --exclude-vcs --exclude=target --exclude="$file" -- *
+#hash="$(nix-hash --type sha256 --base32 -- "$file")"
+#hash="$(nix-hash --type sha256 --base32 -- "Cargo.lock")"
+#echo "$hash"
+#sed -i -E 's/(\s*cargoSha256\s*=\s*")([A-Za-z0-9]*)("; #\s*'"$who"'\s*)$/\1'"$hash"'\3/' -- ../default.nix
