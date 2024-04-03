@@ -2,7 +2,7 @@ with import <nixpkgs> {};
 
 let
   mybin = rustPlatform.buildRustPackage rec {
-    name = "mybin";
+    pname = "mybin";
     version = "0.1.0";
     src = ./mybin/mybin-${version}.tar.gz;
     #cargoSha256 = "0qbdcw601m09fw7vqmafvw5q7w17dh37fbbycs6is3rff5qlmbyw"; #mybin
@@ -29,7 +29,7 @@ let
 
   mylib = rustPlatform.buildRustPackage rec {
     version = "0.1.0";
-    name = "mylib";
+    pname = "mylib";
     src = ./mylib/mylib-${version}.tar.gz;
     #cargoSha256 = "1zwcx7637zl6ka058hfgwzmnxln1y592gfwiycxiz65qygxph383"; #mylib
     #cargoSha256 = "sha256-7AfdCKEh4xTyRir/hmA8I6WYnoPYAQH8NN1Jx19SYDc";
