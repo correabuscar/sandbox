@@ -1,0 +1,8 @@
+    nix-build variant of rustdylibusage
+so this makes a dynamic library (.so) in rust as a derivation(ie. package) in nixos
+then also a bin program that uses it.
+
+    for the system-wide one check:
+    https://github.com/correabuscar/etcnixos/commit/8d1643504cec9c51832004d96d566b7a1c57ce3e
+    and for patching the lib without rebuilding those that depend on it:
+    https://github.com/correabuscar/etcnixos/commit/bee1dd58bb31f8c69d1c336670dc5a691e48aed1
