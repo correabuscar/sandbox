@@ -1,7 +1,7 @@
-Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/test/src/formatters/pretty.rs
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/test/src/formatters/pretty.rs
 ===================================================================
---- .orig/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/test/src/formatters/pretty.rs
-+++ /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/test/src/formatters/pretty.rs
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/test/src/formatters/pretty.rs
++++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/test/src/formatters/pretty.rs
 @@ -91,7 +91,10 @@ impl<T: Write> PrettyFormatter<T> {
      pub fn write_plain<S: AsRef<str>>(&mut self, s: S) -> io::Result<()> {
          let s = s.as_ref();
@@ -24,10 +24,10 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
              self.write_plain(format!("test {name} ... "))?;
          }
  
-Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/test/src/lib.rs
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/test/src/lib.rs
 ===================================================================
---- .orig/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/test/src/lib.rs
-+++ /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/test/src/lib.rs
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/test/src/lib.rs
++++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/test/src/lib.rs
 @@ -91,6 +91,22 @@ use options::RunStrategy;
  use test_result::*;
  use time::TestExecTime;
@@ -51,7 +51,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
  // Process exit code to be used to indicate test failures.
  const ERROR_EXIT_CODE: i32 = 101;
  
-@@ -380,6 +396,9 @@ where
+@@ -379,6 +395,9 @@ where
      }
  
      if concurrency == 1 {
@@ -61,7 +61,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
          while !remaining.is_empty() {
              let (id, test) = remaining.pop_front().unwrap();
              let event = TestEvent::TeWait(test.desc.clone());
-@@ -402,11 +421,32 @@ where
+@@ -401,11 +420,32 @@ where
              }
          }
      } else {
@@ -94,7 +94,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
  
                  let event = TestEvent::TeWait(desc.clone());
                  notify_about_test_event(event)?; //here no pad
-@@ -422,7 +462,10 @@ where
+@@ -421,7 +461,10 @@ where
                  if let Some(timeout) = calc_timeout(&timeout_queue) {
                      res = rx.recv_timeout(timeout);
                      for test in get_timed_out_tests(&running_tests, &mut timeout_queue) {
@@ -106,7 +106,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
                          notify_about_test_event(event)?;
                      }
  
-@@ -437,6 +480,9 @@ where
+@@ -436,6 +479,9 @@ where
                      }
                  } else {
                      res = rx.recv().map_err(|_| RecvTimeoutError::Disconnected);
@@ -116,7 +116,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
                      break;
                  }
              }
-@@ -444,23 +490,36 @@ where
+@@ -443,23 +489,36 @@ where
              let mut completed_test = res.unwrap();
              let running_test = running_tests.remove(&completed_test.id).unwrap();
              running_test.join(&mut completed_test);
@@ -157,7 +157,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
  
      if opts.bench_benchmarks {
          // All benchmarks run at the end, in serial.
-@@ -559,11 +618,18 @@ pub fn run_test(
+@@ -558,11 +617,18 @@ pub fn run_test(
      match testfn.into_runnable() {
          Runnable::Test(runnable_test) => {
              if runnable_test.is_dynamic() {
@@ -177,7 +177,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
  
              let name = desc.name.clone();
              let nocapture = opts.nocapture;
-@@ -596,6 +662,9 @@ pub fn run_test(
+@@ -595,6 +661,9 @@ pub fn run_test(
              // level.
              let supports_threads = !cfg!(target_os = "emscripten") && !cfg!(target_family = "wasm");
              if supports_threads {
@@ -187,7 +187,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
                  let cfg = thread::Builder::new().name(name.as_slice().to_owned());
                  let mut runtest = Arc::new(Mutex::new(Some(runtest)));
                  let runtest2 = runtest.clone();
-@@ -631,6 +700,7 @@ fn __rust_begin_short_backtrace<T, F: Fn
+@@ -630,6 +699,7 @@ fn __rust_begin_short_backtrace<T, F: Fn
      black_box(result)
  }
  
@@ -195,7 +195,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
  fn run_test_in_process(
      id: TestId,
      desc: TestDesc,
-@@ -640,29 +710,230 @@ fn run_test_in_process(
+@@ -639,29 +709,230 @@ fn run_test_in_process(
      monitor_ch: Sender<CompletedTest>,
      time_opts: Option<time::TestTimeOptions>,
  ) {
@@ -436,7 +436,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
  }
  
  fn fold_err<T, E>(
-@@ -687,6 +958,10 @@ fn spawn_test_subprocess(
+@@ -686,6 +957,10 @@ fn spawn_test_subprocess(
      time_opts: Option<time::TestTimeOptions>,
      bench_benchmarks: bool,
  ) {
@@ -447,7 +447,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
      let (result, test_output, exec_time) = (|| {
          let args = env::args().collect::<Vec<_>>();
          let current_exe = &args[0];
-@@ -756,9 +1031,12 @@ fn run_test_in_spawned_subprocess(desc:
+@@ -755,9 +1030,12 @@ fn run_test_in_spawned_subprocess(desc:
          }
  
          if let TrOk = test_result {
@@ -461,10 +461,10 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/te
          }
      });
      let record_result2 = record_result.clone();
-Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/panicking.rs
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/panicking.rs
 ===================================================================
---- .orig/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/panicking.rs
-+++ /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/panicking.rs
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/panicking.rs
++++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/panicking.rs
 @@ -350,10 +350,18 @@ pub mod panic_count {
          PanicInHook,
      }
@@ -725,11 +725,11 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
      rust_panic(payload)
  }
  
-Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/lib.rs
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/lib.rs
 ===================================================================
---- .orig/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/lib.rs
-+++ /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/lib.rs
-@@ -400,6 +400,7 @@
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/lib.rs
++++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/lib.rs
+@@ -403,6 +403,7 @@
  // tidy-alphabetical-end
  //
  #![default_lib_allocator]
@@ -737,10 +737,10 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/st
  
  // Explicitly import the prelude. The compiler uses this same unstable attribute
  // to import the prelude implicitly when building crates that depend on std.
-Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/core/src/fmt/mod.rs
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/core/src/fmt/mod.rs
 ===================================================================
---- .orig/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/core/src/fmt/mod.rs
-+++ /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/core/src/fmt/mod.rs
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/core/src/fmt/mod.rs
++++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/core/src/fmt/mod.rs
 @@ -352,6 +352,20 @@ impl<'a> Arguments<'a> {
          Arguments { pieces, fmt: Some(fmt), args }
      }
@@ -813,10 +813,10 @@ Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/co
      Ok(())
  }
  
-Index: /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/rt.rs
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
 ===================================================================
---- .orig/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/rt.rs
-+++ /var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src/library/std/src/rt.rs
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
++++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
 @@ -68,6 +68,148 @@ macro_rules! rtunwrap {
      };
  }
