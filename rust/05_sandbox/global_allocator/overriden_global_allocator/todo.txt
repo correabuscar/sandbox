@@ -1,0 +1,19 @@
+"Yes, to ensure that you catch any memory allocation or deallocation performed by Rust code using the global allocator, you would typically want to hook into all relevant functions and methods. This ensures that your custom allocator intercepts and handles all memory allocation and deallocation requests made by the Rust code.
+
+In the context of implementing a custom global allocator in Rust, hooking into the following functions and methods would cover the majority of allocation and deallocation scenarios:
+
+1. `alloc`: This function allocates memory for a given size.
+
+2. `dealloc`: This function deallocates memory previously allocated by `alloc`.
+
+3. `realloc`: This function reallocates memory, possibly changing its size.
+
+4. `alloc_zeroed`: This function allocates zero-initialized memory for a given size.
+
+5. `dealloc_excess`: This function deallocates excess memory when resizing a memory block.
+
+6. `alloc_layout`: This method allocates memory for a given `Layout` object, which describes the size and alignment requirements of the memory block.
+
+7. `realloc_layout`: This method reallocates memory for a given `Layout` object.
+
+By hooking into these functions and methods, you can intercept and customize memory allocation and deallocation behavior in Rust. This allows you to implement custom memory management strategies, track memory usage, or integrate with external memory management systems as needed for your application." - src: chatgpt 3.5
