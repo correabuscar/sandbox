@@ -1,0 +1,1 @@
+explore this way of doing dynamic lib and linking: https://stackoverflow.com/a/75903553
