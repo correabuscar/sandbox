@@ -1,3 +1,8 @@
+/*
+ "When you call libc::abort() from within your program, Rust first searches for the abort() symbol within the current binary. If it finds a matching symbol (i.e., your custom implementation), it uses that instead of the libc::abort() function from the standard C library.
+
+This behavior is consistent with Rust's symbol resolution rules and allows you to override standard library functions with custom implementations within your program. "  - chatgpt 3.5
+*/
 #[no_mangle]
 pub extern "C" fn abort() {
     eprintln!("Abort intercepted!");
