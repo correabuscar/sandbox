@@ -75,6 +75,15 @@ fn set_panic_hook_too() {
     }));
 }
 
+//#[no_mangle]
+//pub extern "C" fn abort() {
+//    eprintln!("Abort intercepted!");
+//    //std::process::exit(128+6); //134 is SIGABRT's exit code 128+6
+//    unsafe {
+//        libc::abort();//FIXME: infinite recursion
+//    };
+//}
+
 fn main() {
     // Set up signal handling for SIGABRT
     // way1:
