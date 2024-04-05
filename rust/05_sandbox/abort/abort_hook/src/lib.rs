@@ -55,7 +55,6 @@
 
 //use std::ffi::CString;
 
-//extern crate libc;
 
 // Define the custom abort function
 #[no_mangle]
@@ -71,8 +70,10 @@ pub extern "C" fn abort() {
                                                  // catch_unwind()! and even then FIXME
     // allowing this to fallthrough is bad, illegal instruction (if lucky)
     //std::process::abort();//infinite recursion, FIXME: call the original one?
+
+    //extern crate libc;
     //unsafe {
-    //    libc::abort();
+    //    libc::abort(); //XXX: this will infinite recurse!
     //}
     std::process::exit(128+6); //134 is SIGABRT's exit code 128+6
 }

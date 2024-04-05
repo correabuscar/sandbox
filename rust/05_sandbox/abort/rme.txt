@@ -1,0 +1,2 @@
+word "hook" is used but it's meant "override" as calling the original wasn't
+possible in those scenarios.
