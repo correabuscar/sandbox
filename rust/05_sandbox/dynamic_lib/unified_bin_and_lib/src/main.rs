@@ -1,5 +1,14 @@
-mod lib2;
+//mod lib2;
+
+extern "C" {
+    fn add(left: usize, right: usize) -> usize;
+}
+
+#[link(name = "unified_bin_and_lib")]
+extern {}
 
 fn main() {
-    println!("Hello, world!{}", lib2::add(1,2));
+    println!("Hello, world!{}",
+             unsafe { add(1,2) }
+             );
 }

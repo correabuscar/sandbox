@@ -1,4 +1,17 @@
+#!/usr/bin/env bash
 export RUST_BACKTRACE=1
 cargo clean
-cargo run
-echo "exit code: $?"
+#FIXME: needs double build to finally compile it O_o
+cargo build -v
+cargo build -v
+
+cargo run -v
+ec="$?"
+pushd target/debug
+#FIXME: need to set lib path, make it not necessary!
+LD_LIBRARY_PATH=./ ./unified_bin_and_lib
+ec2="$?"
+./unified_bin_and_lib
+ec3="$?"
+popd
+echo "exit code: $ec $ec2 $ec3"

@@ -21,13 +21,24 @@ path = "src/lib2.rs"
 #  = note: `#[warn(special_module_name)]` on by default
 
 
-#[profile.dev]
+[profile.dev]
+opt-level = 0
+#rpath=true
 ## ... other dev profile settings
 #link = "dylib" # Only if dynamic_linking is enabled
 #
-#[profile.release]
+[profile.release]
+#rpath=true
 ## ... other release profile settings
 #link = "dylib" # Only if dynamic_linking is enabled
 
 
+#[build] #unused key
+#rustc-link-lib = ["unified_bin_and_lib"]
+#script = "build.rs"
+
 [dependencies]
+
+#[build-dependencies]
+#cargo_toml = "0.19.2"
+

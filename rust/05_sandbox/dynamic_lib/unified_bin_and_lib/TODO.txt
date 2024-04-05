@@ -1,0 +1,3 @@
+* must set rpath somehow, else can't run without via 'cargo run'
+* make it not have to double build to work, ie. 'cargo build' must be run
+  twice to succeed
