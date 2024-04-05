@@ -1,0 +1,4 @@
+export RUST_BACKTRACE=1
+cargo clean
+cargo build
+echo "exit code: $?"

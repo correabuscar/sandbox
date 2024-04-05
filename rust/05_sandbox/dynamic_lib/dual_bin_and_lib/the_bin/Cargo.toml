@@ -1,0 +1,12 @@
+[package]
+name = "the_bin"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.dev]
+rpath=true #needed so u can run it alone rather than thru 'cargo run', still needs the .so to be near it
+
+[dependencies]
+the_lib = { version = "0.1.0", path = "../the_lib" }

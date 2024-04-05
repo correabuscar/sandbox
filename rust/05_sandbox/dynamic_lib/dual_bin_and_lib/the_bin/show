@@ -1,0 +1,2 @@
+readelf -d target/debug/the_bin
+ldd target/debug/the_bin
