@@ -16,6 +16,14 @@ edition = "2021"
 #[build]
 #"cargo:rustc-link-lib" = "custom_abort"
 
+[profile.dev]
+opt-level = 0
+#rpath=true #This sets the rpath for the linker, instructing it to search for libraries relative to the executable's location. However, this might not work reliably across all platforms.
+
+#[build]
+#rustc-link-args = ["-Wl,--no-as-needed"]
+
+
 [dependencies]
 libc = "0.2"
 #std = { path = "/usr/lib/rust/1.76.0/lib/rustlib/src/rust/library/std" }

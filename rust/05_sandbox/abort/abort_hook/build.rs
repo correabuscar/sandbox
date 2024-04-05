@@ -16,6 +16,9 @@ fn main() {
         // Link with libc
 //        .arg("-l")
 //        .arg("c") // aka libc for libc::puts
+//        .arg("-L")
+//        .arg(out_dir.clone())
+//        .arg("-lcustom_abort")
         .status()
         .expect("failed to compile custom abort library");
 
@@ -25,11 +28,16 @@ fn main() {
 
     // Output the path to the shared library
     println!("cargo:rustc-link-search=native={}", out_dir); // needed
-    //println!("cargo:rustc-link-lib=dylib=custom_abort");
+//    println!("cargo:rustc-link-lib=dylib=libcustom_abort.so");
+//    println!("cargo:rustc-link-lib=dylib=libcustom_abort");
+//    println!("cargo:rustc-link-lib=dylib=custom_abort");
     //println!("cargo:rustc-link-lib=custom_abort");
 
     // Link with libc
     //println!("cargo:rerun-if-changed=build.rs");
     //println!("cargo:rustc-link-lib=c");
+
+    println!("cargo:rustc-link-arg=-Wl,--no-as-needed,-rpath={}",out_dir);
+    //--no-as-needed has no effect here, 
 }
 

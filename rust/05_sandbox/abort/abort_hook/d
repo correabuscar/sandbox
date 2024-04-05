@@ -1,0 +1,5 @@
+# needs dev-debug/lldb on gentoo
+
+#rust-lldb ./target/debug/abort_hook -o 'b abort' -o 'r'
+#rust-lldb ./target/debug/abort_hook -o 'b libc::abort' -o 'r'
+rust-lldb ./target/debug/abort_hook -o 'b __GI_abort' -o 'r'

@@ -77,3 +77,6 @@ pub extern "C" fn abort() {
     std::process::exit(128+6); //134 is SIGABRT's exit code 128+6
 }
 
+#[no_mangle]
+fn dummy() {
+}
