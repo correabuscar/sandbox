@@ -12,9 +12,11 @@ pub extern "C" fn abort() {
 fn main() {
     println!("Hello, world!");
     let e=std::panic::catch_unwind(|| {
+        //this gets caught first, unless commented out
+        std::process::abort(); //ahaFIXME: uncaught, why?! even tho it still calls libc::abort() eventually! doesn't it?! ok it's because of dead code elimination, my dynamic lib didn't get dynamically linked as rustc thought it's not used, hence no hook for abort()
+        #[allow(unreachable_code)]
         unsafe {
-            std::process::abort(); //ahaFIXME: uncaught, why?! even tho it still calls libc::abort() eventually! doesn't it?! ok it's because of dead code elimination, my dynamic lib didn't get dynamically linked as rustc thought it's not used, hence no hook for abort()
-            //libc::abort(); //caught
+            libc::abort(); //caught
             //abort(); //caught
         }
     });
