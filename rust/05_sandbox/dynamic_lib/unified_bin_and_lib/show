@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+exe="./target/debug/unified_bin_and_lib"
+readelf -d -- "$exe"
+ldd -- "$exe"
