@@ -18,3 +18,5 @@ edition = "2021"
 
 [dependencies]
 libc = "0.2"
+#std = { path = "/usr/lib/rust/1.76.0/lib/rustlib/src/rust/library/std" }
+#^ this doesn't work, but -Z build-std does (tho it needs --target, see ./g2)

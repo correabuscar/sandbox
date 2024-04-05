@@ -1,0 +1,7 @@
+#
+export RUST_BACKTRACE=1
+cargo clean
+
+#so this compiles but doesn't affect what I wanted it to affect:
+cargo run -Z build-std --target x86_64-unknown-linux-gnu
+echo "exit code: $?"
