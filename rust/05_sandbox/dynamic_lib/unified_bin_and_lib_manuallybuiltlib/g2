@@ -7,7 +7,8 @@ cargo clean
 set -vx
 export CARGO_INCREMENTAL=0
 #cargo build -vv --jobs 1 || cargo build -vv --jobs 1
-cargo build --lib && cargo build --bins
+#cargo build --lib && cargo build --bins
+#^ no library targets so there's no point here, but this is good for the other project in ../
 #^ thanks to nerditation for two step build: https://users.rust-lang.org/t/cargo-double-build-is-necessary-to-compile-bin-project-with-its-own-dynamic-lib-inside/109437/4?u=correabuscar
 
 cargo run -vv #--jobs 1
