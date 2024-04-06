@@ -4,6 +4,7 @@ cargo clean
 #FIXME: needs double build to finally compile it O_o
 set -vx
 export NUM_JOBS=1 #presumably affects cargo
+export CARGO_INCREMENTAL=0
 cargo build -vv
 cargo build -vv
 
