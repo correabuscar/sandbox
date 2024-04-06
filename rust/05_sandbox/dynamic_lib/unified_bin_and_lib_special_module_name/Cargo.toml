@@ -1,10 +1,8 @@
 [package]
-name = "dual_bin_and_lib_special_module_name"
+name = "unified_bin_and_lib_special_module_name"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[lib]
-path = "src/lib2.rs"
 
 [dependencies]
