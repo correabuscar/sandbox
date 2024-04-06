@@ -58,17 +58,17 @@ fn main() {
 // Fork handlers
 unsafe extern "C" fn prepare() {
     // You can perform any necessary actions before fork() in the parent process
-    eprintln!("!! prepare");
+    eprintln!("!! prepare pid={}",std::process::id());
 }
 
 unsafe extern "C" fn parent() {
     // You can perform any necessary actions after fork() in the parent process
-    eprintln!("!! parent");
+    eprintln!("!! parent pid={}",std::process::id());
 }
 
 unsafe extern "C" fn child() {
     // You can perform any necessary actions after fork() in the child process
     std::thread::sleep(std::time::Duration::from_secs(1));
-    eprintln!("!! child");
+    eprintln!("!! child pid={}",std::process::id());
 }
 
