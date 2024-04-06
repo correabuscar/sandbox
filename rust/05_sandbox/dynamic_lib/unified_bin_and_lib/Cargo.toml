@@ -38,7 +38,7 @@ opt-level = 0
 #script = "build.rs"
 
 [dependencies]
-
+#unified_bin_and_lib = { path="./" } #cyclic dep
 #[build-dependencies]
 #cargo_toml = "0.19.2"
 

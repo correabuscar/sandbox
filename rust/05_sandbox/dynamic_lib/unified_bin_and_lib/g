@@ -2,11 +2,14 @@
 export RUST_BACKTRACE=1
 cargo clean
 #FIXME: needs double build to finally compile it O_o
+set -vx
+export NUM_JOBS=1 #presumably affects cargo
 cargo build -vv
 cargo build -vv
 
 cargo run -vv
 ec="$?"
+set +vx
 pushd target/debug
 #FIXME: need to set lib path, make it not necessary!
 LD_LIBRARY_PATH=./ ./unified_bin_and_lib
