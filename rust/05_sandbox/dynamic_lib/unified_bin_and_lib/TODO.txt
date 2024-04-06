@@ -1,5 +1,5 @@
 * must set rpath somehow, else can't run without via 'cargo run'
-* make it not have to double build to work, ie. 'cargo build' must be run
-  twice to succeed
+//* make it not have to double build to work, ie. 'cargo build' must be run
+  twice to succeed - can do via cargo build --libs && cargo build --bins
   * I know it would work if I were to build the dyn lib from build.rs tho,
     like I did for the 'abort_hook' project.

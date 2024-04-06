@@ -31,5 +31,20 @@ fn main() {
         // needed, because Cargo.toml's rpath=true isn't enough. FIXME: didn't work!
 //        println!("cargo:rustc-link-arg=-Wl,--no-as-needed,-rpath={}",out_dir); //no effect
 //    }
+//    let lib_name = "libunified_bin_and_lib.so";
+//    let status = std::process::Command::new("rustc")
+//        .args(&["src/lib2.rs", "--crate-type=cdylib", "-o"])
+//        .arg(&format!("{}/{}", out_dir, lib_name))
+//        .status()
+//        .expect("failed to compile custom abort library");
+//
+//    if !status.success() {
+//        panic!("Failed to compile custom abort library");
+//    }
+//
+//    // Output the path to the shared library
+//    println!("cargo:rustc-link-search=native={}", out_dir); // needed
+//    println!("cargo:rustc-link-arg=-Wl,--no-as-needed,-rpath={}",out_dir);
+//    //--no-as-needed has no effect here,
 }
 

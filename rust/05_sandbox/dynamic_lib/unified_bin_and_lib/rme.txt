@@ -1,0 +1,5 @@
+* this lets cargo built the dyn lib .so file, but doesn't know to set rpath
+correctly AND needs to build it in two stages cargo build --lib then 
+cargo build --bins
+
+Thanks to nerditation from: https://users.rust-lang.org/t/cargo-double-build-is-necessary-to-compile-bin-project-with-its-own-dynamic-lib-inside/109437/4?u=correabuscar

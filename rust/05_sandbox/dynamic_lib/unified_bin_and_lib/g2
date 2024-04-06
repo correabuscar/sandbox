@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 export RUST_BACKTRACE=1
 cargo clean
-#FIXME: needs double build to finally compile it O_o ; try ./g2 for a workaround!
+#FIXME: needs double build to finally compile it O_o
 #I wasn't doing JOBS=1 properly, it's --jobs 1 (thanks to: https://users.rust-lang.org/t/cargo-double-build-is-necessary-to-compile-bin-project-with-its-own-dynamic-lib-inside/109437/2?u=correabuscar  )
 #export NUM_JOBS=1 #presumably affects cargo, it doesn't! thanks chatgpt 3.5!
 set -vx
 export CARGO_INCREMENTAL=0
-cargo build -vv --jobs 1 || cargo build -vv --jobs 1
+#cargo build -vv --jobs 1 || cargo build -vv --jobs 1
+cargo build --lib && cargo build --bins
+#^ thanks to nerditation for two step build: https://users.rust-lang.org/t/cargo-double-build-is-necessary-to-compile-bin-project-with-its-own-dynamic-lib-inside/109437/4?u=correabuscar
 
 cargo run -vv --jobs 1
 ec="$?"

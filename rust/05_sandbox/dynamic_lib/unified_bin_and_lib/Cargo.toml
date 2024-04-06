@@ -25,7 +25,7 @@ path = "src/lib2.rs"
 [profile.dev]
 opt-level = 0
 incremental=false
-#rpath=true #no effect
+rpath=true #no effect
 ## ... other dev profile settings
 #link = "dylib" # Only if dynamic_linking is enabled
 #
