@@ -3,14 +3,19 @@
 fn main() {
     let out_dir = std::env::var("OUT_DIR").unwrap();
 
-    //eprintln!("!!!!!!!!! outdir={}",out_dir);//not seen, maybe -v is needed? nope, something else?!
+    eprintln!("!!!!!!!!! outdir={}",out_dir);//not seen, maybe -v is needed? nope, something else?!
+    //println!("cargo:warning=outdir={}",out_dir);
+    //XXX: kind odd that only one ":" is needed, as per:
+    //https://github.com/rust-lang/cargo/issues/985#issuecomment-1071667472
+    //vs 2 "::" as per: https://doc.rust-lang.org/cargo/reference/build-scripts.html#cargo-warning
+
 //    // Parse the Cargo.toml file
 //    let cargo_toml = CargoToml::from_path("Cargo.toml").unwrap();
 //    let manifest: Manifest = cargo_toml.parse().unwrap();
 //
 //    // Get the package name from the Cargo.toml file
 //    let package_name = manifest.package.unwrap().name;
-    let package_name="unified_bin_and_lib";
+    //let package_name="unified_bin_and_lib";
 
     // Check the compilation context
     //let is_library = std::env::var("CARGO_CFG_TARGET_KIND").unwrap() == "cdylib";

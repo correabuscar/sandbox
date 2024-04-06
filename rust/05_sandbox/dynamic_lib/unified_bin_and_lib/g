@@ -2,10 +2,10 @@
 export RUST_BACKTRACE=1
 cargo clean
 #FIXME: needs double build to finally compile it O_o
-cargo build -v
-cargo build -v
+cargo build -vv
+cargo build -vv
 
-cargo run -v
+cargo run -vv
 ec="$?"
 pushd target/debug
 #FIXME: need to set lib path, make it not necessary!
