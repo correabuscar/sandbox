@@ -12,12 +12,13 @@ fn main() {
 //    // Shared state for boolean flags
 //    let fork_flags = Arc::new(Mutex::new(ForkFlags::default()));
 
-    #[cfg(not(unix))]
+    //#[cfg(not(unix))]
+    #[cfg(not(any(unix, target_os = "fuchsia", target_os = "vxworks")))]
     eprintln!("There's no fork() on your OS: {}", std::env::consts::OS);
-    #[cfg(unix)]
+    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     eprintln!("Welcome. There's fork() on this OS: {}", std::env::consts::OS);
     // Register fork handlers
-    #[cfg(unix)]
+    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     unsafe {
         let result: libc::c_int = libc::pthread_atfork(
             Some(prepare),
@@ -54,7 +55,7 @@ fn main() {
 //        println!("No fork occurred in the child process.");
 //    }
 //    XXX: fork is part of 'unix' cfg: https://github.com/rust-lang/libc/blob/a0f5b4b21391252fe38b2df9310dc65e37b07d9f/src/lib.rs#L92C5-L97C25
-    #[cfg(unix)]
+    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     unsafe {
         libc::fork();
         //libc::vfork(); // doesn't use the hooks from pthread_atfork()
@@ -69,19 +70,19 @@ fn main() {
 //cfg_if! {
 //if #[cfg(unix)] {
 // Fork handlers
-#[cfg(unix)]
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn prepare() {
     // You can perform any necessary actions before fork() in the parent process
     eprintln!("!! prepare pid={}",std::process::id());
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn parent() {
     // You can perform any necessary actions after fork() in the parent process
     eprintln!("!! parent pid={}",std::process::id());
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn child() {
     // You can perform any necessary actions after fork() in the child process
     std::thread::sleep(std::time::Duration::from_secs(1));
