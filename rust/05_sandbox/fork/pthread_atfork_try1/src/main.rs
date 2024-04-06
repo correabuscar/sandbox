@@ -14,11 +14,15 @@ fn main() {
 
     // Register fork handlers
     unsafe {
-        libc::pthread_atfork(
+        let result: libc::c_int = libc::pthread_atfork(
             Some(prepare),
             Some(parent),
             Some(child),
         );
+        if result != 0 {
+            // Error handling: Handle the case where pthread_atfork fails
+            panic!("pthread_atfork failed with error code: {}", result);
+        }
     }
 
 //    // Spawn a thread to perform some tasks
