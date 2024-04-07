@@ -377,60 +377,60 @@ fn test_that_pthread_atfork_works_as_expected() {
     //TODO: dedup ^
 } //test fn
 
-use std::fs::{self, File};
-//use std::io;
-
-struct TemporaryFile {
-    path: String,
-    should_cleanup: bool,
-}
-
-impl TemporaryFile {
-    fn new(path: &str) -> Self {
-        //-> io::Result<Self> {
-        let _ = fs::remove_file(path);
-
-        return TemporaryFile {
-            path: String::from(path),
-            should_cleanup: false, // Set to false until explicitly created
-        };
-    }
-
-    fn create(&mut self) {
-        // Create the file
-        match File::create(&self.path) {
-            Ok(_) => {
-                // Set should_cleanup to true if creation was successful
-                self.should_cleanup = true;
-            }
-            Err(err) => {
-                panic!("Failed to create file '{}': {}", self.path, err);
-            }
-        }
-    }
-
-    fn path(&self) -> &str {
-        &self.path
-    }
-
-    fn delete(&self) {
-        // Unconditionally delete the file
-        if let Err(err) = fs::remove_file(&self.path) {
-            panic!("Failed to delete file '{}': {}", self.path, err);
-        }
-    }
-}
-
-impl Drop for TemporaryFile {
-    fn drop(&mut self) {
-        // Perform cleanup actions if needed
-        if self.should_cleanup {
-            // Panic if failed to delete the file
-            self.delete();
-        }
-    }
-}
-
-//    let mut temp_file = TemporaryFile::new(path);
-//    temp_file.create();
-//    temp_file.delete();
+//use std::fs::{self, File};
+////use std::io;
+//
+//struct TemporaryFile {
+//    path: String,
+//    should_cleanup: bool,
+//}
+//
+//impl TemporaryFile {
+//    fn new(path: &str) -> Self {
+//        //-> io::Result<Self> {
+//        let _ = fs::remove_file(path);
+//
+//        return TemporaryFile {
+//            path: String::from(path),
+//            should_cleanup: false, // Set to false until explicitly created
+//        };
+//    }
+//
+//    fn create(&mut self) {
+//        // Create the file
+//        match File::create(&self.path) {
+//            Ok(_) => {
+//                // Set should_cleanup to true if creation was successful
+//                self.should_cleanup = true;
+//            }
+//            Err(err) => {
+//                panic!("Failed to create file '{}': {}", self.path, err);
+//            }
+//        }
+//    }
+//
+//    fn path(&self) -> &str {
+//        &self.path
+//    }
+//
+//    fn delete(&self) {
+//        // Unconditionally delete the file
+//        if let Err(err) = fs::remove_file(&self.path) {
+//            panic!("Failed to delete file '{}': {}", self.path, err);
+//        }
+//    }
+//}
+//
+//impl Drop for TemporaryFile {
+//    fn drop(&mut self) {
+//        // Perform cleanup actions if needed
+//        if self.should_cleanup {
+//            // Panic if failed to delete the file
+//            self.delete();
+//        }
+//    }
+//}
+//
+////    let mut temp_file = TemporaryFile::new(path);
+////    temp_file.create();
+////    temp_file.delete();
