@@ -9,8 +9,8 @@
 //}
 
 fn main() {
-//    // Shared state for boolean flags
-//    let fork_flags = Arc::new(Mutex::new(ForkFlags::default()));
+    //    // Shared state for boolean flags
+    //    let fork_flags = Arc::new(Mutex::new(ForkFlags::default()));
 
     //#[cfg(not(unix))]
     #[cfg(not(any(unix, target_os = "fuchsia", target_os = "vxworks")))]
@@ -22,56 +22,51 @@ fn main() {
     //see: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
 
     #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-    eprintln!("Welcome. There's fork() on this OS: {}", std::env::consts::OS);
+    eprintln!(
+        "Welcome. There's fork() on this OS: {}",
+        std::env::consts::OS
+    );
     // Register fork handlers
     #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     unsafe {
-        let result: libc::c_int = libc::pthread_atfork(
-            Some(prepare),
-            Some(parent),
-            Some(child),
-        );
+        let result: libc::c_int = libc::pthread_atfork(Some(prepare), Some(parent), Some(child));
         if result != 0 {
             // Error handling: Handle the case where pthread_atfork fails
             panic!("pthread_atfork (1) failed with error code: {}", result);
         }
 
         //cummulative addition of handlers:
-        let result: libc::c_int = libc::pthread_atfork(
-            Some(prepare2),
-            Some(parent2),
-            Some(child2),
-        );
+        let result: libc::c_int = libc::pthread_atfork(Some(prepare2), Some(parent2), Some(child2));
         if result != 0 {
             // Error handling: Handle the case where pthread_atfork fails
             panic!("pthread_atfork (2) failed with error code: {}", result);
         }
     }
 
-//    // Spawn a thread to perform some tasks
-//    let fork_flags_clone = Arc::clone(&fork_flags);
-//    let thread_handle = thread::spawn(move || {
-//        // Perform some tasks
-//        // For example:
-//        // println!("Thread doing some work");
-//        // Do some computation...
-//
-//        // Set forked flag to true in the child process
-//        let mut flags = fork_flags_clone.lock().unwrap();
-//        flags.forked = true;
-//    });
-//
-//    // Wait for the thread to finish its tasks
-//    thread_handle.join().unwrap();
-//
-//    // Check the forked flag
-//    let flags = fork_flags.lock().unwrap();
-//    if flags.forked {
-//        println!("A fork occurred in the child process.");
-//    } else {
-//        println!("No fork occurred in the child process.");
-//    }
-//    XXX: fork is part of 'unix' cfg: https://github.com/rust-lang/libc/blob/a0f5b4b21391252fe38b2df9310dc65e37b07d9f/src/lib.rs#L92C5-L97C25
+    //    // Spawn a thread to perform some tasks
+    //    let fork_flags_clone = Arc::clone(&fork_flags);
+    //    let thread_handle = thread::spawn(move || {
+    //        // Perform some tasks
+    //        // For example:
+    //        // println!("Thread doing some work");
+    //        // Do some computation...
+    //
+    //        // Set forked flag to true in the child process
+    //        let mut flags = fork_flags_clone.lock().unwrap();
+    //        flags.forked = true;
+    //    });
+    //
+    //    // Wait for the thread to finish its tasks
+    //    thread_handle.join().unwrap();
+    //
+    //    // Check the forked flag
+    //    let flags = fork_flags.lock().unwrap();
+    //    if flags.forked {
+    //        println!("A fork occurred in the child process.");
+    //    } else {
+    //        println!("No fork occurred in the child process.");
+    //    }
+    //    XXX: fork is part of 'unix' cfg: https://github.com/rust-lang/libc/blob/a0f5b4b21391252fe38b2df9310dc65e37b07d9f/src/lib.rs#L92C5-L97C25
     #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     match unsafe {
         libc::fork()
@@ -96,10 +91,10 @@ fn main() {
             wait_for_child(child_pid);
             println!("Child process with PID {} exited", child_pid);
         }
-    };//match
-}
+    }; //match
+} //main
 
-    fn wait_for_child(child_pid: libc::pid_t) {
+fn wait_for_child(child_pid: libc::pid_t) {
     let mut status: libc::c_int = 0;
     loop {
         let result = unsafe { libc::waitpid(child_pid, &mut status, 0) };
@@ -108,7 +103,10 @@ fn main() {
         }
         if result == child_pid {
             if libc::WIFEXITED(status) {
-                println!("Child process exited with status: {}", libc::WEXITSTATUS(status));
+                println!(
+                    "Child process exited with status: {}",
+                    libc::WEXITSTATUS(status)
+                );
                 break;
             }
         }
@@ -121,17 +119,16 @@ fn main() {
 //      a specified order: the prepare handlers are called in reverse order of registration; the parent and child han‐
 //      dlers are called in the order of registration.
 
-
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
-static PREPARED:AtomicBool=AtomicBool::new(false);
-static PREPARED2:AtomicBool=AtomicBool::new(false);
-static PARENT:AtomicBool=AtomicBool::new(false);
-static PARENT2:AtomicBool=AtomicBool::new(false);
+static PREPARED: AtomicBool = AtomicBool::new(false);
+static PREPARED2: AtomicBool = AtomicBool::new(false);
+static PARENT: AtomicBool = AtomicBool::new(false);
+static PARENT2: AtomicBool = AtomicBool::new(false);
 //static CHILD:AtomicBool=AtomicBool::new(false);
 //static CHILD2:AtomicBool=AtomicBool::new(false);
-const FNAME_CHILD1:&str = concat!("/tmp/",env!("CARGO_PKG_NAME"),".FNAME_CHILD1");
-const FNAME_CHILD2:&str = concat!("/tmp/",env!("CARGO_PKG_NAME"),".FNAME_CHILD2");
+const FNAME_CHILD1: &str = concat!("/tmp/", env!("CARGO_PKG_NAME"), ".FNAME_CHILD1");
+const FNAME_CHILD2: &str = concat!("/tmp/", env!("CARGO_PKG_NAME"), ".FNAME_CHILD2");
 //const DELAY_MILLIS:u64=1000; // 1 sec, wait in first child hook
 
 //cfg_if! {
@@ -142,14 +139,14 @@ unsafe extern "C" fn prepare() {
     //std::thread::sleep(std::time::Duration::from_secs(1));
     // You can perform any necessary actions before fork() in the parent process
     PREPARED.store(true, Ordering::SeqCst);
-    eprintln!("!! prepare pid={}",std::process::id());
+    eprintln!("!! prepare pid={}", std::process::id());
 }
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn parent() {
     PARENT.store(true, Ordering::SeqCst);
     // You can perform any necessary actions after fork() in the parent process
-    eprintln!("!! parent pid={}",std::process::id());
+    eprintln!("!! parent pid={}", std::process::id());
 }
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
@@ -159,9 +156,12 @@ unsafe extern "C" fn child() {
     //CHILD.store(true, Ordering::SeqCst);
     let create_result = std::fs::File::create(FNAME_CHILD1);
     if let Err(err) = create_result {
-        panic!("Failed to create file {} to signal that fork reached child hook, err={}", FNAME_CHILD1, err);
+        panic!(
+            "Failed to create file {} to signal that fork reached child hook, err={}",
+            FNAME_CHILD1, err
+        );
     }
-    eprintln!("!! child pid={}",std::process::id());
+    eprintln!("!! child pid={}", std::process::id());
 }
 //}
 //} //#cfg
@@ -170,14 +170,14 @@ unsafe extern "C" fn child() {
 unsafe extern "C" fn prepare2() {
     PREPARED2.store(true, Ordering::SeqCst);
     // You can perform any necessary actions before fork() in the parent process
-    eprintln!("!! prepare2 pid={}",std::process::id());
+    eprintln!("!! prepare2 pid={}", std::process::id());
 }
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn parent2() {
     // You can perform any necessary actions after fork() in the parent process
     PARENT2.store(true, Ordering::SeqCst);
-    eprintln!("!! parent2 pid={}",std::process::id());
+    eprintln!("!! parent2 pid={}", std::process::id());
 }
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
@@ -187,10 +187,13 @@ unsafe extern "C" fn child2() {
     //CHILD2.store(true, Ordering::SeqCst);
     let create_result = std::fs::File::create(FNAME_CHILD2);
     if let Err(err) = create_result {
-        panic!("Failed to create file {} to signal that fork reached child2 hook, err={}", FNAME_CHILD2, err);
+        panic!(
+            "Failed to create file {} to signal that fork reached child2 hook, err={}",
+            FNAME_CHILD2, err
+        );
     }
     //TODO: dedup ^
-    eprintln!("!! child2 pid={}",std::process::id());
+    eprintln!("!! child2 pid={}", std::process::id());
 }
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
@@ -227,22 +230,14 @@ fn test_that_pthread_atfork_works_as_expected() {
     }
     //TODO: dedup ^
     unsafe {
-        let result: libc::c_int = libc::pthread_atfork(
-            Some(prepare),
-            Some(parent),
-            Some(child),
-        );
+        let result: libc::c_int = libc::pthread_atfork(Some(prepare), Some(parent), Some(child));
         if result != 0 {
             // Error handling: Handle the case where pthread_atfork fails
             panic!("pthread_atfork (1) failed with error code: {}", result);
         }
 
         //cummulative addition of handlers:
-        let result: libc::c_int = libc::pthread_atfork(
-            Some(prepare2),
-            Some(parent2),
-            Some(child2),
-        );
+        let result: libc::c_int = libc::pthread_atfork(Some(prepare2), Some(parent2), Some(child2));
         if result != 0 {
             // Error handling: Handle the case where pthread_atfork fails
             panic!("pthread_atfork (2) failed with error code: {}", result);
@@ -252,7 +247,7 @@ fn test_that_pthread_atfork_works_as_expected() {
     match unsafe {
         libc::fork()
         /* So, to answer your question, after fork() exits, it is indeed guaranteed that the prepare handlers and parent handlers set by a previous pthread_atfork() have completed execution before control is returned to the parent process from fork(). There's no concurrent execution of the handlers during the fork() operation. The fork() operation itself is blocking, ensuring that the atfork handlers are executed in sequence before the child process is created.
-         - chatgpt 3.5 */
+        - chatgpt 3.5 */
     } {
         -1 => panic!("Fork failed"),
         0 => {
@@ -268,16 +263,16 @@ fn test_that_pthread_atfork_works_as_expected() {
             wait_for_child(child_pid);
             println!("Child process with PID {} exited", child_pid);
         }
-    };//match
-    //panic!("uhm");
-    //std::thread::sleep(std::time::Duration::from_secs(2));
+    }; //match
+       //panic!("uhm");
+       //std::thread::sleep(std::time::Duration::from_secs(2));
     assert_eq!(PREPARED.load(Ordering::SeqCst), true);
     assert_eq!(PREPARED2.load(Ordering::SeqCst), true);
     assert_eq!(PARENT.load(Ordering::SeqCst), true);
     assert_eq!(PARENT2.load(Ordering::SeqCst), true);
     //must wait for fork to finish, the hard way:
     //std::thread::sleep(std::time::Duration::from_millis(DELAY_MILLIS+1000)); //add an extra second
-                                                                             //to wtw the delay was
+    //to wtw the delay was
     //XXX: can't use statics for this, as it's a different (forked) process:
     //assert_eq!(CHILD.load(Ordering::SeqCst), true);
     //assert_eq!(CHILD2.load(Ordering::SeqCst), true);
