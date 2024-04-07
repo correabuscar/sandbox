@@ -100,7 +100,7 @@ static PARENT2:AtomicBool=AtomicBool::new(false);
 //static CHILD:AtomicBool=AtomicBool::new(false);
 //static CHILD2:AtomicBool=AtomicBool::new(false);
 const FNAME_CHILD1:&str = concat!("/tmp/",env!("CARGO_PKG_NAME"),".FNAME_CHILD1");
-const FNAME_CHILD2:&str = concat!("/tmp/",env!("CARGO_PKG_NAME"),".FNAME_CHILD1");
+const FNAME_CHILD2:&str = concat!("/tmp/",env!("CARGO_PKG_NAME"),".FNAME_CHILD2");
 const DELAY_MILLIS:u64=1000; // 1 sec, wait in first child hook
 
 //cfg_if! {
@@ -165,7 +165,18 @@ unsafe extern "C" fn child2() {
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 #[test]
 fn test_that_pthread_atfork_works_as_expected() {
-    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    // ok this is stupid:
+    //// Convert the path to a CString
+    //let path_c = std::ffi::CString::new(FNAME_CHILD1).expect("CString conversion failed");
+    //// Check if the file or directory at the specified path exists
+    //let result = unsafe { libc::faccessat(0, path_c.as_ptr(), libc::W_OK , libc::AT_EACCESS) };
+    //assert_eq!(result, 0, "path to file {} doesn't already exist", FNAME_CHILD1);
+
+    //let path_c = std::ffi::CString::new(FNAME_CHILD2).expect("CString conversion failed");
+    //// Check if the file or directory at the specified path exists
+    //let result = unsafe { libc::faccessat(0, path_c.as_ptr(), libc::W_OK , libc::AT_EACCESS) };
+    //let errno_value = unsafe { libc::errno() };
+    //assert_eq!(result, 0, "path to file {} doesn't already exist", FNAME_CHILD2);
     let _delete_result = std::fs::remove_file(FNAME_CHILD1);
     //if let Err(err) = delete_result {
     //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD1, err);
