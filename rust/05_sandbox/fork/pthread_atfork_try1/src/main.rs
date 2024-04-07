@@ -375,6 +375,7 @@ fn test_that_pthread_atfork_works_as_expected() {
         panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child2 hook), err={}", FNAME_CHILD2, err);
     }
     //TODO: dedup ^
+    //FIXME: this test doesn't test order of execution of the handlers
 } //test fn
 
 //use std::fs::{self, File};
