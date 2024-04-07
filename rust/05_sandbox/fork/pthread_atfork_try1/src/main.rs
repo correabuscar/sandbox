@@ -98,6 +98,8 @@ fn main() {
             // Child process
             println!("Child process");
             // Do child process work...
+            //std::mem::drop(deferrer);//manually drop
+            //XXX: this exit() bypasses all(?) drop()s; so deferrer.cancel() isn't needed really
             std::process::exit(0); // Example of child process exiting
         }
         child_pid => {
