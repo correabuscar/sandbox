@@ -73,15 +73,46 @@ fn main() {
 //    }
 //    XXX: fork is part of 'unix' cfg: https://github.com/rust-lang/libc/blob/a0f5b4b21391252fe38b2df9310dc65e37b07d9f/src/lib.rs#L92C5-L97C25
     #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-    unsafe {
-        libc::fork();
+    match unsafe {
+        libc::fork()
         //libc::vfork(); // doesn't use the hooks from pthread_atfork()
         //extern {
         //    fn _exit(code: i32) -> !;
         //}
         ////std::thread::sleep(std::time::Duration::from_secs(1));
         //_exit(0);
-    };
+    } {
+        -1 => panic!("Fork failed"),
+        0 => {
+            // Child process
+            println!("Child process");
+            // Do child process work...
+            std::process::exit(0); // Example of child process exiting
+        }
+        child_pid => {
+            // Parent process
+            println!("Parent process, child PID: {}", child_pid);
+            // Wait for the specific child process to exit, the easy/safe way.
+            wait_for_child(child_pid);
+            println!("Child process with PID {} exited", child_pid);
+        }
+    };//match
+}
+
+    fn wait_for_child(child_pid: libc::pid_t) {
+    let mut status: libc::c_int = 0;
+    loop {
+        let result = unsafe { libc::waitpid(child_pid, &mut status, 0) };
+        if result == -1 {
+            panic!("Error waiting for child process");
+        }
+        if result == child_pid {
+            if libc::WIFEXITED(status) {
+                println!("Child process exited with status: {}", libc::WEXITSTATUS(status));
+                break;
+            }
+        }
+    }
 }
 
 //RETURN VALUE
@@ -101,7 +132,7 @@ static PARENT2:AtomicBool=AtomicBool::new(false);
 //static CHILD2:AtomicBool=AtomicBool::new(false);
 const FNAME_CHILD1:&str = concat!("/tmp/",env!("CARGO_PKG_NAME"),".FNAME_CHILD1");
 const FNAME_CHILD2:&str = concat!("/tmp/",env!("CARGO_PKG_NAME"),".FNAME_CHILD2");
-const DELAY_MILLIS:u64=1000; // 1 sec, wait in first child hook
+//const DELAY_MILLIS:u64=1000; // 1 sec, wait in first child hook
 
 //cfg_if! {
 //if #[cfg(unix)] {
@@ -124,7 +155,7 @@ unsafe extern "C" fn parent() {
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn child() {
     // You can perform any necessary actions after fork() in the child process
-    std::thread::sleep(std::time::Duration::from_millis(DELAY_MILLIS));
+    //std::thread::sleep(std::time::Duration::from_millis(DELAY_MILLIS));
     //CHILD.store(true, Ordering::SeqCst);
     let create_result = std::fs::File::create(FNAME_CHILD1);
     if let Err(err) = create_result {
@@ -259,19 +290,4 @@ fn test_that_pthread_atfork_works_as_expected() {
         panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child2 hook), err={}", FNAME_CHILD2, err);
     }
     //TODO: dedup ^
-    fn wait_for_child(child_pid: libc::pid_t) {
-    let mut status: libc::c_int = 0;
-    loop {
-        let result = unsafe { libc::waitpid(child_pid, &mut status, 0) };
-        if result == -1 {
-            panic!("Error waiting for child process");
-        }
-        if result == child_pid {
-            if libc::WIFEXITED(status) {
-                println!("Child process exited with status: {}", libc::WEXITSTATUS(status));
-                break;
-            }
-        }
-    }
-}
 } //test fn

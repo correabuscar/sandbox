@@ -4,4 +4,4 @@ export RUST_BACKTRACE=1
 cargo clean
 cargo run
 echo "exit code: $?"
-sleep 2
+#sleep 2
