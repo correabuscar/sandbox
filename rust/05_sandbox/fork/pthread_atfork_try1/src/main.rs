@@ -123,6 +123,6 @@ unsafe extern "C" fn parent2() {
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn child2() {
     // You can perform any necessary actions after fork() in the child process
-    std::thread::sleep(std::time::Duration::from_secs(1));
+    //std::thread::sleep(std::time::Duration::from_secs(1));
     eprintln!("!! child2 pid={}",std::process::id());
 }
