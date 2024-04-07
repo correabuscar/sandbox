@@ -366,15 +366,22 @@ fn test_that_pthread_atfork_works_as_expected() {
     //XXX: can't use statics for this, as it's a different (forked) process:
     //assert_eq!(CHILD.load(Ordering::SeqCst), true);
     //assert_eq!(CHILD2.load(Ordering::SeqCst), true);
-    let metadata_result = std::fs::metadata(FNAME_CHILD1);
-    if let Err(err) = metadata_result {
-        panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child hook), err={}", FNAME_CHILD1, err);
-    }
-    let metadata_result = std::fs::metadata(FNAME_CHILD2);
-    if let Err(err) = metadata_result {
-        panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child2 hook), err={}", FNAME_CHILD2, err);
-    }
-    //TODO: dedup ^
+    let values=vec![(FNAME_CHILD1, ""), (FNAME_CHILD2, "2")];
+    for &(fname, childnum) in &values {
+        let metadata_result = std::fs::metadata(fname);
+        if let Err(err) = metadata_result {
+            panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child{} hook), err={}", fname, childnum, err);
+        }
+    }//for
+    //let metadata_result = std::fs::metadata(FNAME_CHILD1);
+    //if let Err(err) = metadata_result {
+    //    panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child hook), err={}", FNAME_CHILD1, err);
+    //}
+    //let metadata_result = std::fs::metadata(FNAME_CHILD2);
+    //if let Err(err) = metadata_result {
+    //    panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child2 hook), err={}", FNAME_CHILD2, err);
+    //}
+    //done1TODO: dedup ^
     //FIXME: this test doesn't test order of execution of the handlers
 } //test fn
 
