@@ -31,7 +31,7 @@ fn main() {
     //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     //ensure_files_are_deleted();
     #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-    let mut deferrer:Defer<_> = Defer::new(|| {
+    let mut deferrer: Defer<_> = Defer::new(|| {
         wipe_tempfiles();
         ensure_files_are_deleted();
     });
@@ -217,7 +217,7 @@ unsafe extern "C" fn child2() {
 }
 
 fn wipe_tempfiles() {
-    eprintln!("Deleting temp files... pid={}",std::process::id());
+    eprintln!("Deleting temp files... pid={}", std::process::id());
     let _ = std::fs::remove_file(FNAME_CHILD1);
     //if let Err(err) = delete_result {
     //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD1, err);
@@ -282,7 +282,6 @@ impl<F: Fn()> Drop for Defer<F> {
     }
 }
 
-
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 #[test]
 fn test_that_pthread_atfork_works_as_expected() {
@@ -309,7 +308,7 @@ fn test_that_pthread_atfork_works_as_expected() {
     //mehTODO: dedup ^
     //wipe_tempfiles();
     //ensure_files_are_deleted();
-    let mut deferrer:Defer<_> = Defer::new(|| {
+    let mut deferrer: Defer<_> = Defer::new(|| {
         wipe_tempfiles();
         ensure_files_are_deleted();
     });
