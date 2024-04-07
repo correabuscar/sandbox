@@ -26,13 +26,20 @@ fn main() {
         "Welcome. There's fork() on this OS: {}",
         std::env::consts::OS
     );
+    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    //wipe_tempfiles();
+    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    //ensure_files_are_deleted();
     #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-    wipe_tempfiles();
+    let mut deferrer:Defer<_> = Defer::new(|| {
+        wipe_tempfiles();
+        ensure_files_are_deleted();
+    });
     #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-    ensure_files_are_deleted();
+    deferrer.execute();
 
-    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-    let mut _deferred_execution: Option<Defer<_>> = None;
+    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    //let mut _deferred_execution: Option<Defer<_>> = None;
 
     // Register fork handlers
     #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
@@ -87,16 +94,17 @@ fn main() {
     } {
         -1 => panic!("Fork failed"),
         0 => {
+            deferrer.cancel();
             // Child process
             println!("Child process");
             // Do child process work...
             std::process::exit(0); // Example of child process exiting
         }
         child_pid => {
-            _deferred_execution = Some(Defer::new(|| {
-                wipe_tempfiles();
-                ensure_files_are_deleted();
-            }));
+            //_deferred_execution = Some(Defer::new(|| {
+            //    wipe_tempfiles();
+            //    ensure_files_are_deleted();
+            //}));
             // Parent process
             println!("Parent process, child PID: {}", child_pid);
             // Wait for the specific child process to exit, the easy/safe way.
@@ -209,6 +217,7 @@ unsafe extern "C" fn child2() {
 }
 
 fn wipe_tempfiles() {
+    eprintln!("Deleting temp files... pid={}",std::process::id());
     let _ = std::fs::remove_file(FNAME_CHILD1);
     //if let Err(err) = delete_result {
     //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD1, err);
@@ -228,24 +237,51 @@ fn ensure_files_are_deleted() {
     if let Ok(ok) = metadata_result {
         panic!("File {} wasn't already deleted by a prev. call to remove_file() which is very odd!, ok={:?}", FNAME_CHILD2, ok);
     }
+    eprintln!("Ensure temp files are deleted...");
 }
 
-struct Defer<F: FnOnce()>(Option<F>);
+//struct Defer<F: FnOnce()>(Option<F>);
+//
+//impl<F: FnOnce()> Defer<F> {
+//    fn new(f: F) -> Self {
+//        Defer(Some(f))
+//    }
+//}
+//
+//impl<F: FnOnce()> Drop for Defer<F> {
+//    fn drop(&mut self) {
+//        // If the closure is present, execute it
+//        if let Some(f) = self.0.take() {
+//            f();
+//        }
+//    }
+//}
+struct Defer<F: Fn()>(Option<F>);
 
-impl<F: FnOnce()> Defer<F> {
+impl<F: Fn()> Defer<F> {
     fn new(f: F) -> Self {
         Defer(Some(f))
     }
+
+    fn execute(&mut self) {
+        if let Some(ref f) = self.0 {
+            f();
+        }
+    }
+
+    fn cancel(&mut self) {
+        self.0 = None;
+    }
 }
 
-impl<F: FnOnce()> Drop for Defer<F> {
+impl<F: Fn()> Drop for Defer<F> {
     fn drop(&mut self) {
-        // If the closure is present, execute it
-        if let Some(f) = self.0.take() {
+        if let Some(ref f) = self.0 {
             f();
         }
     }
 }
+
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 #[test]
@@ -271,9 +307,13 @@ fn test_that_pthread_atfork_works_as_expected() {
     //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD2, err);
     //}
     //mehTODO: dedup ^
-    wipe_tempfiles();
-    ensure_files_are_deleted();
-    let mut _deferred_execution: Option<Defer<_>> = None;
+    //wipe_tempfiles();
+    //ensure_files_are_deleted();
+    let mut deferrer:Defer<_> = Defer::new(|| {
+        wipe_tempfiles();
+        ensure_files_are_deleted();
+    });
+    deferrer.execute();
 
     //TODO: dedup ^
     unsafe {
@@ -299,16 +339,13 @@ fn test_that_pthread_atfork_works_as_expected() {
         // match
         -1 => panic!("Fork failed"),
         0 => {
+            deferrer.cancel();
             // Child process
             println!("Child process");
             // Do child process work...
             std::process::exit(0); // Example of child process exiting
         }
         child_pid => {
-            _deferred_execution = Some(Defer::new(|| {
-                wipe_tempfiles();
-                ensure_files_are_deleted();
-            }));
             // Parent process
             println!("Parent process, child PID: {}", child_pid);
             // Wait for the specific child process to exit, the easy/safe way.
