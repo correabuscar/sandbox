@@ -110,28 +110,42 @@ fn main() {
             // Parent process
             println!("Parent process, child PID: {}", child_pid);
             // Wait for the specific child process to exit, the easy/safe way.
-            wait_for_child(child_pid);
-            println!("Child process with PID {} exited", child_pid);
+            let has_exit_code=wait_for_child(child_pid);
+            println!("Child process with PID {} exited with exit code: {:?}", child_pid, has_exit_code);
         }
     }; //match
 } //main
 
-fn wait_for_child(child_pid: libc::pid_t) {
-    let mut status: libc::c_int = 0;
-    loop {
+fn wait_for_child(child_pid: libc::pid_t) -> Option<libc::c_int> {
+    const TIMEOUT_SECS:u64 =5;
+    let start_time = std::time::Instant::now();
+    loop { //TODO: uncertain why the loop is needed, apparently child receiving a signal and not
+           //exiting can make waitpid still exit somehow? uncertain! added 5 sec timeout anyway,
+           //safer than forever loop.
+        let elapsed_time = start_time.elapsed().as_secs();
+        if elapsed_time >= TIMEOUT_SECS {
+            // Timeout reached
+            return None;
+        }
+        //The waitpid() system call suspends execution of the calling thread until a child specified by pid argument has changed  state.
+        let mut status: libc::c_int = 0;
         let result = unsafe { libc::waitpid(child_pid, &mut status, 0) };
         if result == -1 {
             panic!("Error waiting for child process");
         }
         if result == child_pid {
             if libc::WIFEXITED(status) {
+                let status=libc::WEXITSTATUS(status);
                 println!(
                     "Child process exited with status: {}",
-                    libc::WEXITSTATUS(status)
+                    status
                 );
-                break;
+                return Some(status);
             }
         }
+
+        // Sleep for a short duration before checking again
+        std::thread::sleep(std::time::Duration::from_millis(50));
     }
 }
 
@@ -158,6 +172,7 @@ const FNAME_CHILD2: &str = concat!("/tmp/", env!("CARGO_PKG_NAME"), ".FNAME_CHIL
 // Fork handlers
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn prepare() {
+    HOOK_TRACKER.started_executing("prepare");
     //std::thread::sleep(std::time::Duration::from_secs(1));
     // You can perform any necessary actions before fork() in the parent process
     PREPARED.store(true, Ordering::SeqCst);
@@ -166,6 +181,7 @@ unsafe extern "C" fn prepare() {
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn parent() {
+    HOOK_TRACKER.started_executing("parent");
     PARENT.store(true, Ordering::SeqCst);
     // You can perform any necessary actions after fork() in the parent process
     eprintln!("!! parent pid={}", std::process::id());
@@ -173,6 +189,7 @@ unsafe extern "C" fn parent() {
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn child() {
+    HOOK_TRACKER.started_executing("child");
     // You can perform any necessary actions after fork() in the child process
     //std::thread::sleep(std::time::Duration::from_millis(DELAY_MILLIS));
     //CHILD.store(true, Ordering::SeqCst);
@@ -190,6 +207,7 @@ unsafe extern "C" fn child() {
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn prepare2() {
+    HOOK_TRACKER.started_executing("prepare2");
     PREPARED2.store(true, Ordering::SeqCst);
     // You can perform any necessary actions before fork() in the parent process
     eprintln!("!! prepare2 pid={}", std::process::id());
@@ -197,6 +215,7 @@ unsafe extern "C" fn prepare2() {
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn parent2() {
+    HOOK_TRACKER.started_executing("parent2");
     // You can perform any necessary actions after fork() in the parent process
     PARENT2.store(true, Ordering::SeqCst);
     eprintln!("!! parent2 pid={}", std::process::id());
@@ -204,6 +223,7 @@ unsafe extern "C" fn parent2() {
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn child2() {
+    HOOK_TRACKER.started_executing("child2");
     // You can perform any necessary actions after fork() in the child process
     //std::thread::sleep(std::time::Duration::from_secs(1));
     //CHILD2.store(true, Ordering::SeqCst);
@@ -331,6 +351,16 @@ fn test_that_pthread_atfork_works_as_expected() {
             panic!("pthread_atfork (2) failed with error code: {}", result);
         }
     }
+
+//    // Create a pipe for communication between parent and child
+//    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+//    let (mut parent_read, mut child_write) = match std::io::pipe() {
+//        Ok((r, w)) => (r, w),
+//        Err(err) => {
+//            panic!("Failed to create pipe: {}", err);
+//        }
+//    };
+
     #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     match unsafe {
         libc::fork()
@@ -343,15 +373,25 @@ fn test_that_pthread_atfork_works_as_expected() {
             deferrer.cancel();
             // Child process
             println!("Child process");
-            // Do child process work...
-            std::process::exit(0); // Example of child process exiting
+            println!("inchild:{:?}",HOOK_TRACKER.get_executed_hooks());
+            if HOOK_TRACKER.get_executed_hooks() == ["prepare2", "prepare", "child", "child2"] {
+                //success
+                std::process::exit(200);
+            } else {
+                //failed order, unexpected.
+                std::process::exit(201);
+            }
+            //std::process::exit(0); // Example of child process exiting
         }
         child_pid => {
             // Parent process
             println!("Parent process, child PID: {}", child_pid);
             // Wait for the specific child process to exit, the easy/safe way.
-            wait_for_child(child_pid);
-            println!("Child process with PID {} exited", child_pid);
+            let has_exit_code=wait_for_child(child_pid);
+            println!("Child process with PID {} exited with exit code: {:?}", child_pid, has_exit_code);
+            let exit_code=has_exit_code.expect("forked process didn't exit successfully");
+            assert_eq!(200, exit_code);
+            //XXX: 200 means child's seen this (correct)hook execution order: ["prepare2", "prepare", "child", "child2"]
         }
     }; //match
        //panic!("uhm");
@@ -382,7 +422,10 @@ fn test_that_pthread_atfork_works_as_expected() {
     //    panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child2 hook), err={}", FNAME_CHILD2, err);
     //}
     //done1TODO: dedup ^
-    //FIXME: this test doesn't test order of execution of the handlers
+    //doneFIXME: this test doesn't test order of execution of the handlers
+    //TODO: get rid of external crate for lazy_static!() macro.
+    let expected_order=vec!["prepare2","prepare","parent","parent2"];
+    assert_eq!(HOOK_TRACKER.get_executed_hooks(), expected_order);
 } //test fn
 
 //use std::fs::{self, File};
@@ -442,3 +485,66 @@ fn test_that_pthread_atfork_works_as_expected() {
 ////    let mut temp_file = TemporaryFile::new(path);
 ////    temp_file.create();
 ////    temp_file.delete();
+
+
+// Create a static instance of HookTracker using lazy_static
+lazy_static! { //FIXME: external crate should not be needed, find another way.
+    static ref HOOK_TRACKER: HookTracker = HookTracker {
+        //list: Arc::new(Mutex::new(Vec::new())),
+        list: Mutex::new(Vec::new()),
+    };
+}
+
+use std::sync::Mutex;
+use lazy_static::lazy_static;
+
+// Define a struct to hold your hook data
+struct HookTracker {
+    //list: Arc<Mutex<Vec<&'static str>>>, //nopTODO: is Arc really needed tho?! other than futureproofing the code
+    list: Mutex<Vec<&'static str>>,
+} // struct
+
+impl HookTracker {
+    // Function to register that a hook has started executing
+    fn started_executing(&self, func_name:&'static str)
+//    fn started_executing<F>(&self, _func: F)
+//    where
+//        F: Fn(),
+    {
+        // Lock the list to ensure exclusive access
+        let mut guard = self.list.lock().expect("Unexpected concurrent execution attempted");
+
+        // Add the name of the function to the list
+        guard.push(func_name);
+
+        // Print the name of the function
+        println!("Executing {}", func_name);
+    }
+
+    //// Function to print the names of executed functions
+    //fn print_executed_hooks(&self) {
+    //    // Lock the list to ensure exclusive access
+    //    let guard = self.list.lock().expect("Failed to acquire lock.");
+    //    println!("Here's what executed so far:");
+    //    // Print the names of executed functions
+    //    for (index, func_name) in guard.iter().enumerate() {
+    //        println!("Function {}: {}", index + 1, func_name);
+    //    }
+    //}
+    fn get_executed_hooks(&self) -> Vec<&str> {
+        // Lock the list to ensure exclusive access
+        let guard = self.list.lock().expect("Failed to acquire lock.");
+
+        // Create a Vec<String> to hold the executed hook names
+        let mut executed_hooks = Vec::new();
+
+        // Iterate over the guard and collect the hook names into the executed_hooks Vec
+        for func_name in guard.iter() {
+            executed_hooks.push(func_name.clone());
+        }
+
+        // Return the Vec<String> containing the executed hook names
+        executed_hooks
+    }//fn
+
+} //impl
