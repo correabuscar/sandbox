@@ -27,7 +27,18 @@ fn main() {
         );
         if result != 0 {
             // Error handling: Handle the case where pthread_atfork fails
-            panic!("pthread_atfork failed with error code: {}", result);
+            panic!("pthread_atfork (1) failed with error code: {}", result);
+        }
+
+        //cummulative addition of handlers:
+        let result: libc::c_int = libc::pthread_atfork(
+            Some(prepare2),
+            Some(parent2),
+            Some(child2),
+        );
+        if result != 0 {
+            // Error handling: Handle the case where pthread_atfork fails
+            panic!("pthread_atfork (2) failed with error code: {}", result);
         }
     }
 
@@ -67,6 +78,12 @@ fn main() {
     };
 }
 
+//RETURN VALUE
+//      On  success,  pthread_atfork()  returns  zero.  On error, it returns an error number.  pthread_atfork() may be
+//      called multiple times by a process to register additional handlers.  The handlers for each phase are called in
+//      a specified order: the prepare handlers are called in reverse order of registration; the parent and child han‐
+//      dlers are called in the order of registration.
+
 //cfg_if! {
 //if #[cfg(unix)] {
 // Fork handlers
@@ -91,3 +108,21 @@ unsafe extern "C" fn child() {
 //}
 //} //#cfg
 
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+unsafe extern "C" fn prepare2() {
+    // You can perform any necessary actions before fork() in the parent process
+    eprintln!("!! prepare2 pid={}",std::process::id());
+}
+
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+unsafe extern "C" fn parent2() {
+    // You can perform any necessary actions after fork() in the parent process
+    eprintln!("!! parent2 pid={}",std::process::id());
+}
+
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+unsafe extern "C" fn child2() {
+    // You can perform any necessary actions after fork() in the child process
+    std::thread::sleep(std::time::Duration::from_secs(1));
+    eprintln!("!! child2 pid={}",std::process::id());
+}
