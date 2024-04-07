@@ -26,6 +26,14 @@ fn main() {
         "Welcome. There's fork() on this OS: {}",
         std::env::consts::OS
     );
+    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    wipe_tempfiles();
+    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    ensure_files_are_deleted();
+
+    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    let mut _deferred_execution: Option<Defer<_>> = None;
+
     // Register fork handlers
     #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     unsafe {
@@ -85,6 +93,10 @@ fn main() {
             std::process::exit(0); // Example of child process exiting
         }
         child_pid => {
+            _deferred_execution = Some(Defer::new(|| {
+                wipe_tempfiles();
+                ensure_files_are_deleted();
+            }));
             // Parent process
             println!("Parent process, child PID: {}", child_pid);
             // Wait for the specific child process to exit, the easy/safe way.
@@ -196,6 +208,45 @@ unsafe extern "C" fn child2() {
     eprintln!("!! child2 pid={}", std::process::id());
 }
 
+fn wipe_tempfiles() {
+    let _ = std::fs::remove_file(FNAME_CHILD1);
+    //if let Err(err) = delete_result {
+    //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD1, err);
+    //}
+    let _ = std::fs::remove_file(FNAME_CHILD2);
+    //if let Err(err) = delete_result {
+    //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD2, err);
+    //}
+}
+
+fn ensure_files_are_deleted() {
+    let metadata_result = std::fs::metadata(FNAME_CHILD1);
+    if let Ok(ok) = metadata_result {
+        panic!("File {} wasn't already deleted by a prev. call to remove_file() which is very odd!, ok={:?}", FNAME_CHILD1, ok);
+    }
+    let metadata_result = std::fs::metadata(FNAME_CHILD2);
+    if let Ok(ok) = metadata_result {
+        panic!("File {} wasn't already deleted by a prev. call to remove_file() which is very odd!, ok={:?}", FNAME_CHILD2, ok);
+    }
+}
+
+struct Defer<F: FnOnce()>(Option<F>);
+
+impl<F: FnOnce()> Defer<F> {
+    fn new(f: F) -> Self {
+        Defer(Some(f))
+    }
+}
+
+impl<F: FnOnce()> Drop for Defer<F> {
+    fn drop(&mut self) {
+        // If the closure is present, execute it
+        if let Some(f) = self.0.take() {
+            f();
+        }
+    }
+}
+
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 #[test]
 fn test_that_pthread_atfork_works_as_expected() {
@@ -211,23 +262,19 @@ fn test_that_pthread_atfork_works_as_expected() {
     //let result = unsafe { libc::faccessat(0, path_c.as_ptr(), libc::W_OK , libc::AT_EACCESS) };
     //let errno_value = unsafe { libc::errno() };
     //assert_eq!(result, 0, "path to file {} doesn't already exist", FNAME_CHILD2);
-    let _delete_result = std::fs::remove_file(FNAME_CHILD1);
-    //if let Err(err) = delete_result {
-    //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD1, err);
-    //}
-    let _delete_result = std::fs::remove_file(FNAME_CHILD2);
+    //    let _delete_result = std::fs::remove_file(FNAME_CHILD1);
+    //    //if let Err(err) = delete_result {
+    //    //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD1, err);
+    //    //}
+    //    let _delete_result = std::fs::remove_file(FNAME_CHILD2);
     //if let Err(err) = delete_result {
     //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD2, err);
     //}
     //mehTODO: dedup ^
-    let metadata_result = std::fs::metadata(FNAME_CHILD1);
-    if let Ok(ok) = metadata_result {
-        panic!("File {} wasn't already deleted by a prev. call to remove_file() which is very odd!, ok={:?}", FNAME_CHILD1, ok);
-    }
-    let metadata_result = std::fs::metadata(FNAME_CHILD2);
-    if let Ok(ok) = metadata_result {
-        panic!("File {} wasn't already deleted by a prev. call to remove_file() which is very odd!, ok={:?}", FNAME_CHILD2, ok);
-    }
+    wipe_tempfiles();
+    ensure_files_are_deleted();
+    let mut _deferred_execution: Option<Defer<_>> = None;
+
     //TODO: dedup ^
     unsafe {
         let result: libc::c_int = libc::pthread_atfork(Some(prepare), Some(parent), Some(child));
@@ -249,6 +296,7 @@ fn test_that_pthread_atfork_works_as_expected() {
         /* So, to answer your question, after fork() exits, it is indeed guaranteed that the prepare handlers and parent handlers set by a previous pthread_atfork() have completed execution before control is returned to the parent process from fork(). There's no concurrent execution of the handlers during the fork() operation. The fork() operation itself is blocking, ensuring that the atfork handlers are executed in sequence before the child process is created.
         - chatgpt 3.5 */
     } {
+        // match
         -1 => panic!("Fork failed"),
         0 => {
             // Child process
@@ -257,6 +305,10 @@ fn test_that_pthread_atfork_works_as_expected() {
             std::process::exit(0); // Example of child process exiting
         }
         child_pid => {
+            _deferred_execution = Some(Defer::new(|| {
+                wipe_tempfiles();
+                ensure_files_are_deleted();
+            }));
             // Parent process
             println!("Parent process, child PID: {}", child_pid);
             // Wait for the specific child process to exit, the easy/safe way.
@@ -286,3 +338,61 @@ fn test_that_pthread_atfork_works_as_expected() {
     }
     //TODO: dedup ^
 } //test fn
+
+use std::fs::{self, File};
+//use std::io;
+
+struct TemporaryFile {
+    path: String,
+    should_cleanup: bool,
+}
+
+impl TemporaryFile {
+    fn new(path: &str) -> Self {
+        //-> io::Result<Self> {
+        let _ = fs::remove_file(path);
+
+        return TemporaryFile {
+            path: String::from(path),
+            should_cleanup: false, // Set to false until explicitly created
+        };
+    }
+
+    fn create(&mut self) {
+        // Create the file
+        match File::create(&self.path) {
+            Ok(_) => {
+                // Set should_cleanup to true if creation was successful
+                self.should_cleanup = true;
+            }
+            Err(err) => {
+                panic!("Failed to create file '{}': {}", self.path, err);
+            }
+        }
+    }
+
+    fn path(&self) -> &str {
+        &self.path
+    }
+
+    fn delete(&self) {
+        // Unconditionally delete the file
+        if let Err(err) = fs::remove_file(&self.path) {
+            panic!("Failed to delete file '{}': {}", self.path, err);
+        }
+    }
+}
+
+impl Drop for TemporaryFile {
+    fn drop(&mut self) {
+        // Perform cleanup actions if needed
+        if self.should_cleanup {
+            // Panic if failed to delete the file
+            self.delete();
+        }
+    }
+}
+
+//    let mut temp_file = TemporaryFile::new(path);
+//    temp_file.create();
+//    temp_file.delete();
