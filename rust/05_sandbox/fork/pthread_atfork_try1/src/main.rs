@@ -9,22 +9,26 @@
 //    forked: bool,
 //}
 
+#[cfg(not(any(unix, target_os = "fuchsia", target_os = "vxworks")))]
+fn main() { // a main() for other OS-es which aren't supported!
+    panic!("There's no fork() on your OS: {}", std::env::consts::OS);
+}
+
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 fn main() {
     //    // Shared state for boolean flags
     //    let fork_flags = Arc::new(Mutex::new(ForkFlags::default()));
 
     //#[cfg(not(unix))]
-    #[cfg(not(any(unix, target_os = "fuchsia", target_os = "vxworks")))]
-    panic!("There's no fork() on your OS: {}", std::env::consts::OS);
     //compile_error!("There's no fork() on your OS!"); //XXX: can't format it! so can't show own OS
     //compile_error!(concat!("There's no fork() on your OS ", env!("CARGO_CFG_TARGET_FAMILY")));
     //XXX: can't format it in compile_error!() and there's no env.var. at build time that's like
     //CARGO_CFG_TARGET_FAMILY(eg. "unix") which is only available in build.rs
     //see: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
 
-    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-    { //block to not have to repeat the 'cfg' but this runs drop() sooner than main() exit!ie. at
-      //end of this block!
+    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    //{ //block to not have to repeat the 'cfg' but this runs drop() sooner than main() exit!ie. at
+      //end of this block! doneFIXME: fixed by placing cfg on main()
     eprintln!(
         "Welcome. There's fork() and pthread_atfork() on this OS: {}",
         std::env::consts::OS
@@ -120,7 +124,7 @@ fn main() {
             );
         }
     }; //match
-    } // end block
+    //} // end block
 } //main
 
 fn wait_for_child(child_pid: libc::pid_t) -> Option<libc::c_int> {
