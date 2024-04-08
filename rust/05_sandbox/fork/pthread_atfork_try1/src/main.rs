@@ -118,9 +118,9 @@ fn main() {
             // Parent process
             println!("Parent process, child PID: {}", child_pid);
             // Wait for the specific child process to exit, the easy/safe way.
-            let has_exit_code = wait_for_child(child_pid);
+            let has_exit_code = wait_for_child_or_panic(child_pid);
             println!(
-                "Child process with PID {} exited with exit code: {:?}",
+                "Child process with PID {} exited with exit code: {}",
                 child_pid, has_exit_code
             );
         }
@@ -128,7 +128,7 @@ fn main() {
        //} // end block
 } //main
 
-fn wait_for_child(child_pid: libc::pid_t) -> Option<libc::c_int> {
+fn wait_for_child_or_panic(child_pid: libc::pid_t) -> libc::c_int {
     const TIMEOUT_SECS: u64 = 5;
     let start_time = std::time::Instant::now();
     loop {
@@ -138,19 +138,21 @@ fn wait_for_child(child_pid: libc::pid_t) -> Option<libc::c_int> {
         let elapsed_time = start_time.elapsed().as_secs();
         if elapsed_time >= TIMEOUT_SECS {
             // Timeout reached
-            return None;
+            panic!("Timeout {} seconds while waiting for child process with pid={} to exit.", TIMEOUT_SECS, child_pid);
+            //break;
+            //return None;
         }
         //The waitpid() system call suspends execution of the calling thread until a child specified by pid argument has changed  state.
         let mut status: libc::c_int = 0;
         let result = unsafe { libc::waitpid(child_pid, &mut status, 0) };
         if result == -1 {
-            panic!("Error waiting for child process");
+            panic!("Error waiting for child process, waitpid returned -1");
         }
         if result == child_pid {
             if libc::WIFEXITED(status) {
                 let status = libc::WEXITSTATUS(status);
                 println!("Child process exited with status: {}", status);
-                return Some(status);
+                return status;//Some(status);
             }
         }
 
@@ -407,12 +409,12 @@ fn test_that_pthread_atfork_works_as_expected() {
             // Parent process
             println!("Parent process, child PID: {}", child_pid);
             // Wait for the specific child process to exit, the easy/safe way.
-            let has_exit_code = wait_for_child(child_pid);
+            let exit_code = wait_for_child_or_panic(child_pid);
             println!(
                 "Child process with PID {} exited with exit code: {:?}",
-                child_pid, has_exit_code
+                child_pid, exit_code
             );
-            let exit_code = has_exit_code.expect("forked process didn't exit successfully");
+            //let exit_code = has_exit_code.expect("forked process didn't exit successfully");
             assert_eq!(200, exit_code);
             //XXX: 200 means child's seen this (correct)hook execution order: ["prepare2", "prepare", "child", "child2"]
         }
