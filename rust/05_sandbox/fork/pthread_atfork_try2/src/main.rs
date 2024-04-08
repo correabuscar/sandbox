@@ -217,8 +217,6 @@ unsafe extern "C" fn child2() {
     eprintln!("!! child2 pid={}", std::process::id());
 }
 
-
-
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 #[test]
 fn test_that_pthread_atfork_works_as_expected() {
@@ -260,14 +258,13 @@ fn test_that_pthread_atfork_works_as_expected() {
         0 => {
             // Child process
             println!("Child process");
-            let hooks_order_seen_in_child=
-                HOOK_TRACKER.get_executed_hooks();
+            let hooks_order_seen_in_child = HOOK_TRACKER.get_executed_hooks();
             println!(
                 "inchild:{:?}",
                 hooks_order_seen_in_child //HookTracker::get().lock().get_executed_hooks()
                                           //HOOK_TRACKER.get_or_init(|| HookTracker::init()).get_executed_hooks()
             );
-            const EXPECTED_ORDER:[&str;4] = ["prepare2", "prepare", "child", "child2"];
+            const EXPECTED_ORDER: [&str; 4] = ["prepare2", "prepare", "child", "child2"];
             if hooks_order_seen_in_child == EXPECTED_ORDER {
                 //success
                 std::process::exit(200);
@@ -280,7 +277,10 @@ fn test_that_pthread_atfork_works_as_expected() {
         }
         child_pid => {
             // Parent process
-            println!("This is the Parent process, but we know forked process aka child PID: {}", child_pid);
+            println!(
+                "This is the Parent process, but we know forked process aka child PID: {}",
+                child_pid
+            );
             // Wait for the specific child process to exit, the easy/safe way.
             let exit_code = wait_for_child_or_panic(child_pid);
             println!(
