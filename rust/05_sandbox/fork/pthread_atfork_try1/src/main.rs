@@ -311,12 +311,13 @@ impl<F: Fn()> Drop for Defer<F> {
 #[test]
 fn test_that_pthread_atfork_works_as_expected() {
     println!(); //a new line
-                // ok this is stupid:
-                //// Convert the path to a CString
-                //let path_c = std::ffi::CString::new(FNAME_CHILD1).expect("CString conversion failed");
-                //// Check if the file or directory at the specified path exists
-                //let result = unsafe { libc::faccessat(0, path_c.as_ptr(), libc::W_OK , libc::AT_EACCESS) };
-                //assert_eq!(result, 0, "path to file {} doesn't already exist", FNAME_CHILD1);
+
+    // ok this is stupid:
+    //// Convert the path to a CString
+    //let path_c = std::ffi::CString::new(FNAME_CHILD1).expect("CString conversion failed");
+    //// Check if the file or directory at the specified path exists
+    //let result = unsafe { libc::faccessat(0, path_c.as_ptr(), libc::W_OK , libc::AT_EACCESS) };
+    //assert_eq!(result, 0, "path to file {} doesn't already exist", FNAME_CHILD1);
 
     //let path_c = std::ffi::CString::new(FNAME_CHILD2).expect("CString conversion failed");
     //// Check if the file or directory at the specified path exists
@@ -408,8 +409,9 @@ fn test_that_pthread_atfork_works_as_expected() {
             //XXX: 200 means child's seen this (correct)hook execution order: ["prepare2", "prepare", "child", "child2"]
         }
     }; //match
-       //panic!("uhm");
-       //std::thread::sleep(std::time::Duration::from_secs(2));
+
+    //panic!("uhm");
+    //std::thread::sleep(std::time::Duration::from_secs(2));
     assert_eq!(PREPARED.load(Ordering::SeqCst), true);
     assert_eq!(PREPARED2.load(Ordering::SeqCst), true);
     assert_eq!(PARENT.load(Ordering::SeqCst), true);
@@ -427,17 +429,18 @@ fn test_that_pthread_atfork_works_as_expected() {
             panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child{} hook), err={}", fname, childnum, err);
         }
     } //for
-      //let metadata_result = std::fs::metadata(FNAME_CHILD1);
-      //if let Err(err) = metadata_result {
-      //    panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child hook), err={}", FNAME_CHILD1, err);
-      //}
-      //let metadata_result = std::fs::metadata(FNAME_CHILD2);
-      //if let Err(err) = metadata_result {
-      //    panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child2 hook), err={}", FNAME_CHILD2, err);
-      //}
-      //done1TODO: dedup ^
-      //doneFIXME: this test doesn't test order of execution of the handlers
-      //TODO: get rid of external crate for lazy_static!() macro.
+
+    //let metadata_result = std::fs::metadata(FNAME_CHILD1);
+    //if let Err(err) = metadata_result {
+    //    panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child hook), err={}", FNAME_CHILD1, err);
+    //}
+    //let metadata_result = std::fs::metadata(FNAME_CHILD2);
+    //if let Err(err) = metadata_result {
+    //    panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child2 hook), err={}", FNAME_CHILD2, err);
+    //}
+    //done1TODO: dedup ^
+    //doneFIXME: this test doesn't test order of execution of the handlers
+    //TODO: get rid of external crate for lazy_static!() macro.
     let expected_order = vec!["prepare2", "prepare", "parent", "parent2"];
     assert_eq!(
         HOOK_TRACKER //.get_or_init(HookTracker::init())
