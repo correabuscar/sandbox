@@ -205,7 +205,7 @@ unsafe extern "C" fn parent() {
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn child() {
-    let who="child";
+    let who = "child";
     HOOK_TRACKER.started_executing(who);
     // You can perform any necessary actions after fork() in the child process
     //std::thread::sleep(std::time::Duration::from_millis(DELAY_MILLIS));
@@ -217,7 +217,7 @@ unsafe extern "C" fn child() {
     //        FNAME_CHILD1, err
     //    );
     //}
-    touch_or_panic(FNAME_CHILD1,who);
+    touch_or_panic(FNAME_CHILD1, who);
     eprintln!("!! child pid={}", std::process::id());
 }
 //}
@@ -241,7 +241,7 @@ unsafe extern "C" fn parent2() {
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn child2() {
-    let who="child2";
+    let who = "child2";
     HOOK_TRACKER.started_executing(who);
     // You can perform any necessary actions after fork() in the child process
     //std::thread::sleep(std::time::Duration::from_secs(1));
@@ -258,7 +258,7 @@ unsafe extern "C" fn child2() {
     eprintln!("!! child2 pid={}", std::process::id());
 }
 
-fn touch_or_panic(file_name:&str, who:&str) {
+fn touch_or_panic(file_name: &str, who: &str) {
     if let Err(err) = std::fs::File::create(file_name) {
         panic!(
             "Failed to create file {} to signal that fork reached {} hook, err={}",
