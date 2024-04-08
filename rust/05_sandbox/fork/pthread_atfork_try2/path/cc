@@ -1,0 +1,65 @@
+#!/usr/bin/env /run/current-system/sw/bin/bash
+
+echo "$# $@" >>/tmp/linker.$(/run/current-system/sw/bin/basename "$0").cmds
+#/run/current-system/sw/bin/rustc
+shift 1
+# Store the arguments in an array
+args=("$@")
+
+args_to_remove=(
+  "-Wl,--eh-frame-hdr"
+  "-Wl,-z,noexecstack"
+  "-Wl,-z,relro,-z,now"
+  -lutil -lrt #-lpthread
+  -ldl -lc
+  #"-nodefaultlibs"
+)
+# Create a new array to hold the filtered arguments
+filtered_args=()
+
+# Iterate over the original array and add elements to the filtered array if they are not in args_to_remove
+for arg in "${args[@]}"; do
+    if [[ ! " ${args_to_remove[@]} " =~ " $arg " ]]; then
+        filtered_args+=("$arg")
+    fi
+done
+## Iterate over the arguments and remove '-nodefaultlibs'
+#for ((i = 0; i < ${#args[@]}; i++)); do
+#    if [ "${args[$i]}" = "-nodefaultlibs" ]; then
+#        unset 'args[i]'
+#        ((i=0))
+#        continue
+#    fi
+#    if [ "${args[$i]}" = "-Wl,--eh-frame-hdr" ]; then
+#        unset 'args[i]'
+#        ((i=0))
+#        continue
+#    fi
+#    if [ "${args[$i]}" = "-Wl,-z,noexecstack" ]; then
+#        unset 'args[i]'
+#        ((i=0))
+#        continue
+#    fi
+#    if [ "${args[$i]}" = "-Wl,-z,relro,-z,now" ]; then
+#        unset 'args[i]'
+#        ((i=0))
+#        continue
+#    fi
+#done
+args+=("-l:libucrt.a" "-l:libkernel32.a")
+#"-Wl,--disable-auto-image-base")
+#"-Wl,--entry=mainCRTStartup") #  = note: /nix/store/hqvni28zpibl6jsqqimcvng6h6qm58xy-binutils-2.41/bin/ld: warning: cannot find entry symbol mainCRTStartup; defaulting to 0000000000002040
+#"-Wl,--subsystem=windows") #unknown arg
+
+unset args_to_remove
+unset args
+# Reassign the modified arguments to $@
+set -- "${filtered_args[@]}"
+unset filtered_args
+
+# Now $@ contains the modified arguments without '-nodefaultlibs'
+echo "stripped:$# $@" >>/tmp/linker.$(/run/current-system/sw/bin/basename "$0").cmds
+
+#/run/current-system/sw/bin/cc 
+x86_64-w64-mingw32-cc "$@"
+#"$@"

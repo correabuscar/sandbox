@@ -1,0 +1,10 @@
+#!/usr/bin/env /run/current-system/sw/bin/bash
+
+echo "this doesn't get to execute" >&2
+exit 33
+
+#echo "$# $@" >>/tmp/linker.$(basename "$0").cmds
+echo "$# $@" >>/tmp/linker.$(/run/current-system/sw/bin/basename "$0").cmds
+#/run/current-system/sw/bin/rustc
+shift 1
+/run/current-system/sw/bin/ld "$@"

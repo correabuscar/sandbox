@@ -12,6 +12,7 @@
 #[cfg(not(any(unix, target_os = "fuchsia", target_os = "vxworks")))]
 fn main() {
     // a main() for other OS-es which aren't supported!
+    //compile_error!("hi");
     panic!("There's no fork() on your OS: {}", std::env::consts::OS);
 }
 

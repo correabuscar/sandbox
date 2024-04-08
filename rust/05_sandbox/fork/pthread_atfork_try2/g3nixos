@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "attempts to compile for windows, on gentoo"
+echo "attempts to compile for windows, on nixos"
 export RUST_BACKTRACE=1
 cargo clean
 #cargo run --target=x86_64-pc-windows-msvc
@@ -15,14 +15,23 @@ cargo clean
 #  = help: consider downloading the target with `rustup target add x86_64-pc-windows-gnu`
 #  = help: consider building the standard library from source with `cargo build -Zbuild-std`
 
-#export RUSTFLAGS="-Clink-self-contained=no" #no effect on the missing rsbegin.o and rsend.o
-#-Clink-self-contained=no is from: https://github.com/rust-lang/rust/issues/117548#issuecomment-1792837617
-cargo run --target=x86_64-pc-windows-gnu -Zbuild-std
+#nix-shell cross_compile.nix --command "cargo build -vv --jobs=1" #epic fail!
+nix-shell default.nix --command "cargo build -vv --jobs=1" #gret suxess
+# --target=x86_64-pc-windows-gnu"
+#--config target.x86_64-pc-windows-gnu.linker=\\\"`realpath ./linker.sh`\\\" "
+#|& /run/current-system/sw/bin/grep -vF \"dangerous relocation: R_AMD64_IMAGEBASE with __ImageBase undefined\" "
+#; \"cc\" --version"
+#; cc --version"
+#export |grep -F PATH"
+#echo \"!!\$CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER\" "
+#|& grep -F 'ucrt' "
+#; export|grep -i RUST"
+#&& cargo run --target=x86_64-pc-windows-gnu && cargo test --target=x86_64-pc-windows-gnu"
+#-Zbuild-std
 #^ fails linking like this:
 #  = note: /usr/libexec/gcc/x86_64-w64-mingw32/ld: cannot find rsbegin.o: No such file or directory
 #          /usr/libexec/gcc/x86_64-w64-mingw32/ld: cannot find -l:libpthread.a: No such file or directory
 #          /usr/libexec/gcc/x86_64-w64-mingw32/ld: cannot find rsend.o: No such file or directory
 #          collect2: error: ld returned 1 exit status
-# on nixos the rsbegin.o and rsend.o aren't an issue, because I used rustup!
 echo "exit code: $?"
-sleep 2
+#sleep 2
