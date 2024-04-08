@@ -293,7 +293,7 @@ fn test_that_pthread_atfork_works_as_expected() {
                 child_pid, exit_code
             );
             //let exit_code = has_exit_code.expect("forked process didn't exit successfully");
-            assert_eq!(200, exit_code, "Fork process didn't execut one or more child hooks, or if it did, they weren't in expected order!");
+            assert_eq!(200, exit_code, "Fork process didn't execute one or more child hooks, or if it did, they weren't in expected order!");
             //XXX: 200 means child's seen this (correct)hook execution order: ["prepare2", "prepare", "child", "child2"]
         }
     }; //match
