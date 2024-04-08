@@ -205,17 +205,19 @@ unsafe extern "C" fn parent() {
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn child() {
-    HOOK_TRACKER.started_executing("child");
+    let who="child";
+    HOOK_TRACKER.started_executing(who);
     // You can perform any necessary actions after fork() in the child process
     //std::thread::sleep(std::time::Duration::from_millis(DELAY_MILLIS));
     //CHILD.store(true, Ordering::SeqCst);
-    let create_result = std::fs::File::create(FNAME_CHILD1);
-    if let Err(err) = create_result {
-        panic!(
-            "Failed to create file {} to signal that fork reached child hook, err={}",
-            FNAME_CHILD1, err
-        );
-    }
+    //let create_result = std::fs::File::create(FNAME_CHILD1);
+    //if let Err(err) = create_result {
+    //    panic!(
+    //        "Failed to create file {} to signal that fork reached child hook, err={}",
+    //        FNAME_CHILD1, err
+    //    );
+    //}
+    touch_or_panic(FNAME_CHILD1,who);
     eprintln!("!! child pid={}", std::process::id());
 }
 //}
@@ -239,19 +241,30 @@ unsafe extern "C" fn parent2() {
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn child2() {
-    HOOK_TRACKER.started_executing("child2");
+    let who="child2";
+    HOOK_TRACKER.started_executing(who);
     // You can perform any necessary actions after fork() in the child process
     //std::thread::sleep(std::time::Duration::from_secs(1));
     //CHILD2.store(true, Ordering::SeqCst);
-    let create_result = std::fs::File::create(FNAME_CHILD2);
-    if let Err(err) = create_result {
+    //let create_result = std::fs::File::create(FNAME_CHILD2);
+    //if let Err(err) = create_result {
+    //    panic!(
+    //        "Failed to create file {} to signal that fork reached child2 hook, err={}",
+    //        FNAME_CHILD2, err
+    //    );
+    //}
+    touch_or_panic(FNAME_CHILD2, who);
+    //doneTODO: dedup ^
+    eprintln!("!! child2 pid={}", std::process::id());
+}
+
+fn touch_or_panic(file_name:&str, who:&str) {
+    if let Err(err) = std::fs::File::create(file_name) {
         panic!(
-            "Failed to create file {} to signal that fork reached child2 hook, err={}",
-            FNAME_CHILD2, err
+            "Failed to create file {} to signal that fork reached {} hook, err={}",
+            file_name, who, err
         );
     }
-    //TODO: dedup ^
-    eprintln!("!! child2 pid={}", std::process::id());
 }
 
 fn wipe_tempfiles() {
@@ -354,7 +367,7 @@ fn test_that_pthread_atfork_works_as_expected() {
     });
     deferrer.execute();
 
-    //TODO: dedup ^
+    //doneTODO: dedup ^
     unsafe {
         let result: libc::c_int = libc::pthread_atfork(Some(prepare), Some(parent), Some(child));
         if result != 0 {
@@ -453,7 +466,7 @@ fn test_that_pthread_atfork_works_as_expected() {
     //}
     //done1TODO: dedup ^
     //doneFIXME: this test doesn't test order of execution of the handlers
-    //TODO: get rid of external crate for lazy_static!() macro.
+    //doneTODO: get rid of external crate for lazy_static!() macro.
     let expected_order = vec!["prepare2", "prepare", "parent", "parent2"];
     assert_eq!(
         HOOK_TRACKER //.get_or_init(HookTracker::init())
@@ -522,7 +535,7 @@ fn test_that_pthread_atfork_works_as_expected() {
 ////    temp_file.delete();
 
 //// Create a static instance of HookTracker using lazy_static
-//lazy_static! { //FIXME: external crate should not be needed, find another way.
+//lazy_static! { //doneFIXME: external crate should not be needed, find another way.
 //    static ref HOOK_TRACKER: HookTracker = HookTracker {
 //        //list: Arc::new(Mutex::new(Vec::new())),
 //        list: Mutex::new(Vec::new()),
