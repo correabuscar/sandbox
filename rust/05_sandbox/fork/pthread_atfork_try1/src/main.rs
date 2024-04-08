@@ -467,6 +467,9 @@ fn test_that_pthread_atfork_works_as_expected() {
     //done1TODO: dedup ^
     //doneFIXME: this test doesn't test order of execution of the handlers
     //doneTODO: get rid of external crate for lazy_static!() macro.
+    //TODO: since we keep a list of executed hooks, we know which ones (if any) didn't execute,
+    //don't thus need the creation of files in /tmp/ by the forked process too!
+    //XXX: the second part of this list is already verified in child aka forked process.
     let expected_order = vec!["prepare2", "prepare", "parent", "parent2"];
     assert_eq!(
         HOOK_TRACKER //.get_or_init(HookTracker::init())
