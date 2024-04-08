@@ -138,7 +138,10 @@ fn wait_for_child_or_panic(child_pid: libc::pid_t) -> libc::c_int {
         let elapsed_time = start_time.elapsed().as_secs();
         if elapsed_time >= TIMEOUT_SECS {
             // Timeout reached
-            panic!("Timeout {} seconds while waiting for child process with pid={} to exit.", TIMEOUT_SECS, child_pid);
+            panic!(
+                "Timeout {} seconds while waiting for child process with pid={} to exit.",
+                TIMEOUT_SECS, child_pid
+            );
             //break;
             //return None;
         }
@@ -152,7 +155,7 @@ fn wait_for_child_or_panic(child_pid: libc::pid_t) -> libc::c_int {
             if libc::WIFEXITED(status) {
                 let status = libc::WEXITSTATUS(status);
                 println!("Child process exited with status: {}", status);
-                return status;//Some(status);
+                return status; //Some(status);
             }
         }
 
