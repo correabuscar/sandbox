@@ -34,17 +34,6 @@ fn main() {
         "Welcome. There's fork() and pthread_atfork() on this OS: {}",
         std::env::consts::OS
     );
-    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-    //wipe_tempfiles();
-    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-    //ensure_files_are_deleted();
-    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-    let mut deferrer: Defer<_> = Defer::new(|| {
-        wipe_tempfiles();
-        ensure_files_are_deleted();
-    });
-    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-    deferrer.execute();
 
     //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     //let mut _deferred_execution: Option<Defer<_>> = None;
@@ -102,7 +91,6 @@ fn main() {
     } {
         -1 => panic!("Fork failed"),
         0 => {
-            deferrer.cancel();
             // Child process
             println!("Child process");
             // Do child process work...
@@ -111,10 +99,6 @@ fn main() {
             std::process::exit(0); // Example of child process exiting
         }
         child_pid => {
-            //_deferred_execution = Some(Defer::new(|| {
-            //    wipe_tempfiles();
-            //    ensure_files_are_deleted();
-            //}));
             // Parent process
             println!("Parent process, child PID: {}", child_pid);
             // Wait for the specific child process to exit, the easy/safe way.
@@ -176,10 +160,6 @@ static PREPARED: AtomicBool = AtomicBool::new(false);
 static PREPARED2: AtomicBool = AtomicBool::new(false);
 static PARENT: AtomicBool = AtomicBool::new(false);
 static PARENT2: AtomicBool = AtomicBool::new(false);
-//static CHILD:AtomicBool=AtomicBool::new(false);
-//static CHILD2:AtomicBool=AtomicBool::new(false);
-const FNAME_CHILD1: &str = concat!("/tmp/", env!("CARGO_PKG_NAME"), ".FNAME_CHILD1");
-const FNAME_CHILD2: &str = concat!("/tmp/", env!("CARGO_PKG_NAME"), ".FNAME_CHILD2");
 //const DELAY_MILLIS:u64=1000; // 1 sec, wait in first child hook
 
 //cfg_if! {
@@ -205,19 +185,9 @@ unsafe extern "C" fn parent() {
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn child() {
-    let who = "child";
-    HOOK_TRACKER.started_executing(who);
+    HOOK_TRACKER.started_executing("child");
     // You can perform any necessary actions after fork() in the child process
     //std::thread::sleep(std::time::Duration::from_millis(DELAY_MILLIS));
-    //CHILD.store(true, Ordering::SeqCst);
-    //let create_result = std::fs::File::create(FNAME_CHILD1);
-    //if let Err(err) = create_result {
-    //    panic!(
-    //        "Failed to create file {} to signal that fork reached child hook, err={}",
-    //        FNAME_CHILD1, err
-    //    );
-    //}
-    touch_or_panic(FNAME_CHILD1, who);
     eprintln!("!! child pid={}", std::process::id());
 }
 //}
@@ -241,131 +211,18 @@ unsafe extern "C" fn parent2() {
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn child2() {
-    let who = "child2";
-    HOOK_TRACKER.started_executing(who);
+    HOOK_TRACKER.started_executing("child2");
     // You can perform any necessary actions after fork() in the child process
     //std::thread::sleep(std::time::Duration::from_secs(1));
-    //CHILD2.store(true, Ordering::SeqCst);
-    //let create_result = std::fs::File::create(FNAME_CHILD2);
-    //if let Err(err) = create_result {
-    //    panic!(
-    //        "Failed to create file {} to signal that fork reached child2 hook, err={}",
-    //        FNAME_CHILD2, err
-    //    );
-    //}
-    touch_or_panic(FNAME_CHILD2, who);
-    //doneTODO: dedup ^
     eprintln!("!! child2 pid={}", std::process::id());
 }
 
-fn touch_or_panic(file_name: &str, who: &str) {
-    if let Err(err) = std::fs::File::create(file_name) {
-        panic!(
-            "Failed to create file {} to signal that fork reached {} hook, err={}",
-            file_name, who, err
-        );
-    }
-}
 
-fn wipe_tempfiles() {
-    eprintln!("Deleting temp files... pid={}", std::process::id());
-    let _ = std::fs::remove_file(FNAME_CHILD1);
-    //if let Err(err) = delete_result {
-    //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD1, err);
-    //}
-    let _ = std::fs::remove_file(FNAME_CHILD2);
-    //if let Err(err) = delete_result {
-    //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD2, err);
-    //}
-}
-
-fn ensure_files_are_deleted() {
-    let metadata_result = std::fs::metadata(FNAME_CHILD1);
-    if let Ok(ok) = metadata_result {
-        panic!("File {} wasn't already deleted by a prev. call to remove_file() which is very odd!, ok={:?}", FNAME_CHILD1, ok);
-    }
-    let metadata_result = std::fs::metadata(FNAME_CHILD2);
-    if let Ok(ok) = metadata_result {
-        panic!("File {} wasn't already deleted by a prev. call to remove_file() which is very odd!, ok={:?}", FNAME_CHILD2, ok);
-    }
-    eprintln!("Ensure temp files are deleted...");
-}
-
-//struct Defer<F: FnOnce()>(Option<F>);
-//
-//impl<F: FnOnce()> Defer<F> {
-//    fn new(f: F) -> Self {
-//        Defer(Some(f))
-//    }
-//}
-//
-//impl<F: FnOnce()> Drop for Defer<F> {
-//    fn drop(&mut self) {
-//        // If the closure is present, execute it
-//        if let Some(f) = self.0.take() {
-//            f();
-//        }
-//    }
-//}
-struct Defer<F: Fn()>(Option<F>);
-
-impl<F: Fn()> Defer<F> {
-    fn new(f: F) -> Self {
-        Defer(Some(f))
-    }
-
-    fn execute(&mut self) {
-        if let Some(ref f) = self.0 {
-            f();
-        }
-    }
-
-    fn cancel(&mut self) {
-        self.0 = None;
-    }
-}
-
-impl<F: Fn()> Drop for Defer<F> {
-    fn drop(&mut self) {
-        if let Some(ref f) = self.0 {
-            f();
-        }
-    }
-}
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 #[test]
 fn test_that_pthread_atfork_works_as_expected() {
     println!(); //a new line
-
-    // ok this is stupid:
-    //// Convert the path to a CString
-    //let path_c = std::ffi::CString::new(FNAME_CHILD1).expect("CString conversion failed");
-    //// Check if the file or directory at the specified path exists
-    //let result = unsafe { libc::faccessat(0, path_c.as_ptr(), libc::W_OK , libc::AT_EACCESS) };
-    //assert_eq!(result, 0, "path to file {} doesn't already exist", FNAME_CHILD1);
-
-    //let path_c = std::ffi::CString::new(FNAME_CHILD2).expect("CString conversion failed");
-    //// Check if the file or directory at the specified path exists
-    //let result = unsafe { libc::faccessat(0, path_c.as_ptr(), libc::W_OK , libc::AT_EACCESS) };
-    //let errno_value = unsafe { libc::errno() };
-    //assert_eq!(result, 0, "path to file {} doesn't already exist", FNAME_CHILD2);
-    //    let _delete_result = std::fs::remove_file(FNAME_CHILD1);
-    //    //if let Err(err) = delete_result {
-    //    //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD1, err);
-    //    //}
-    //    let _delete_result = std::fs::remove_file(FNAME_CHILD2);
-    //if let Err(err) = delete_result {
-    //    panic!("Failed to delete file {}, in preparation for the test, err={}", FNAME_CHILD2, err);
-    //}
-    //mehTODO: dedup ^
-    //wipe_tempfiles();
-    //ensure_files_are_deleted();
-    let mut deferrer: Defer<_> = Defer::new(|| {
-        wipe_tempfiles();
-        ensure_files_are_deleted();
-    });
-    deferrer.execute();
 
     //doneTODO: dedup ^
     unsafe {
@@ -401,22 +258,22 @@ fn test_that_pthread_atfork_works_as_expected() {
         // match
         -1 => panic!("Fork failed"),
         0 => {
-            deferrer.cancel();
             // Child process
             println!("Child process");
             let hooks_order_seen_in_child=
-                //HookTracker::get().lock()
                 HOOK_TRACKER.get_executed_hooks();
             println!(
                 "inchild:{:?}",
                 hooks_order_seen_in_child //HookTracker::get().lock().get_executed_hooks()
                                           //HOOK_TRACKER.get_or_init(|| HookTracker::init()).get_executed_hooks()
             );
-            if hooks_order_seen_in_child == ["prepare2", "prepare", "child", "child2"] {
+            const EXPECTED_ORDER:[&str;4] = ["prepare2", "prepare", "child", "child2"];
+            if hooks_order_seen_in_child == EXPECTED_ORDER {
                 //success
                 std::process::exit(200);
             } else {
                 //failed order, unexpected.
+                println!("!! Fork process reports unexpected order or missing execution of hooks: (actual) '{:?}' != '{:?}' (expected)", hooks_order_seen_in_child, EXPECTED_ORDER);
                 std::process::exit(201);
             }
             //std::process::exit(0); // Example of child process exiting
@@ -431,7 +288,7 @@ fn test_that_pthread_atfork_works_as_expected() {
                 child_pid, exit_code
             );
             //let exit_code = has_exit_code.expect("forked process didn't exit successfully");
-            assert_eq!(200, exit_code);
+            assert_eq!(200, exit_code, "Fork process didn't execut one or more child hooks, or if it did, they weren't in expected order!");
             //XXX: 200 means child's seen this (correct)hook execution order: ["prepare2", "prepare", "child", "child2"]
         }
     }; //match
@@ -448,28 +305,12 @@ fn test_that_pthread_atfork_works_as_expected() {
     //XXX: can't use statics for this, as it's a different (forked) process:
     //assert_eq!(CHILD.load(Ordering::SeqCst), true);
     //assert_eq!(CHILD2.load(Ordering::SeqCst), true);
-    let values = vec![(FNAME_CHILD1, ""), (FNAME_CHILD2, "2")];
-    for &(fname, childnum) in &values {
-        let metadata_result = std::fs::metadata(fname);
-        if let Err(err) = metadata_result {
-            panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child{} hook), err={}", fname, childnum, err);
-        }
-    } //for
 
-    //let metadata_result = std::fs::metadata(FNAME_CHILD1);
-    //if let Err(err) = metadata_result {
-    //    panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child hook), err={}", FNAME_CHILD1, err);
-    //}
-    //let metadata_result = std::fs::metadata(FNAME_CHILD2);
-    //if let Err(err) = metadata_result {
-    //    panic!("Fork didn't execute child hook, as file {} doesn't exist already(fork was supposed to create it in child2 hook), err={}", FNAME_CHILD2, err);
-    //}
-    //done1TODO: dedup ^
     //doneFIXME: this test doesn't test order of execution of the handlers
     //doneTODO: get rid of external crate for lazy_static!() macro.
-    //TODO: since we keep a list of executed hooks, we know which ones (if any) didn't execute,
-    //don't thus need the creation of files in /tmp/ by the forked process too! XXX: done this in
-    //the next project, named: pthread_atfork_try2, see it in ../
+    //doneTODO: since we keep a list of executed hooks, we know which ones (if any) didn't execute,
+    //don't thus need the creation of files in /tmp/ by the forked process too! this was left
+    //undone in previous project aka ../pthread_atfork_try1/
     //XXX: the second part of this list is already verified in child aka forked process.
     let expected_order = vec!["prepare2", "prepare", "parent", "parent2"];
     assert_eq!(

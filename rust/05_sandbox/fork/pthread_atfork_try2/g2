@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+echo "attempts to compile for windows, on gentoo"
+export RUST_BACKTRACE=1
+cargo clean
+#cargo run --target=x86_64-pc-windows-msvc
+#cargo run --target=x86_64-w64-mingw32
+#^ doesn't exist in: rustc --print target-list
+
+#cargo run --target=x86_64-pc-windows-gnu
+#^ I don't have something on Gentoo
+#error[E0463]: can't find crate for `core`
+#  |
+#  = note: the `x86_64-pc-windows-gnu` target may not be installed
+#  = help: consider downloading the target with `rustup target add x86_64-pc-windows-gnu`
+#  = help: consider building the standard library from source with `cargo build -Zbuild-std`
+
+cargo run --target=x86_64-pc-windows-gnu -Zbuild-std
+#^ fails linking like this:
+#  = note: /usr/libexec/gcc/x86_64-w64-mingw32/ld: cannot find rsbegin.o: No such file or directory
+#          /usr/libexec/gcc/x86_64-w64-mingw32/ld: cannot find -l:libpthread.a: No such file or directory
+#          /usr/libexec/gcc/x86_64-w64-mingw32/ld: cannot find rsend.o: No such file or directory
+#          collect2: error: ld returned 1 exit status
+echo "exit code: $?"
+sleep 2
