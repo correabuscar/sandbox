@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "attempts to compile for windows, on gentoo"
+echo "attempts to compile for windows, on gentoo, will fail to link!"
 export RUST_BACKTRACE=1
 cargo clean
 #cargo run --target=x86_64-pc-windows-msvc

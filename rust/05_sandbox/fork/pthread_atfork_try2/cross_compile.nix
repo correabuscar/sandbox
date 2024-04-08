@@ -29,6 +29,7 @@ nixpkgs.mkShell {
     #export RUSTFLAGS="-C linker=crap -C default-linker-libraries=yes -C link-self-contained=yes"
     #fine then, the hard way 'cc' exists in ./  AND yet it doesn't run it! lol!
     #export PATH="/home/user/sandbox/pthread_atfork_try2/path:/nix/store/pz7rb86xdq7jk4z5lrn0qlbs63pcsg4m-rustup-1.26.0/bin" #works
+    #this was the only way to make it use the linker that I want, instead of just 'cc'
     export PATH="/home/user/sandbox/pthread_atfork_try2/path:$PATH"
     #XXX: a path with "." aka current dir, is ignored by rust!
 
