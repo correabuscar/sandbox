@@ -1,3 +1,4 @@
+#![feature(lazy_cell)]
 //use std::sync::{Arc, Mutex};
 //use std::thread;
 //use std::process;
@@ -172,6 +173,7 @@ const FNAME_CHILD2: &str = concat!("/tmp/", env!("CARGO_PKG_NAME"), ".FNAME_CHIL
 // Fork handlers
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn prepare() {
+    //HOOK_TRACKER.get_or_init(HookTracker::init()).started_executing("prepare");
     HOOK_TRACKER.started_executing("prepare");
     //std::thread::sleep(std::time::Duration::from_secs(1));
     // You can perform any necessary actions before fork() in the parent process
@@ -373,8 +375,15 @@ fn test_that_pthread_atfork_works_as_expected() {
             deferrer.cancel();
             // Child process
             println!("Child process");
-            println!("inchild:{:?}",HOOK_TRACKER.get_executed_hooks());
-            if HOOK_TRACKER.get_executed_hooks() == ["prepare2", "prepare", "child", "child2"] {
+            let hooks_order_seen_in_child=
+                //HookTracker::get().lock()
+                HOOK_TRACKER.get_executed_hooks();
+            println!("inchild:{:?}",
+                     hooks_order_seen_in_child
+                     //HookTracker::get().lock().get_executed_hooks()
+                     //HOOK_TRACKER.get_or_init(|| HookTracker::init()).get_executed_hooks()
+                     );
+            if hooks_order_seen_in_child == ["prepare2", "prepare", "child", "child2"] {
                 //success
                 std::process::exit(200);
             } else {
@@ -425,7 +434,10 @@ fn test_that_pthread_atfork_works_as_expected() {
     //doneFIXME: this test doesn't test order of execution of the handlers
     //TODO: get rid of external crate for lazy_static!() macro.
     let expected_order=vec!["prepare2","prepare","parent","parent2"];
-    assert_eq!(HOOK_TRACKER.get_executed_hooks(), expected_order);
+    assert_eq!(
+       HOOK_TRACKER//.get_or_init(HookTracker::init())
+        //HookTracker::get()
+        .get_executed_hooks(), expected_order);
 } //test fn
 
 //use std::fs::{self, File};
@@ -487,24 +499,39 @@ fn test_that_pthread_atfork_works_as_expected() {
 ////    temp_file.delete();
 
 
-// Create a static instance of HookTracker using lazy_static
-lazy_static! { //FIXME: external crate should not be needed, find another way.
-    static ref HOOK_TRACKER: HookTracker = HookTracker {
-        //list: Arc::new(Mutex::new(Vec::new())),
-        list: Mutex::new(Vec::new()),
-    };
-}
 
-use std::sync::Mutex;
-use lazy_static::lazy_static;
+//// Create a static instance of HookTracker using lazy_static
+//lazy_static! { //FIXME: external crate should not be needed, find another way.
+//    static ref HOOK_TRACKER: HookTracker = HookTracker {
+//        //list: Arc::new(Mutex::new(Vec::new())),
+//        list: Mutex::new(Vec::new()),
+//    };
+//}
+//use std::sync::OnceLock;
+//static HOOK_TRACKER: OnceLock<HookTracker> = OnceLock::new();
+//use std::sync::LazyLock;
+static HOOK_TRACKER: std::sync::LazyLock<HookTracker> = std::sync::LazyLock::new(|| {
+        //HookTracker { list:Mutex::new(Vec::new()) }
+        HookTracker::init()
+});
+
+//use std::sync::Mutex;
+//use lazy_static::lazy_static;
 
 // Define a struct to hold your hook data
 struct HookTracker {
     //list: Arc<Mutex<Vec<&'static str>>>, //nopTODO: is Arc really needed tho?! other than futureproofing the code
-    list: Mutex<Vec<&'static str>>,
+    list: std::sync::Mutex<Vec<&'static str>>,
 } // struct
 
 impl HookTracker {
+    //fn get() -> HookTracker { //Mutex<Vec<&'static str>> {
+    //    HOOK_TRACKER.get_or_init(|| HookTracker::init())
+    //}
+    #[inline]
+    fn init() -> HookTracker { //Mutex<Vec<&'static str>>{
+        HookTracker { list:std::sync::Mutex::new(Vec::new()) }
+    }
     // Function to register that a hook has started executing
     fn started_executing(&self, func_name:&'static str)
 //    fn started_executing<F>(&self, _func: F)
@@ -531,6 +558,7 @@ impl HookTracker {
     //        println!("Function {}: {}", index + 1, func_name);
     //    }
     //}
+    #[allow(dead_code)] //it's used in #[test] at least!
     fn get_executed_hooks(&self) -> Vec<&str> {
         // Lock the list to ensure exclusive access
         let guard = self.list.lock().expect("Failed to acquire lock.");
@@ -540,7 +568,7 @@ impl HookTracker {
 
         // Iterate over the guard and collect the hook names into the executed_hooks Vec
         for func_name in guard.iter() {
-            executed_hooks.push(func_name.clone());
+            executed_hooks.push(*func_name); //XXX: well...
         }
 
         // Return the Vec<String> containing the executed hook names
