@@ -392,7 +392,7 @@ fn test_that_pthread_atfork_works_as_expected() {
     //        }
     //    };
 
-    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     match unsafe {
         libc::fork()
         /* So, to answer your question, after fork() exits, it is indeed guaranteed that the prepare handlers and parent handlers set by a previous pthread_atfork() have completed execution before control is returned to the parent process from fork(). There's no concurrent execution of the handlers during the fork() operation. The fork() operation itself is blocking, ensuring that the atfork handlers are executed in sequence before the child process is created.
@@ -423,11 +423,11 @@ fn test_that_pthread_atfork_works_as_expected() {
         }
         child_pid => {
             // Parent process
-            println!("Parent process, child PID: {}", child_pid);
+            println!("This is the Parent process, but we know forked process aka child PID: {}", child_pid);
             // Wait for the specific child process to exit, the easy/safe way.
             let exit_code = wait_for_child_or_panic(child_pid);
             println!(
-                "Child process with PID {} exited with exit code: {:?}",
+                "Parent sees the Child process with PID '{}' exited with exit code: '{}'",
                 child_pid, exit_code
             );
             //let exit_code = has_exit_code.expect("forked process didn't exit successfully");
