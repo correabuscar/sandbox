@@ -112,6 +112,7 @@ fn main() {
        //} // end block
 } //main
 
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 fn wait_for_child_or_panic(child_pid: libc::pid_t) -> libc::c_int {
     const TIMEOUT_SECS: u64 = 5;
     let start_time = std::time::Instant::now();
@@ -154,12 +155,16 @@ fn wait_for_child_or_panic(child_pid: libc::pid_t) -> libc::c_int {
 //      a specified order: the prepare handlers are called in reverse order of registration; the parent and child han‐
 //      dlers are called in the order of registration.
 
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::Ordering;
-static PREPARED: AtomicBool = AtomicBool::new(false);
-static PREPARED2: AtomicBool = AtomicBool::new(false);
-static PARENT: AtomicBool = AtomicBool::new(false);
-static PARENT2: AtomicBool = AtomicBool::new(false);
+//use std::sync::atomic::AtomicBool;
+//use std::sync::atomic::Ordering;
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+static PREPARED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+static PREPARED2: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+static PARENT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+static PARENT2: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 //const DELAY_MILLIS:u64=1000; // 1 sec, wait in first child hook
 
 //cfg_if! {
@@ -171,14 +176,14 @@ unsafe extern "C" fn prepare() {
     HOOK_TRACKER.started_executing("prepare");
     //std::thread::sleep(std::time::Duration::from_secs(1));
     // You can perform any necessary actions before fork() in the parent process
-    PREPARED.store(true, Ordering::SeqCst);
+    PREPARED.store(true, std::sync::atomic::Ordering::SeqCst);
     eprintln!("!! prepare pid={}", std::process::id());
 }
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn parent() {
     HOOK_TRACKER.started_executing("parent");
-    PARENT.store(true, Ordering::SeqCst);
+    PARENT.store(true, std::sync::atomic::Ordering::SeqCst);
     // You can perform any necessary actions after fork() in the parent process
     eprintln!("!! parent pid={}", std::process::id());
 }
@@ -196,7 +201,7 @@ unsafe extern "C" fn child() {
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 unsafe extern "C" fn prepare2() {
     HOOK_TRACKER.started_executing("prepare2");
-    PREPARED2.store(true, Ordering::SeqCst);
+    PREPARED2.store(true, std::sync::atomic::Ordering::SeqCst);
     // You can perform any necessary actions before fork() in the parent process
     eprintln!("!! prepare2 pid={}", std::process::id());
 }
@@ -205,7 +210,7 @@ unsafe extern "C" fn prepare2() {
 unsafe extern "C" fn parent2() {
     HOOK_TRACKER.started_executing("parent2");
     // You can perform any necessary actions after fork() in the parent process
-    PARENT2.store(true, Ordering::SeqCst);
+    PARENT2.store(true, std::sync::atomic::Ordering::SeqCst);
     eprintln!("!! parent2 pid={}", std::process::id());
 }
 
@@ -295,16 +300,16 @@ fn test_that_pthread_atfork_works_as_expected() {
 
     //panic!("uhm");
     //std::thread::sleep(std::time::Duration::from_secs(2));
-    assert_eq!(PREPARED.load(Ordering::SeqCst), true);
-    assert_eq!(PREPARED2.load(Ordering::SeqCst), true);
-    assert_eq!(PARENT.load(Ordering::SeqCst), true);
-    assert_eq!(PARENT2.load(Ordering::SeqCst), true);
+    assert_eq!(PREPARED.load(std::sync::atomic::Ordering::SeqCst), true);
+    assert_eq!(PREPARED2.load(std::sync::atomic::Ordering::SeqCst), true);
+    assert_eq!(PARENT.load(std::sync::atomic::Ordering::SeqCst), true);
+    assert_eq!(PARENT2.load(std::sync::atomic::Ordering::SeqCst), true);
     //must wait for fork to finish, the hard way:
     //std::thread::sleep(std::time::Duration::from_millis(DELAY_MILLIS+1000)); //add an extra second
     //to wtw the delay was
     //XXX: can't use statics for this, as it's a different (forked) process:
-    //assert_eq!(CHILD.load(Ordering::SeqCst), true);
-    //assert_eq!(CHILD2.load(Ordering::SeqCst), true);
+    //assert_eq!(CHILD.load(std::sync::atomic::Ordering::SeqCst), true);
+    //assert_eq!(CHILD2.load(std::sync::atomic::Ordering::SeqCst), true);
 
     //doneFIXME: this test doesn't test order of execution of the handlers
     //doneTODO: get rid of external crate for lazy_static!() macro.
@@ -389,6 +394,7 @@ fn test_that_pthread_atfork_works_as_expected() {
 //use std::sync::OnceLock;
 //static HOOK_TRACKER: OnceLock<HookTracker> = OnceLock::new();
 //use std::sync::LazyLock;
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 static HOOK_TRACKER: std::sync::LazyLock<HookTracker> = std::sync::LazyLock::new(|| {
     //HookTracker { list:Mutex::new(Vec::new()) }
     HookTracker::init()
@@ -398,11 +404,13 @@ static HOOK_TRACKER: std::sync::LazyLock<HookTracker> = std::sync::LazyLock::new
 //use lazy_static::lazy_static;
 
 // Define a struct to hold your hook data
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 struct HookTracker {
     //list: Arc<Mutex<Vec<&'static str>>>, //nopTODO: is Arc really needed tho?! other than futureproofing the code
     list: std::sync::Mutex<Vec<&'static str>>,
 } // struct
 
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 impl HookTracker {
     //fn get() -> HookTracker { //Mutex<Vec<&'static str>> {
     //    HOOK_TRACKER.get_or_init(|| HookTracker::init())
