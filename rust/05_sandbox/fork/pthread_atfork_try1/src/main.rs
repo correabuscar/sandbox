@@ -23,27 +23,29 @@ fn main() {
     //see: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
 
     #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    { //block to not have to repeat the 'cfg' but this runs drop() sooner than main() exit!ie. at
+      //end of this block!
     eprintln!(
-        "Welcome. There's fork() on this OS: {}",
+        "Welcome. There's fork() and pthread_atfork() on this OS: {}",
         std::env::consts::OS
     );
     //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     //wipe_tempfiles();
     //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     //ensure_files_are_deleted();
-    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     let mut deferrer: Defer<_> = Defer::new(|| {
         wipe_tempfiles();
         ensure_files_are_deleted();
     });
-    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     deferrer.execute();
 
     //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     //let mut _deferred_execution: Option<Defer<_>> = None;
 
     // Register fork handlers
-    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     unsafe {
         let result: libc::c_int = libc::pthread_atfork(Some(prepare), Some(parent), Some(child));
         if result != 0 {
@@ -83,7 +85,7 @@ fn main() {
     //        println!("No fork occurred in the child process.");
     //    }
     //    XXX: fork is part of 'unix' cfg: https://github.com/rust-lang/libc/blob/a0f5b4b21391252fe38b2df9310dc65e37b07d9f/src/lib.rs#L92C5-L97C25
-    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
+    //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     match unsafe {
         libc::fork()
         //libc::vfork(); // doesn't use the hooks from pthread_atfork()
@@ -118,6 +120,7 @@ fn main() {
             );
         }
     }; //match
+    } // end block
 } //main
 
 fn wait_for_child(child_pid: libc::pid_t) -> Option<libc::c_int> {
