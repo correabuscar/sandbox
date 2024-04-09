@@ -1,10 +1,13 @@
-[build]
-target = "x86_64-pc-windows-gnu"
-#these aren't used!
+#these 2 if want default target to be this, eg. on 'cargo run' without args:
+#[build]
+#target = "x86_64-pc-windows-gnu"
+
+#these aren't used when using ./g2nixos_fail aka cross_compile.nix, it uses 'cc' linker instead, dno why.
 [target.x86_64-pc-windows-gnu]
 #linker = "/home/user/sandbox/pthread_atfork_try2/linker.sh"
 linker = "x86_64-w64-mingw32-cc"
-ar = "x86_64-w64-mingw32-gcc-ar"
+#ar = "x86_64-w64-mingw32-gcc-ar" #this wasn't used, apparently!
+runner = "wine64"
 
 #[target.x86-64-pc-windows-gnu]
 #linker = "x86_64-w64-mingw32-cc"

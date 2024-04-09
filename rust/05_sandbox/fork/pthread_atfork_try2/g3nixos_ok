@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-echo "attempts to compile for windows, on nixos"
+echo "attempts to compile(and run via wine64) for windows, on nixos(linux), will succeed!"
 export RUST_BACKTRACE=1
-cargo clean
+#cargo clean
 #cargo run --target=x86_64-pc-windows-msvc
 #cargo run --target=x86_64-w64-mingw32
 #^ doesn't exist in: rustc --print target-list
@@ -16,7 +16,7 @@ cargo clean
 #  = help: consider building the standard library from source with `cargo build -Zbuild-std`
 
 #nix-shell cross_compile.nix --command "cargo build -vv --jobs=1" #epic fail!
-nix-shell default.nix --command "cargo build -vv --jobs=1" #gret suxess
+nix-shell default.nix --command "cargo clean && cargo run -vv --jobs=1 --target=x86_64-pc-windows-gnu" #gret suxess
 # --target=x86_64-pc-windows-gnu"
 #--config target.x86_64-pc-windows-gnu.linker=\\\"`realpath ./linker.sh`\\\" "
 #|& /run/current-system/sw/bin/grep -vF \"dangerous relocation: R_AMD64_IMAGEBASE with __ImageBase undefined\" "
