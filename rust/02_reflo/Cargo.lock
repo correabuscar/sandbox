@@ -36,6 +36,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.81"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0952808a6c2afd1aa8947271f3a60f1a6763c7b912d210184c5149b5cf147247"
+
+[[package]]
 name = "assert_cmd"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -312,10 +318,9 @@ checksum = "4271d37baee1b8c7e4b708028c57d816cf9d2434acb33a549475f78c181f6253"
 name = "grrs"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "assert_cmd",
  "ctrlc",
- "exitfailure",
- "failure",
  "predicates",
  "structopt",
  "tempfile",

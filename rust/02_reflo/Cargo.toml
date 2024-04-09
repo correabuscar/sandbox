@@ -1,4 +1,5 @@
 [workspace]
+resolver="2"
 members = ["**/src/.."]
 #edition = "2018" #unused key, in workspace! unused manifest key: workspace.edition
 exclude = ["helper_scripts", ".git", "**/.git", "target", "**/target", "book/tags", "cli-wg/tags", "rbe/tags", "others/tags"]

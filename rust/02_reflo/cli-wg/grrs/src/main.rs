@@ -1,7 +1,5 @@
-use exitfailure::ExitFailure;
+use anyhow::Context;
 use structopt::StructOpt;
-//use failure::result_ext::ResultExt;
-use failure::ResultExt;
 
 /// Search for a pattern in a file and display the lines that contain it.
 #[derive(StructOpt)]
@@ -20,7 +18,7 @@ fn find_a_match() {
     assert_eq!(result, b"lorem ipsum\n");
 }
 
-fn main() -> Result<(), ExitFailure> {
+fn main() -> anyhow::Result<()> {
     ctrlc::set_handler(move || {
         println!("received Ctrl+C!");
     })
@@ -28,7 +26,7 @@ fn main() -> Result<(), ExitFailure> {
 
     let args = Cli::from_args();
     let content = std::fs::read_to_string(&args.path)
-        .with_context(|_| format!("could not read file `{}`", args.path.display()))?;
+        .with_context(|| format!("could not read file `{}`", args.path.display()))?;
 
     grrs::find_matches(&content, &args.pattern, &mut std::io::stdout());
 
