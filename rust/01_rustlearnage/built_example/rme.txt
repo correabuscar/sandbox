@@ -1,3 +1,5 @@
+note: this was supposed to err on trying to build it! to show you the error's not pointing to the filename!
+
 show-stopper detected: stacktraces are useless due to error propagation
 
 https://play.rust-lang.org/?gist=937fcf44524183aa8d466c2e44c10a27&version=stable

@@ -2,10 +2,19 @@
 name = "built_example"
 version = "0.1.0"
 authors = [ "CExftNSroxORgpxED" ]
+exclude = [ "/built" ]
 
 [dependencies]
 
 #src: https://docs.rs/built/0.2.3/built/?search=
 [build-dependencies]
 #built = "0.2"
-built = { path = "builty" }
+built = { path = "./built" }
+
+[package.metadata.clippy]
+allow = [
+    "write_with_newline",
+    "clippy::write_with_newline",
+    "clippy::needless_borrows_for_generic_args",
+    "clippy::needless_borrowed_reference",
+]

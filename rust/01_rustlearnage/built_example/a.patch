@@ -1,0 +1,33 @@
+patch on top of built 0.2.3 commit a10808ac73c63568e6455aa7eef1945960a89bcd
+
+diff --git a/src/lib.rs b/src/lib.rs
+index 362c0c7..7e8a1ca 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -747,7 +747,7 @@ impl Options {
+     }
+ }
+ 
+-/// Writes rust-code describing the crate at `manifest_location` to a new file named `dst`.
++/// Writes rust-code describing the crate at `src` to a new file named `dst`.
+ ///
+ /// # Errors
+ /// The function returns an error if the file at `dst` already exists or can't
+@@ -808,9 +808,16 @@ pub fn write_built_file_with_opts<P: AsRef<path::Path>, Q: AsRef<path::Path>>(
+ /// A shorthand for calling `write_built_file()` with `CARGO_MANIFEST_DIR` and
+ /// `[OUT_DIR]/built.rs`.
+ pub fn write_built_file() -> io::Result<()> {
++    write_built_file_with_opts2(&Options::default())?;
++    Ok(())
++}
++
++/// A shorthand for calling `write_built_file_with_opts()` with `CARGO_MANIFEST_DIR` ,
++/// `[OUT_DIR]/built.rs` and the provided `options`.
++pub fn write_built_file_with_opts2(options: &Options) -> io::Result<()> { //XXX: cannot use same name function, even tho they have different number of args - ie. function overloading!(and this isn't part of a struct) https://github.com/lukaslueg/built/issues/12
+     let src = env::var("CARGO_MANIFEST_DIR").unwrap();
+     let dst = path::Path::new(&env::var("OUT_DIR").unwrap()).join("built.rs");
+-    write_built_file_with_opts(&Options::default(), &src, &dst)?;
++    write_built_file_with_opts(options, &src, &dst)?;
+     Ok(())
+ }
+ 
