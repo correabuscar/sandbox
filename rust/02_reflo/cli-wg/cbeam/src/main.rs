@@ -10,7 +10,7 @@ fn ctrl_channel() -> Result<Receiver<()>, ctrlc::Error> {
     Ok(receiver)
 }
 
-fn main() -> Result<(), exitfailure::ExitFailure> {
+fn main() -> anyhow::Result<()> {
     let ctrl_c_events = ctrl_channel()?;
     let ticks = tick(Duration::from_secs(1));
 

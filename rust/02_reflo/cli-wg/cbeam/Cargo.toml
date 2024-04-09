@@ -9,5 +9,6 @@ edition = "2018"
 [dependencies]
 crossbeam-channel = "0.5"
 ctrlc = "3"
-exitfailure = "0.5.1"
+#exitfailure = "0.5.1"
+anyhow = "1.0"
 
