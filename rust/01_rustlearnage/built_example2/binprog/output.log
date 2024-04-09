@@ -1,0 +1,15 @@
+with patch u see the file name in the message (hardcoded)
+otherwise, u'd have no idea
+
+
+   Compiling binprog v0.1.0 (/home/user/sandbox/rust/01_rustlearnage/built_example2/binprog)
+error: failed to run custom build command for `binprog v0.1.0 (/home/user/sandbox/rust/01_rustlearnage/built_example2/binprog)`
+
+Caused by:
+  process didn't exit successfully: `/home/user/sandbox/rust/01_rustlearnage/built_example2/target/debug/build/binprog-721ad871647197e4/build-script-build` (exit status: 101)
+  --- stderr
+  Failed to open Cargo.lock. This information is only available for top-level packages. See the documentation for `built::Options::set_dependencies`.
+  thread 'main' panicked at /home/user/sandbox/rust/01_rustlearnage/built_example2/binprog/build.rs:43:31:
+  Failed to acquire build-time information: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+  note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+

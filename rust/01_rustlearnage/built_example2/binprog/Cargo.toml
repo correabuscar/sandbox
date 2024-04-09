@@ -1,0 +1,15 @@
+[package]
+name = "binprog"
+version = "0.1.0"
+edition = "2021"
+exclude = [ "/built" ]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[build-dependencies]
+built = { path="./built", version="0.7.2", features = [ "dependency-tree" ] }
+#default-features=true } #true/false no effect
+#, default-features = false }
+#built = "0.7.2"

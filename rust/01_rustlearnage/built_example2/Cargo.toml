@@ -1,0 +1,88 @@
+[workspace]
+resolver = "2"
+members = ["**/src/..", "binprog"]
+#edition = "2018" #unused key, in workspace! unused manifest key: workspace.edition
+exclude = ["helper_scripts", ".git", "**/.git", "target", "**/target"]
+#^ https://doc.rust-lang.org/glob/glob/struct.Pattern.html
+
+#license = "MIT/Apache-2.0 OR CC0 OR UNLICENSE" #unused manifest key: workspace.license
+
+
+#Careful, these profile sections only have effect in here! so,
+#warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+#package:   ${HOME}/build/2nonpkgs/rust.stuff/rustlearnage/recompile_self/Cargo.toml
+
+#doc: https://doc.crates.io/manifest.html#the-profile-sections
+#https://doc.rust-lang.org/cargo/reference/manifest.html
+# The development profile, used for `cargo build`.
+[profile.dev]
+debug = true       # (u32 or bool) Include debug information (debug symbols).
+                   # Equivalent to `-C debuginfo=2` compiler flag.
+#debug-assertions = false 
+debug-assertions = true # default 
+# controls whether debug assertions are enabled
+# (e.g. debug_assert!() and arithmetic overflow checks)
+incremental = true # whether or not incremental compilation is enabled
+overflow-checks = true # use overflow checks for integer arithmetic.
+                   # Passes the `-C overflow-checks=...` flag to the compiler.
+panic = 'unwind'   # panic strategy (`-C panic=...`), can also be 'abort'
+codegen-units = 16 # if > 1 enables parallel code generation which improves
+                   # compile times, but prevents some optimizations.
+                   # Passes `-C codegen-units`.
+opt-level = 0      # controls the `--opt-level` the compiler builds with.
+                   # 0-1 is good for debugging. 2 is well-optimized. Max is 3.
+                   # 's' attempts to reduce size, 'z' reduces size even more.
+lto=false #due to incremental being true (see below)
+
+# The release profile, used for `cargo build --release`.
+[profile.release]
+debug = false
+opt-level = 3
+debug-assertions = true 
+#debug-assertions = false #default 
+#purposefully flipped debug-assertions for testing purposes! now back to normal(true for both)
+
+lto = true        # Link Time Optimization usually reduces size of binaries
+                   # and static libraries. Increases compilation time.
+                   # If true, passes `-C lto` flag to the compiler, and if a
+                   # string is specified like 'thin' then `-C lto=thin` will
+                   # be passed.
+                   # error: can't perform LTO when compiling incrementally
+rpath = false      # controls whether compiler should set loader paths.
+                   # If true, passes `-C rpath` flag to the compiler.
+codegen-units = 1
+panic = 'unwind'
+incremental = false # false due to lto=true otherwise: error: can't perform LTO when compiling incrementally
+overflow-checks = true #hmm... false seems unwise here!
+
+
+# The testing profile, used for `cargo test`.
+[profile.test]
+opt-level = 0
+debug = 2
+rpath = false
+lto = false #error: can't perform LTO when compiling incrementally
+debug-assertions = true
+codegen-units = 16
+panic = 'unwind'
+incremental = true #
+overflow-checks = true
+
+# The benchmarking profile, used for `cargo bench` and `cargo test --release`.
+[profile.bench]
+opt-level = 3
+debug = false
+rpath = false
+lto = true #error: can't perform LTO when compiling incrementally
+debug-assertions = false
+codegen-units = 16
+panic = 'unwind'
+incremental = false # false due to lto=true
+overflow-checks = false
+
+##doesn't work here(in workspace's Cargo.toml):
+#[package]
+## ...
+#publish = false
+#edition = '2018'
+

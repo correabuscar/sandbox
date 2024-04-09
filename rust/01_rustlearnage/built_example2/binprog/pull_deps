@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -vex
+
+git clone https://github.com/lukaslueg/built.git
+pushd built
+git checkout acc64758afadc32d492ff43ca8f47cb5a6a45636 #aka 0.7.2, yes this is a comment
+patch -p1 -i ../a.patch
+popd
+set +vex
+echo "All done"

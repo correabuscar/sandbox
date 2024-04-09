@@ -1,0 +1,21 @@
+see: https://github.com/lukaslueg/built/issues/14#issuecomment-2046042521
+this isn't a fix, but it's taken from: https://github.com/lukaslueg/built/pull/33#issuecomment-737228894
+at least u know which file it's not found :)
+
+diff --git a/src/dependencies.rs b/src/dependencies.rs
+index bfa9d2e..5155c4a 100644
+--- a/src/dependencies.rs
++++ b/src/dependencies.rs
+@@ -68,7 +68,11 @@ pub fn write_dependencies(manifest_location: &path::Path, mut w: &fs::File) -> i
+     use io::{Read, Write};
+ 
+     let mut lock_buf = String::new();
+-    fs::File::open(manifest_location.join("Cargo.lock"))?.read_to_string(&mut lock_buf)?;
++    fs::File::open(manifest_location.join("Cargo.lock"))
++        .map_err(|e| {
++            eprintln!("Failed to open Cargo.lock. This information is only available for top-level packages. See the documentation for `built::Options::set_dependencies`.");
++            e
++        })?.read_to_string(&mut lock_buf)?;
+     let lockfile = lock_buf.parse().expect("Failed to parse lockfile");
+ 
+     let dependencies = Dependencies::new(&lockfile);
