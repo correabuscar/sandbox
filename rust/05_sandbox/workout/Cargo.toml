@@ -1,0 +1,15 @@
+[package]
+name = "workout"
+version = "0.1.0"
+authors = [ "CExftNSroxORgpxED" ]
+exclude = [ "/ncurses-rs", "/cursive" ]
+
+[dependencies]
+cursive = "0.20"
+#cursive = { git = "https://github.com/gyscos/Cursive" }
+#cursive = { path = 
+#cursive = { path = "/home/user/build/2nonpkgs/rust.stuff/Cursive" }
+
+[patch.crates-io]
+ncurses = { path = './ncurses-rs' }
+cursive = { path = './cursive/cursive' }

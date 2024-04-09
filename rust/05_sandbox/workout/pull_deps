@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -vex
+
+#https://github.com/jeaye/ncurses-rs/pull/201#issuecomment-2045636905
+
+git clone https://github.com/gyscos/cursive.git
+pushd cursive
+git checkout 0a95c82c88c8a791d7fd983e7fb9f568b77551a8
+patch -p1 -i ../cursive_fix.patch
+popd
+git clone https://github.com/jeaye/ncurses-rs.git
+pushd ncurses-rs
+git checkout 3aa22bc279e4929e3ab69d49f75a18eda3e431e9
+patch -p1 -i ../ncurses-rs_fix.patch
+popd
+
+set +vex
+echo "All good."
