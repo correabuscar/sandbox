@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+#due to rust flags "-Z treat-err-as-bug=5" lots of these get created during compilation that errors.
+find . -name 'rustc-ice-*.txt' -delete
