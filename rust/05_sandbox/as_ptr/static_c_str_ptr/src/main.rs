@@ -44,4 +44,25 @@ fn main() {
     println!("Hello, world! '{:?}''{:?}'", FORMAT_STRING, FORMAT_STRING_PTR2.ptr);
     println!("Hello, world! '{:?}''{:?}'", FORMAT_STRING2, FORMAT_STRING_PTR2.ptr as *const u8);
     println!("Hello, world! '{:?}''{:?}'", FORMAT_STRING2, hidden::FORMAT_STRING_PTR4.get() as *const u8);
+    // Convert the pointer back into a reference to [u8; 3]
+    let ptr=hidden::FORMAT_STRING_PTR4.get();
+    let reference_to_array: &[u8; 3] = unsafe {
+        // Safety: We know that ptr points to a valid memory location holding a [u8; 3]
+        // and the reference will have the same lifetime as the static array.
+        // Thus, it's safe to create a reference from the pointer.
+        //&*ptr.cast::<[u8; 3]>()//this works too
+        &*(ptr as *const [u8; 3])
+    };
+
+    println!("{:?}", reference_to_array);//got FORMAT_STRING from the pointer
+    // Create a mutable copy of the array
+    // FIXME: to disable mutating it, i guess we would have to never expose the pointer directly
+    // so, maybe wrapper for the function call that wants to be used, but even so, then that
+    // function can access it, but i guess we'd assume it won't touch it, or double check contents
+    // before/after.
+    let mut mutable_array = *reference_to_array;//wrong way, this is making a copy (thanks chatgpt3.5 /s)
+    mutable_array[1]=b'd';
+    // Now you can use reference_to_array as needed
+    println!("{:?}", mutable_array);//got FORMAT_STRING from the pointer
+    println!("{:?}", reference_to_array);//got FORMAT_STRING from the pointer
 }
