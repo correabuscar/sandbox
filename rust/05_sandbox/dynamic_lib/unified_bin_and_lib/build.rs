@@ -8,6 +8,7 @@ fn main() {
     //XXX: kind odd that only one ":" is needed, as per:
     //https://github.com/rust-lang/cargo/issues/985#issuecomment-1071667472
     //vs 2 "::" as per: https://doc.rust-lang.org/cargo/reference/build-scripts.html#cargo-warning
+    //cargo::warning is too new(end of 2023) https://github.com/rust-lang/cargo/commit/9ebe3b332a51cf413a2ee50d011339633bf2ed22
 
 //    // Parse the Cargo.toml file
 //    let cargo_toml = CargoToml::from_path("Cargo.toml").unwrap();

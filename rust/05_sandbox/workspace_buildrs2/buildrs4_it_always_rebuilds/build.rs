@@ -40,4 +40,5 @@ fn main() {
            ); 
   //^ nvmFIXME: so this is being cached and depending strictly upon when the last change to build.rs was made! ie. if you touch src/main.rs but not build.rs the BUILD_DATE is the stale cached one from before! XXX: no, actually it was cargo:rerun-if-env-changed see above! So this is always run now, unless you do a `cargo check` which will update the build.rs cached output, and any further make build will never compile&run build.rs , see: https://github.com/rust-lang/cargo/issues/4901
   //println!("cargo:warning=Hey, here's a warning from build.rs, for a reason! noting that BUILD_DATE is {}",tm.to_utc().rfc822()); //is a message that will be printed to the main console after a build script has finished running.
+    //cargo::warning is too new(end of 2023) https://github.com/rust-lang/cargo/commit/9ebe3b332a51cf413a2ee50d011339633bf2ed22
 }
