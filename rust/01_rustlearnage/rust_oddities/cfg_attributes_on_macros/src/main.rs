@@ -5,6 +5,7 @@
 
 fn main() {
 
+    //XXX: but this creates a block!
     #[allow(clippy::print_stdout)] {
         println!("Hello, world!"); // all good now
     }
