@@ -19,3 +19,14 @@ fn main() {
     panic!("fancy testing")
 
 }
+
+//code that's enabled with `cargo build --features=ideally-excluded-from-all
+#[cfg(all(feature="ideally-excluded-from-all", not(feature="used-all-features-detector")))]
+#[allow(dead_code)]
+fn some_func() {
+}
+
+#[cfg(any(not(feature="ideally-excluded-from-all"), feature="used-all-features-detector"))]
+#[allow(dead_code)]
+fn some_func() {
+}
