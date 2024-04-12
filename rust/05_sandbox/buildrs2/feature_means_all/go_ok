@@ -1,4 +1,4 @@
 #
 
 #TODO: this way means: u have to keep it in sync with Cargo.toml
-cargo build --features="one,two"
+cargo build --features="one,two" -vv

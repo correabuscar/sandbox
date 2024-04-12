@@ -12,3 +12,4 @@ build = "build.rs"
 one=[]
 two=[]
 ideally-excluded-from-all=[] #would like cargo build --all-features to NOT include this one!
+used-all-features-detector=[] #workaround, if this is enabled, likely --all-features was used!

@@ -9,3 +9,6 @@ Now you can't use say: cargo test --all-features
 As a workaround: you'd have to specify each feature like --features="one,two,three"
 and thus make sure it's all from Cargo.toml except the "test_build_rs" one!
 
+OR, a better way/workaround is to use an additional feature that if also
+defined, it means --all-features were used, thus don't enable the code that u
+wanted for your feature!
