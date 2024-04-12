@@ -1,0 +1,38 @@
+[package]
+name = "ncurses"
+version = "6.0.0"
+authors = [ "contact@jeaye.com" ]
+description = "A very thin wrapper around the ncurses TUI library"
+documentation = "https://github.com/jeaye/ncurses-rs"
+homepage = "https://github.com/jeaye/ncurses-rs"
+repository = "https://github.com/jeaye/ncurses-rs"
+readme = "README.md"
+keywords = ["ncurses","TUI"]
+license = "MIT"
+build = "build.rs"
+
+[build-dependencies]
+cc = "1.0.92"
+pkg-config = "0.3"
+
+[dependencies]
+libc = "0.2"
+
+[features]
+default=[]
+wide = []
+panel = []
+menu = []
+# Uses a 64-bit type for `chtype` (otherwise a 32-bit type is used).
+# This should be set automagically (when needed) by build.rs
+wide_chtype = []
+# Uses legacy values for mouse-related constants.
+mouse_v1 = []
+extended_colors = ["wide"]
+
+#internal:
+test_build_rs_of_ncurses_rs = []
+dummy_feature_to_detect_that_--all-features_arg_was_used= []
+
+[lib]
+name = "ncurses"
