@@ -1,0 +1,11 @@
+can't conditionally compile stuff in build.rs
+by using feature(s) because then you can't use cargo arg '--all-features'
+AND exclude the feature that you only intended to use on build.rs
+
+Say you have a feature called "test_build_rs" which will successfully end with
+a non-zero exit on success, to prevent continuation of compilation of the rest
+of the crate.
+Now you can't use say: cargo test --all-features
+As a workaround: you'd have to specify each feature like --features="one,two,three"
+and thus make sure it's all from Cargo.toml except the "test_build_rs" one!
+
