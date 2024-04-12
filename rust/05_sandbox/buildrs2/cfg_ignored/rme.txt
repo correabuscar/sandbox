@@ -1,0 +1,8 @@
+build.rs doesn't see a cfg set via:
+cargo rustc -- --cfg set_this
+
+but it does see it if set via:
+RUSTFLAGS="--cfg set_this" cargo rustc
+or
+RUSTFLAGS="--cfg set_this" cargo build
+

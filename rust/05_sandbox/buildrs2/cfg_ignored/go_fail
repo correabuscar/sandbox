@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+cargo clean
+cargo rustc -- --print cfg --cfg set_this
