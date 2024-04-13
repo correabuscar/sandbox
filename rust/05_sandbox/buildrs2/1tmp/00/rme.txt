@@ -1,0 +1,5 @@
+this was original:
+commit 3aa22bc279e4929e3ab69d49f75a18eda3e431e9
+repo: https://github.com/jeaye/ncurses-rs.git
+
+PR at: https://github.com/jeaye/ncurses-rs/pull/218
