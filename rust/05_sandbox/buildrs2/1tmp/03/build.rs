@@ -406,8 +406,10 @@ impl MyCompilerCommand for Command {
             }
             panic!(
                 "Compiler failed{}. Is ncurses installed? \
-        pkg-config or pkgconf too? it's ncurses-devel on Fedora. \
-        Or maybe it failed for different reasons which are seen in the output above.",
+        pkg-config or pkgconf too? \
+        it's 'ncurses-devel' on Fedora; \
+        run `nix-shell` first, on NixOS. \
+        Or maybe it failed for different reasons which are seen in the errored output above.",
                 how
             )
         }
@@ -451,7 +453,8 @@ impl MyCompilerCommand for Command {
                     panic!(
                         "Found arg number '{}' that has \\0 aka NUL in it! \
                            It got replaced with '{}'.",
-                        count, REPLACEMENT_FOR_ARG_THAT_HAS_NUL
+                        count + 1,
+                        REPLACEMENT_FOR_ARG_THAT_HAS_NUL
                     );
                 }
             }
@@ -539,6 +542,7 @@ fn main() {
     test_panic_for_not_found_command();
     test_panic_for_command_non_zero_exit();
     test_get_what_will_run();
+    test_assert_no_nul_in_args();
 
     eprintln!("\n-------------------------------------
               \n!!! All build.rs tests have passed successfully! Ignore the above seemingly erroneous output, it was part of the successful testing !!!\nYou're seeing this because you tried to build with --features=test_build_rs_of_ncurses_rs");
@@ -738,4 +742,18 @@ fn test_get_what_will_run() {
     assert_eq!(prog, expected_prog);
     assert_eq!(how_many_args, expected_hma);
     assert_eq!(formatted_args, expected_fa);
+}
+
+#[allow(dead_code)]
+fn test_assert_no_nul_in_args() {
+    let expected_prog = "test_get_what_will_run.exe";
+    let result = std::panic::catch_unwind(|| {
+        let mut command = Command::new(expected_prog);
+        command.arg("a\0here");
+        command.assert_no_nul_in_args();
+    });
+    expect_panic(
+        result,
+        r##"Found arg number '1' that has \0 aka NUL in it! It got replaced with '<string-with-nul>'."##,
+    );
 }
