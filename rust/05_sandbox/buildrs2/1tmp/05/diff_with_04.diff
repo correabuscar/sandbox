@@ -1,0 +1,72 @@
+--- /home/user/sandbox/rust/05_sandbox/buildrs2/1tmp/04/build.rs	2024-04-13 18:17:46.520309346 +0200
++++ build.rs	2024-04-14 13:29:18.343521029 +0200
+@@ -134,6 +134,8 @@ fn build_wrap(ncurses_lib: &Option<Libra
+         //    build.include(path);
+         //}
+     }
++    build.opt_level(1); //else is 0, causes warning on NixOS: _FORTIFY_SOURCE requires compiling with optimization (-O)
++
+     // The following creates `libwrap.a` on linux
+     build.file("src/wrap.c").compile("wrap");
+ }
+@@ -570,11 +572,14 @@ fn test_assert_works() {
+ 
+ #[allow(dead_code)]
+ fn test_no_panic_in_command() {
+-    let cmd = if cfg!(windows) { "dir" } else { "ls" };
+-    let arg = if cfg!(windows) { "/?" } else { "--help" };
++    let expected_ec = 42;
++    let cmd = if cfg!(windows) { "cmd" } else { "sh" };
++    let args_ok=&["-c", "exit 0" ];
++    let args_fail=&["-c", &format!("exit {}", expected_ec) ];
+     let result = std::panic::catch_unwind(|| {
+         let mut command = Command::new(cmd);
+-        command.arg(arg);
++        command.args(args_ok);
++        //execute: sh -c 'exit 0'`
+         command.status_or_panic();
+     });
+     let fail_msg = format!(
+@@ -587,19 +592,18 @@ fn test_no_panic_in_command() {
+     // executed bin exits with exit code 0, or it would panic ie. fail the test
+     let result = std::panic::catch_unwind(|| {
+         let mut command = Command::new(cmd);
+-        command.arg(arg);
++        command.args(args_ok);
++        //execute: sh -c 'exit 0'`
+         command.success_or_panic();
+     });
+     assert!(result.is_ok(), "{}", fail_msg);
+ 
+     // executed bin exits with specific exit code 2
+     let result = std::panic::catch_unwind(|| {
+-        //TODO: windows variant here? (or does 'ls' exist there too? and exits with code 2?)
+         let mut command = Command::new(cmd);
+-        let arg = "hopefully non exitent dir here";
+-        command.arg(arg);
++        command.args(args_fail);
++        //execute: sh -c 'exit 42'`
+         let exit_status = command.status_or_panic();
+-        let expected_ec = 2;
+         assert_eq!(
+             exit_status.code().expect("was command killed by a signal?"),
+             expected_ec,
+@@ -631,14 +635,14 @@ fn test_panic_for_not_found_command() {
+ 
+ #[allow(dead_code)]
+ fn test_panic_for_command_non_zero_exit() {
+-    let cmd = if cfg!(windows) { "dir" } else { "ls" };
+-    let arg = "hopefully non exitent dir here";
++    let cmd = if cfg!(windows) { "cmd" } else { "sh" };
++    let args_fail=&["-c", &format!("exit 43") ];
+     let result = std::panic::catch_unwind(|| {
+         let mut command = Command::new(cmd);
+-        command.arg(arg);
++        command.args(args_fail);
+         command.success_or_panic();
+     });
+-    let expected_panic_msg = "Compiler failed with exit code 2. Is ncurses installed? pkg-config or pkgconf too? it's 'ncurses-devel' on Fedora; run `nix-shell` first, on NixOS. Or maybe it failed for different reasons which are seen in the errored output above.";
++    let expected_panic_msg = "Compiler failed with exit code 43. Is ncurses installed? pkg-config or pkgconf too? it's 'ncurses-devel' on Fedora; run `nix-shell` first, on NixOS. Or maybe it failed for different reasons which are seen in the errored output above.";
+     expect_panic(result, expected_panic_msg);
+ }
+ 
