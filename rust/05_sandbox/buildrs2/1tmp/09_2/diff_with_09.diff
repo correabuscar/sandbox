@@ -1,0 +1,144 @@
+--- /home/user/sandbox/rust/05_sandbox/buildrs2/1tmp/09/build.rs	2024-04-17 12:38:52.149743207 +0200
++++ build.rs	2024-04-17 13:26:56.632966878 +0200
+@@ -17,9 +17,9 @@ use pkg_config::Library;
+ use std::env;
+ use std::ffi::OsStr;
+ use std::ffi::OsString;
+-use std::fs::File;
+-use std::io::Write as required_for_write_all_function;//in File
+ use std::fmt::Write as required_for_writeln_macro;
++use std::fs::File;
++use std::io::Write as required_for_write_all_function; //in File
+ use std::os::unix::ffi::OsStrExt;
+ use std::os::unix::ffi::OsStringExt;
+ use std::path::Path;
+@@ -280,14 +280,6 @@ fn main() {
+ }
+ // -----------------------------------------------------------------
+ 
+-//internal buffer OOM message:
+-const IBOOMM:&str="Couldn't write to internal buffer. Out of memory?";
+-macro_rules! wln {
+-    ($buffer:expr, $($arg:tt)*) => {
+-        writeln!($buffer, $($arg)*).expect(IBOOMM); // expect returns () here.
+-    }
+-}
+-
+ /// Tries to see if linker can find/link with the named library.
+ /// Uses ncurses lib searchdirs(if any found by pkg-config) to find that lib.
+ /// This is mainly used when pkg-config is missing.
+@@ -460,87 +452,54 @@ fn gen_rs(
+     //later with things like: "error[E0432]: unresolved import `constants::TRUE`" in the case of
+     //generating raw_constants.rs which would be empty due to 'genconstants' having failed with exit
+     //code 1
+-    let consts:std::process::Output = Command::new(&bin_full)
++    let consts: std::process::Output = Command::new(&bin_full)
+         .output() // TODO: maybe make this a extension trait and dedup code
+         .unwrap_or_else(|err| {
+             panic!(
+-                "Attempting to execute '{}' failed, reason: '{}'",
++                "!!! Attempting to execute '{}' failed, reason: '{}'",
+                 bin_full, err
+             )
+         });
+ 
+-    //FIXME: well, i can't be duplicating captured stdout/stderr into a buffer, better to just use
+-    //stderr directly even if each written line could panic and thus u won't see any subsequent
+-    //lines which is what i was trying to avoid here.
+-    let closure=|buf:&mut String| {
+-        wln!(buf,"But here's its stdout&stderr:");
+-        wln!(buf,"|||stdout start|||");
++    // test this with: `$ TERM=foo cargo build`
++    let show_stdout_stderr = || {
++        //XXX: presumably eprintln! and std::io::stderr().write_all().unwrap() write to same stderr
++        //stream and both would panic if some error would happen when writing to it!
++        eprintln!("But here's its stdout&stderr:");
++        eprintln!("|||stdout start|||");
++        //Preserve stdout/stderr bytes, instead of lossily convert them to utf-8 before showing them.
+         //show stdout of executed binary, on stderr
+-        let err_out = std::io::stderr().write_all(&consts.stdout);
++        std::io::stderr().write_all(&consts.stdout).unwrap();
+         eprintln!("\n|||stdout end||| |||stderr start|||");
+         //show stderr of executed binary, on stderr
+-        let err_err = std::io::stderr().write_all(&consts.stderr);
++        std::io::stderr().write_all(&consts.stderr).unwrap();
+         eprintln!("\n|||stderr end|||");
+-        //Panic later, in case the stderr won't error(like stdout did) on write_all()
+-        (err_out,err_err)
+     };
+-    let closure_two=|(err_out,err_err)| {
+-        let mut collected_error_msgs;
+-        //TODO: dedup here hurts readability?! so, undedup?
+-        let prefix = "For '";
+-        let midfix = "', the error was: '";
+-        let suffix = "'.";
+-        if let Err(err) = err_out {
+-            let who = "stdout";
+-            //      Note the extra space at the end _ there.
+-            collected_error_msgs = format!("{}{}{}{}{} ", prefix, who, midfix, err, suffix);
+-        } else {
+-            collected_error_msgs = String::new();
+-        }
+-        if let Err(err) = err_err {
+-            let who = "stderr";
+-            //Append to previous(if any, else it's empty) error string:
+-            collected_error_msgs.push_str(&format!("{}{}{}{}{}", prefix, who, midfix, err, suffix));
+-        }
+-        if !collected_error_msgs.is_empty() {
+-            panic!(
+-                "While trying to show you the stdout/stderr above, encountered these errors: {}",
+-                collected_error_msgs
+-                );
+-        }
++    let a_panic = || -> ! {
++        panic!("Due to the above-reported error");
+     };
+ 
+-
+     let exit_code = consts.status.code().unwrap_or_else(|| {
+-        let mut buffer=String::new();
+-        writeln!(buffer,
+-            "Execution of '{}' failed, likely killed by signal?",
+-            bin_full
+-        ).expect(IBOOMM);
+-        closure_two(closure(&mut buffer));
+-        panic!("{}",buffer);
++        //we get here if it segfaults(signal 11), so if exited due to signal
++        //but unsure if we get here for any other reasons!
++        //To test this branch uncomment a segfault line early in src/genconstants.c then `cargo build`
++        eprintln!(
++            "!!! Execution of '{}' failed, likely killed by signal! Maybe check 'dmesg' for the word \"segfault\" or \"{}\".",
++            bin_full, out_bin_fname
++            );
++        show_stdout_stderr(); //stderr is empty here on segfault.
++        a_panic();
+     });
+     if 0 != exit_code {
+-        let mut buffer=String::new();
+-        //Preserve stdout/stderr bytes, instead of lossily convert them to utf-8 before showing them.
+-        writeln!(buffer,
+-            "Execution of '{}' failed with exit code '{}'",
++        eprintln!(
++            "!!! Execution of '{}' failed with exit code '{}'",
+             bin_full, exit_code
+-        ).expect(IBOOMM);
+-        let (err_out,err_err)=closure(&mut buffer);
++        );
++        show_stdout_stderr();
+         eprintln!(
+             "!! Maybe you need to try a different value for the TERM environment variable !!"
+         );
+-        closure_two((err_out,err_err));
+-        //    assert_eq!(
+-        //        exit_code,
+-        //        0,
+-        //        "Execution of '{}' failed with exit code '{}',\n|||stdout start|||\n{}\n|||stdout end||| |||stderr start|||\n{}\n|||stderr end|||\n!! Maybe you need to try a different value for the TERM environment variable !!",
+-        //        bin_full,
+-        //        exit_code,
+-        //        String::from_utf8_lossy(&consts.stdout),
+-        //        String::from_utf8_lossy(&consts.stderr),
+-        //    );
++        a_panic();
+     }
+ 
+     //write the output from executing the binary into a new rust source file .rs
