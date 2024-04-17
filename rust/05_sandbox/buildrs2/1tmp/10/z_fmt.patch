@@ -1,0 +1,548 @@
+diff --git a/build.rs b/build.rs
+index 4213f4a..737ce73 100644
+--- a/build.rs
++++ b/build.rs
+@@ -17,8 +17,9 @@ use pkg_config::Library;
+ use std::env;
+ use std::ffi::OsStr;
+ use std::ffi::OsString;
++use std::fmt::Write as required_for_writeln_macro;
+ use std::fs::File;
+-use std::io::Write;
++use std::io::Write as required_for_write_all_function; //in File
+ use std::os::unix::ffi::OsStrExt;
+ use std::os::unix::ffi::OsStringExt;
+ use std::path::Path;
+@@ -101,6 +102,7 @@ const TINFO_LIB_NAMES: &[&str] = if IS_WIDE_AND_NOT_ON_MACOS {
+     //
+     //These are tried in order and first that links is selected:
+     &["tinfow5", "tinfow", "tinfo"]
++    //doneFIXME: here ^, user can have in env. this TINFOW_NO_PKG_CONFIG=1 but not also TINFO_NO_PKG_CONFIG=1 which would cause seg fault on Gentoo because tinfo will be found&linked(instead of tinfow) with one or more of menuw,panelw,ncursesw eg. when doing example ex_5 (ie. menuw,ncursesw,tinfo(no w)); but on Fedora this ncursesw+tinfo(no w) makes sense, so we can't really guard against this (well maybe with target_os but what if they change in the future...) instead maybe print a warning if w and non-w are mixed(but only for tinfo is needed), even though it will be a false warning on Fedora, well maybe it won't be if we also check if env. var is set TINFOW_NO_PKG_CONFIG.
+ } else {
+     //no reason to ever fallback to tinfow here when not-wide!
+     //Fedora/Gentoo has ncurses+tinfo
+@@ -118,7 +120,9 @@ const TINFO_LIB_NAMES: &[&str] = if IS_WIDE_AND_NOT_ON_MACOS {
+ /// finds and emits cargo:rustc-link-lib=
+ fn find_library(names: &[&str]) -> Option<Library> {
+     for name in names {
++        //println!("cargo:warning=Trying lib '{}'",name);
+         if let Ok(lib) = pkg_config::probe_library(name) {
++            //println!("cargo:warning=Found lib '{}' '{:?}'",name, lib);
+             return Some(lib);
+         }
+     }
+@@ -195,25 +199,52 @@ fn main() {
+     // so when pkg-config is missing, how do we know which tinfo to tell cargo to link, if any!
+     // doneFIXME: ^ I guess we gonna have to compile own .c to link with tinfo to see if it fails or
+     // works!
+-    if find_library(TINFO_LIB_NAMES).is_none() {
++    let tinfo_name = if let Some(found) = find_library(TINFO_LIB_NAMES) {
++        let libs = found.libs;
++        assert_eq!(
++            libs.len(),
++            1,
++            "Found tinfo lib returned more than one lib: '{:?}'",
++            libs
++        );
++        libs.first()
++            .unwrap_or_else(|| {
++                panic!(
++                    "Unexpected panic on tinfo lib found string in '{:?}'.",
++                    libs
++                )
++            })
++            .clone()
++    } else {
++        //None found, but at least on NixOS it works without any tinfo(it's inside ncursesw lib), so no need to warn.
+         //Pick the tinfo lib to link with, as fallback,
+         //the first one that links successfully!
+         //The order in the list matters!
+-        for each in TINFO_LIB_NAMES {
+-            if try_link(each, &ncurses_lib) {
+-                println!(
+-                    "cargo:warning=Using lib fallback '{}' which links successfully.",
+-                    each
+-                );
+-                //successfully linked with this tinfo variant,
+-                //so let's use it as fallback
+-                println!("cargo:rustc-link-lib={}", each);
+-                break;
+-            }
+-        }
++        TINFO_LIB_NAMES
++            .iter()
++            .find(|&each| {
++                let ret: bool = try_link(each, &ncurses_lib);
++                if ret {
++                    println!(
++                        "cargo:warning=Using lib fallback '{}' which links successfully.",
++                        each
++                    );
++                    println!("cargo:rustc-link-lib={}", each);
++                }
++                ret
++            })
++            .unwrap_or_else(|| &"")
++            .to_string()
++    };
++    if IS_WIDE_AND_NOT_ON_MACOS
++        && tinfo_name == "tinfo"
++        && std::env::var("TINFOW_NO_PKG_CONFIG").is_ok()
++    {
++        println!("cargo:warning=Looks like you're using wide(and are not on macos) and you've set TINFOW_NO_PKG_CONFIG but have NOT set TINFO_NO_PKG_CONFIG too, so you're linking tinfo(no w) with other wide libs like ncursesw, which will cause '{}' eg. for example ex_5 when trying to run it. This is a warning not a panic because we assume you know what you're doing, and besides this works on Fedora (even if that env. var isn't set)!","Segmentation fault (core dumped)");
+     }
++    //TODO: test on macos-es.
+ 
+-    // gets the name of ncurses lib found by pkg-config, if it found any!
++    // Gets the name of ncurses lib found by pkg-config, if it found any!
+     // else (warns and)returns the default one like 'ncurses' or 'ncursesw'
+     // and emits cargo:rustc-link-lib= for it unless already done.
+     let lib_name = get_ncurses_lib_name(&ncurses_lib);
+@@ -249,11 +280,31 @@ fn main() {
+ }
+ // -----------------------------------------------------------------
+ 
++//TODO: look into how to make doc tests and if they'd work with build.rs
++/// creates file with the specifies contents
++/// any existing file with that name is lost
++fn overwrite_file_contents(file_name: &str, contents: &[u8]) {
++    //FIXME: Maybe don't require utf-8 valid paths? by requiring &str here,
++    //the caller would do PathBuf::display() which replaces '\xFF' with the placeholder char
++    //which is the replacement character \u{FFFD}
++    //Many other programs break at compile time if path contains non-utf8 chars, before we even get here!
++    let mut file = File::create(file_name)
++        .unwrap_or_else(|err| panic!("Couldn't create file '{}', reason: '{}'", file_name, err));
++
++    file.write_all(contents).unwrap_or_else(|err| {
++        panic!(
++            "Couldn't write contents to file '{}', reason: '{}'",
++            file_name, err
++        )
++    });
++    drop(file); //explicit file close, not needed since it's in a function now!
++}
++
+ /// Tries to see if linker can find/link with the named library.
+ /// Uses ncurses lib searchdirs(if any found by pkg-config) to find that lib.
+ /// This is mainly used when pkg-config is missing.
+-/// Should still work if pkg-config exists though.
+-/// Returns true is linking succeeded, false otherwise.
++/// Should still work if pkg-config exists though(except it will be missing the found link searchdirs and thus might fail? TODO: test this on NixOS, with NCURSES(W)_NO_PKG_CONFIG=1 env.var, for something like menu(w) or panel(w) )
++/// Returns true if linking succeeded, false otherwise.
+ fn try_link(lib_name: &str, ncurses_lib: &Option<Library>) -> bool {
+     //OUT_DIR is set by cargo during build
+     let out_dir = env::var("OUT_DIR").expect("cannot get OUT_DIR");
+@@ -267,21 +318,23 @@ fn try_link(lib_name: &str, ncurses_lib: &Option<Library>) -> bool {
+         .display()
+         .to_string();
+ 
+-    let mut file = File::create(&out_src_full).unwrap_or_else(|err| {
+-        panic!(
+-            "Couldn't create rust file '{}', reason: '{}'",
+-            out_src_full, err
+-        )
+-    });
+-
+     let source_code = b"int main() { return 0; }";
+-    file.write_all(source_code).unwrap_or_else(|err| {
+-        panic!(
+-            "Couldn't write to C file '{}', reason: '{}'",
+-            out_src_full, err
+-        )
+-    });
+-    drop(file); //explicit file close
++    overwrite_file_contents(&out_src_full, source_code);
++    //TODO: remove commented out code everywhere in build.rs
++    //    let mut file = File::create(&out_src_full).unwrap_or_else(|err| {
++    //        panic!(
++    //            "Couldn't create C file '{}', reason: '{}'",
++    //            out_src_full, err
++    //        )
++    //    });
++    //
++    //    file.write_all(source_code).unwrap_or_else(|err| {
++    //        panic!(
++    //            "Couldn't write to C file '{}', reason: '{}'",
++    //            out_src_full, err
++    //        )
++    //    });
++    //    drop(file); //explicit file close
+ 
+     let build = cc::Build::new();
+     let mut linker_searchdir_args: Vec<String> = Vec::new();
+@@ -315,7 +368,7 @@ fn try_link(lib_name: &str, ncurses_lib: &Option<Library>) -> bool {
+         .args_checked(["-l", lib_name])
+         .args_checked(linker_searchdir_args);
+     let exit_status = command.status_or_panic(); //runs compiler
+-    let ret = exit_status.success();
++    let ret: bool = exit_status.success();
+ 
+     if DELETE_GENERATEDS {
+         if ret {
+@@ -369,7 +422,7 @@ fn gen_rs(
+     println!("cargo:rerun-if-changed={}", source_c_file);
+     let out_dir = env::var("OUT_DIR").expect("cannot get OUT_DIR");
+     #[cfg(windows)]
+-    let out_bin_fname = format!("{}.exe", out_bin_fname);
++    let out_bin_fname = format!("{}.exe", out_bin_fname); //shadowed
+     let bin_full = Path::new(&out_dir)
+         .join(out_bin_fname)
+         .display()
+@@ -394,6 +447,7 @@ fn gen_rs(
+         ENV_VAR_NAME_FOR_NCURSES_RS_CFLAGS
+     );
+ 
++    //See comment above the const var def. to understand which env.vars are tried here:
+     let _ = build.try_flags_from_environment(ENV_VAR_NAME_FOR_NCURSES_RS_CFLAGS);
+ 
+     //'cc::Build' can do only lib outputs but we want a binary
+@@ -420,45 +474,84 @@ fn gen_rs(
+     //later with things like: "error[E0432]: unresolved import `constants::TRUE`" in the case of
+     //generating raw_constants.rs which would be empty due to 'genconstants' having failed with exit
+     //code 1
+-    let consts = Command::new(&bin_full)
+-        .output() // TODO: maybe make this a trait extension and dedup code
+-        .unwrap_or_else(|err| panic!("Executing '{}' failed, reason: '{}'", bin_full, err));
+-    let exit_code = consts.status.code().unwrap_or_else(|| {
++    let output: std::process::Output = Command::new(&bin_full).output_or_panic(); // doneTODO: maybe make this an extension trait and dedup code
++                                                                                  //        .unwrap_or_else(|err| {
++                                                                                  //            //doneTODO: this should be same as .status_or_panic() basically; or maybe not, since needs
++                                                                                  //            //different message and less args; but for deduppage sould do.
++                                                                                  //            panic!(
++                                                                                  //                "!!! Attempting to execute '{}' failed, reason: '{}'",
++                                                                                  //                bin_full, err
++                                                                                  //            )
++                                                                                  //        });
++
++    // TODO: dedup this whole block with the one from check_chtype_size
++    // test this with: `$ TERM=foo cargo build`
++    let show_stdout_stderr = || {
++        //XXX: presumably eprintln! and std::io::stderr().write_all().unwrap() write to same stderr
++        //stream and both would panic if some error would happen when writing to it!
++        eprintln!("But here's its stdout&stderr:");
++        eprintln!("|||stdout start|||");
++        //Preserve stdout/stderr bytes, instead of lossily convert them to utf-8 before showing them.
++        //show stdout of executed binary, on stderr
++        std::io::stderr().write_all(&output.stdout).unwrap();
++        eprintln!("\n|||stdout end||| |||stderr start|||");
++        //show stderr of executed binary, on stderr
++        std::io::stderr().write_all(&output.stderr).unwrap();
++        eprintln!("\n|||stderr end|||");
++    };
++    let and_panic = || -> ! {
+         panic!(
+-            "Execution of '{}' failed, possibly killed by signal? stderr is: '{}'",
+-            bin_full,
+-            String::from_utf8_lossy(&consts.stderr)
+-        )
++            "Due to the above-reported error while executing '{}'.",
++            bin_full
++        );
++    };
++
++    let exit_code = output.status.code().unwrap_or_else(|| {
++        //we get here if it segfaults(signal 11), so if exited due to signal
++        //but unsure if we get here for any other reasons!
++        //To test this branch uncomment a segfault line early in src/genconstants.c then `cargo build`
++        eprintln!(
++            "!!! Execution of '{}' failed, likely killed by signal! Maybe check 'dmesg' for the word \"segfault\" or \"{}\".",
++            bin_full, out_bin_fname
++            );
++        show_stdout_stderr();
++        and_panic();
+     });
+-    assert_eq!(
+-        exit_code,
+-        0,
+-        "Executing '{}' failed with exit code '{}',\n|||stdout start|||\n{}\n|||stdout end||| |||stderr start|||\n{}\n|||stderr end|||\n!! Maybe you need to try a different value for the TERM environment variable !!",
+-        bin_full,
+-        exit_code,
+-        String::from_utf8_lossy(&consts.stdout),
+-        String::from_utf8_lossy(&consts.stderr),
+-    );
++    if 0 != exit_code {
++        eprintln!(
++            "!!! Execution of '{}' failed with exit code '{}'",
++            bin_full, exit_code
++        );
++        show_stdout_stderr();
++        eprintln!(
++            // this msg can't be part of the (future)extension trait impl:
++            "!! Maybe you need to try a different value for the TERM environment variable !!"
++        );
++        and_panic();
++    }
+ 
+-    //write the output from executing the binary into a new rust source file .rs
+-    //that .rs file is later used outside of this build.rs, in the normal build
++    //Write the output from executing the binary into a new rust source file .rs
++    //That .rs file is later used outside of this build.rs, in the normal build
+     let gen_rust_file_full_path = Path::new(&out_dir)
+         .join(gen_rust_file)
+         .display()
+         .to_string();
+-    let mut file = File::create(&gen_rust_file_full_path).unwrap_or_else(|err| {
+-        panic!(
+-            "Couldn't create rust file '{}', reason: '{}'",
+-            gen_rust_file_full_path, err
+-        )
+-    });
+-
+-    file.write_all(&consts.stdout).unwrap_or_else(|err| {
+-        panic!(
+-            "Couldn't write to rust file '{}', reason: '{}'",
+-            gen_rust_file_full_path, err
+-        )
+-    });
++    overwrite_file_contents(&gen_rust_file_full_path, &output.stdout);
++    //we ignore stderr.
++
++    //    let mut file = File::create(&gen_rust_file_full_path).unwrap_or_else(|err| {
++    //        panic!(
++    //            "Couldn't create rust file '{}', reason: '{}'",
++    //            gen_rust_file_full_path, err
++    //        )
++    //    });
++    //
++    //    file.write_all(&output.stdout).unwrap_or_else(|err| {
++    //        panic!(
++    //            "Couldn't write to rust file '{}', reason: '{}'",
++    //            gen_rust_file_full_path, err
++    //        )
++    //    });
+ }
+ 
+ fn check_chtype_size(ncurses_lib: &Option<Library>) {
+@@ -474,10 +567,7 @@ fn check_chtype_size(ncurses_lib: &Option<Library>) {
+     };
+     let bin_full = Path::new(&out_dir).join(bin_name).display().to_string();
+ 
+-    let mut fp = File::create(&src)
+-        .unwrap_or_else(|err| panic!("cannot create '{}', reason: '{}'", src, err));
+-    fp.write_all(
+-        b"
++    let contents = br#"
+ #include <assert.h>
+ #include <limits.h>
+ #include <stdio.h>
+@@ -487,21 +577,24 @@ fn check_chtype_size(ncurses_lib: &Option<Library>) {
+ int main(void)
+ {
+     if (sizeof(chtype)*CHAR_BIT == 64) {
+-        puts(\"cargo:rustc-cfg=feature=\\\"wide_chtype\\\"\");
++        puts("cargo:rustc-cfg=feature=\"wide_chtype\"");
+     } else {
+         /* We only support 32-bit and 64-bit chtype. */
+-        assert(sizeof(chtype)*CHAR_BIT == 32 && \"unsupported size for chtype\");
++        assert(sizeof(chtype)*CHAR_BIT == 32 && "unsupported size for chtype");
+     }
+ 
+ #if defined(NCURSES_MOUSE_VERSION) && NCURSES_MOUSE_VERSION == 1
+-	puts(\"cargo:rustc-cfg=feature=\\\"mouse_v1\\\"\");
++	puts("cargo:rustc-cfg=feature=\"mouse_v1\"");
+ #endif
+     return 0;
+ }
+-    ",
+-    )
+-    .unwrap_or_else(|err| panic!("cannot write into file '{}', reason: '{}'", src, err));
+-    drop(fp); //explicit file close (flush)
++    "#;
++    overwrite_file_contents(&src, contents);
++    //    let mut fp = File::create(&src)
++    //        .unwrap_or_else(|err| panic!("cannot create '{}', reason: '{}'", src, err));
++    //fp.write_all(
++    //    .unwrap_or_else(|err| panic!("cannot write into file '{}', reason: '{}'", src, err));
++    //    drop(fp); //explicit file close (flush)
+ 
+     let mut build = cc::Build::new();
+     if let Some(lib) = ncurses_lib {
+@@ -521,9 +614,8 @@ int main(void)
+     command.arg("-o").arg_checked(&bin_full).arg_checked(&src);
+     command.success_or_panic(); //runs compiler
+ 
+-    let features = Command::new(&bin_full)
+-        .output() // TODO: maybe make this a trait extension and dedup code
+-        .unwrap_or_else(|err| panic!("Executing '{}' failed, reason: '{}'", bin_full, err));
++    let features = Command::new(&bin_full).output_or_panic(); // kindadoneTODO: maybe make this an extension trait and dedup code (see up, it's fresh-er)
++                                                              //.unwrap_or_else(|err| panic!("Executing '{}' failed, reason: '{}'", bin_full, err));
+     let exit_code = features.status.code().unwrap_or_else(|| {
+         panic!(
+             "Execution of '{}' failed, possibly killed by signal? stderr is: '{}'",
+@@ -540,6 +632,7 @@ int main(void)
+         String::from_utf8_lossy(&features.stdout),
+         String::from_utf8_lossy(&features.stderr),
+     );
++    //FIXME: reuse ^ code from gen_rs() but without dup-ing
+ 
+     //for cargo to consume
+     print!("{}", String::from_utf8_lossy(&features.stdout));
+@@ -622,8 +715,40 @@ fn get_ncurses_lib_name(ncurses_lib: &Option<Library>) -> String {
+     lib_name
+ }
+ 
++trait MyOutput {}
++
++impl MyOutput for std::process::Output {}
++
++trait MyExitStatus {
++    fn success_or_panic(self) -> ExitStatus;
++}
++
++impl MyExitStatus for std::process::ExitStatus {
++    fn success_or_panic(self) -> ExitStatus {
++        if self.success() {
++            self
++        } else {
++            let how: String;
++            if let Some(code) = self.code() {
++                how = format!(" with exit code {}.", code);
++            } else {
++                how = ", was it terminated by a signal?".to_string();
++            }
++            panic!(
++                "Compiler failed{} Is ncurses installed? \
++        pkg-config or pkgconf too? \
++        it's 'ncurses-devel' on Fedora; \
++        run `nix-shell` first, on NixOS. \
++        Or maybe it failed for different reasons which are seen in the errored output above.",
++                how
++            )
++        }
++    }
++}
++
+ // Define an extension trait for Command
+ trait MyCompilerCommand {
++    fn output_or_panic(&mut self) -> std::process::Output;
+     fn success_or_panic(&mut self) -> ExitStatus;
+     //fn success_or_else<F: FnOnce(ExitStatus) -> ExitStatus>(&mut self, op: F) -> ExitStatus;
+     fn status_or_panic(&mut self) -> ExitStatus;
+@@ -639,6 +764,7 @@ trait MyCompilerCommand {
+     /// otherwise the original Command::arg would've set it to "<string-with-nul>"
+     /// Doesn't do any other checks, passes it to Command::arg()
+     fn arg_checked<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Command;
++    fn panic<T: std::fmt::Display>(&mut self, err: T, what_type_of_command: &str) -> !;
+ }
+ 
+ fn has_null_byte<S: AsRef<OsStr>>(arg: S) -> bool {
+@@ -655,31 +781,41 @@ fn has_null_byte<S: AsRef<OsStr>>(arg: S) -> bool {
+ /// get replaced entirely with this: "<string-with-nul>"
+ const REPLACEMENT_FOR_ARG_THAT_HAS_NUL: &str = "<string-with-nul>";
+ // Implement the extension trait for Command
+-impl MyCompilerCommand for Command {
++impl MyCompilerCommand for std::process::Command {
++    fn output_or_panic(&mut self) -> std::process::Output {
++        self.output().unwrap_or_else(|err| {
++            //doneTODO: this should be same as .status_or_panic() basically; or maybe not, since needs
++            //different message and less args; but for deduppage sould do.
++            //            panic!(
++            //                "!!! Attempting to execute '{}' failed, reason: '{}'",
++            //                bin_full, err
++            //            )
++            self.panic(err, "generated bin"); //TODO: let caller provide this
++        })
++    }
+     /// you can't use an arg value "<string-with-nul>", or this will panic.
+     fn success_or_panic(&mut self) -> ExitStatus {
+-        let exit_status: ExitStatus = self
+-            .show_what_will_run()
+-            .assert_no_nul_in_args()
+-            .status_or_panic();
+-        if exit_status.success() {
+-            exit_status
+-        } else {
+-            let how: String;
+-            if let Some(code) = exit_status.code() {
+-                how = format!(" with exit code {}", code);
+-            } else {
+-                how = ", was terminated by a signal".to_string();
+-            }
+-            panic!(
+-                "Compiler failed{}. Is ncurses installed? \
+-        pkg-config or pkgconf too? \
+-        it's 'ncurses-devel' on Fedora; \
+-        run `nix-shell` first, on NixOS. \
+-        Or maybe it failed for different reasons which are seen in the errored output above.",
+-                how
+-            )
+-        }
++        let exit_status: ExitStatus = self.status_or_panic().success_or_panic();
++        exit_status
++        //        //TODO: make this below part of ExitStatus (ie. extension trait) so I can use it on other Command(s)
++        //        if exit_status.success() {
++        //            exit_status
++        //        } else {
++        //            let how: String;
++        //            if let Some(code) = exit_status.code() {
++        //                how = format!(" with exit code {}", code);
++        //            } else {
++        //                how = ", was terminated by a signal".to_string();
++        //            }
++        //            panic!(
++        //                "Compiler failed{}. Is ncurses installed? \
++        //        pkg-config or pkgconf too? \
++        //        it's 'ncurses-devel' on Fedora; \
++        //        run `nix-shell` first, on NixOS. \
++        //        Or maybe it failed for different reasons which are seen in the errored output above.",
++        //                how
++        //            )
++        //        }
+     }
+     //note: can't override arg/args because they're not part of a Trait in Command
+     //so would've to wrap Command in my own struct for that. This would've ensured
+@@ -747,7 +883,7 @@ impl MyCompilerCommand for Command {
+                     //None aka not fully utf8 arg
+                     //then we show it as ascii + hex
+                     let mut broken_arg = String::new();
+-                    use std::fmt::Write; // can't globally import this ^, conflicts with std::io::Write
++                    //use std::fmt::Write; // can't globally import this ^, conflicts with std::io::Write
+                     for byte in arg.as_bytes() {
+                         match std::char::from_u32(*byte as u32) {
+                             Some(c) if c.is_ascii() => broken_arg.push(c),
+@@ -776,13 +912,33 @@ impl MyCompilerCommand for Command {
+     /// returns ExitStatus whether it be 0 or !=0
+     fn status_or_panic(&mut self) -> ExitStatus {
+         // Call the original status() method and handle the potential error
+-        self.status().unwrap_or_else(|err| {
+-            let (p_prog, how_many_args, formatted_args) = self.get_what_will_run();
+-            panic!(
+-                "Failed to run compilation command '{}' with '{}' args: '{}', reason: '{}'",
+-                p_prog, how_many_args, formatted_args, err
+-            )
+-        })
++        self.show_what_will_run()
++            .assert_no_nul_in_args()
++            .status()
++            .unwrap_or_else(|err| {
++                self.panic(err, "compilation"); //TODO: let caller provide this?!
++                                                //                let (p_prog, how_many_args, formatted_args) = self.get_what_will_run();
++                                                //                panic!(
++                                                //                    "Failed to run compilation command '{}' with '{}' args: '{}', reason: '{}'",
++                                                //                    p_prog, how_many_args, formatted_args, err
++                                                //                )
++            })
++    }
++    fn panic<T: std::fmt::Display>(&mut self, err: T, what_type_of_command: &str) -> ! {
++        let (p_prog, how_many_args, formatted_args) = self.get_what_will_run();
++        panic!(
++            "Failed to run {}{}command '{}' with '{}' args: '{}', reason: '{}'",
++            what_type_of_command,
++            if what_type_of_command.is_empty() {
++                ""
++            } else {
++                " "
++            },
++            p_prog,
++            how_many_args,
++            formatted_args,
++            err
++        )
+     }
+     fn show_what_will_run(&mut self) -> &mut Self {
+         let (exe_name, how_many_args, formatted_args) = self.get_what_will_run();
+@@ -1032,3 +1188,4 @@ fn test_assert_no_nul_in_args() {
+     });
+     assert!(result.is_ok(), "!!! This should not have panicked !!!");
+ }
++//TODO: retest these, they break atm.
