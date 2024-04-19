@@ -80,6 +80,6 @@ pub extern "C" fn abort() {
 
 #[no_mangle]
 fn dummy() {
-    //XXX: so this is needed to be use in main() or else this entire lib won't be dynamically
+    //XXX: so this is needed to be used in main() or else this entire lib won't be dynamically
     //linked into the executable due to dead code elimination
 }
