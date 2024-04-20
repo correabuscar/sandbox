@@ -1,0 +1,42 @@
+#"The configurations provided in the ~/.cargo/config file are additive. So, if multiple configurations match the target, their rustflags settings will be combined. In your case, if the target architecture is x86_64 and the platform is either unix or windows, all three flags will be applied together." chatgpt 3.5
+[target.'cfg(any(windows, unix))']
+rustflags = [
+#"-C", "target-cpu=amdfam10",
+"-Z", "treat-err-as-bug=6",  #XXX: changing this causes full recompilation!!! ie. of rustup.rs/
+"-Z", "macro-backtrace",
+#20apr2024 must be 6 not 5, else can't see any error even tho there's only one!
+#external-macro-backtrace was renamed to macro-backtrace see: https://github.com/rust-lang/rust/issues/49535#issuecomment-653899181 and https://github.com/rust-lang/rust/pull/67359
+#XXX: ok `-Z treat-err-as-bug=1` is bad https://github.com/rust-lang/rust/issues/27189#issuecomment-512126528
+#XXX: error: the option `Z` is only accepted on the nightly compiler
+#doneFIXME: temp-commented out when using archlinux's upstream rust (aka stable) because of the above error ^
+]
+# src: https://users.rust-lang.org/t/auto-vectorization-in-rust/24379/4
+# for -Z treat-err-as-bug=1 see: https://github.com/rust-lang/rust/issues/27189#issuecomment-509898987
+# thanks to Mutabah on #rust on irc.mozilla.org irc for pointing me to issue 27189 ^
+
+# made this to avoid using this for ARM!
+#[target.'cfg(all(target_arch="x86_64", any(unix, windows)))']
+[target.'cfg(target_arch="x86_64")']
+rustflags = [
+#"-C", "target-cpu=native"  #this is =generic on Z575 ! see it via: $ rustc -C target-cpu=help|head -3 OR rustc --print target-cpus OR (llvm) $ llc -mcpu=help --mtriple=x86_64-pc-linux-gnu
+#"-C", "target-cpu=skylake-avx512" apparently this in RUSTFLAGS and while compiling rust causes sigill on i87k! kinda odd! hmm have avx and avx2 only!
+"-C", "target-cpu=skylake", #this works!
+]
+
+#[target.'cfg(all(target_arch="arm", any(unix, windows)))']
+[target.'cfg(any(target_arch="arm", target_arch="aarch64")']
+rustflags = [
+#"-C", "target-cpu=native", #can't use native here as it tries to use the one im compiling on ie. skylake
+#"For QEMU emulated ARM targets, you can typically use cortex-a53 or cortex-a57 as a reasonable default CPU target. These are common ARMv8-A (64-bit) architectures and are often used for virtualized ARM environments." - chatgpt 3.5
+#"ARMv8 AArch64 Multi-platform: This image is suitable for ARMv8 processors, which include Cortex-A53. " - chatgpt 3.5
+"-C", "target-cpu=cortex-a53",
+#XXX: ^ it's not in list: $ rustc -C target-cpu=help
+#but also doesn't complain like: 'helpsa' is not a recognized processor for this target (ignoring processor)
+]
+
+#TODO: if you put secret token here (for crates.io publishing) remember to either ensure this file isn't rsank-saved by adding it to /home/user/bin/rsank/rsank.lst OR censor the key in ~/rsank/4copytogit
+
+[env]
+RUST_TEST_THREADS = "1"
+#^ from: https://github.com/rust-lang/cargo/issues/8430#issuecomment-1146812150
+#limit to 1 by default to avoid the failing test name being overwritten when using eg. --test-threads 2 or more (or just not specifying any)

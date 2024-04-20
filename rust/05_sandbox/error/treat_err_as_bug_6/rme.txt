@@ -1,0 +1,4 @@
+on ncurses-rs commit 3aa22bc279e4929e3ab69d49f75a18eda3e431e9 (origin/master, origin/HEAD, master)
+the following diff applied
+should show 1 error but with -Z treat-err-as-bug=5 it doesn't
+it only shows it with -Z treat-err-as-bug=6
