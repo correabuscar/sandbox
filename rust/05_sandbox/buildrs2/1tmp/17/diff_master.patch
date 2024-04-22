@@ -8,12 +8,17 @@ index d133873..c53cd36 100644
  *.swp
 +rustc-ice-*.txt
 diff --git a/Cargo.toml b/Cargo.toml
-index a2b2d6f..3585934 100644
+index a2b2d6f..44bb807 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -10,9 +10,22 @@ readme = "README.md"
+@@ -9,10 +9,28 @@ repository = "https://github.com/jeaye/ncurses-rs"
+ readme = "README.md"
  keywords = ["ncurses","TUI"]
  license = "MIT"
++#If the edition field is not present in Cargo.toml, then the 2015 edition is assumed for backwards compatibility.
++#Set to avoid a warning with newer rust:
++#The Rust 2021 Edition was introduced in Rust 1.56.0.
++edition = "2021"
  build = "build.rs"
 +#https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
 +rust-version = "1.70.0" #but can be 1.57.0, see feature not_OnceLock
@@ -28,6 +33,7 @@ index a2b2d6f..3585934 100644
 +#Due to build.rs' use of std::process::Command::get_*() MSRV is 1.57.0
 +#To minimize MSRV further you can set `cc = "=1.0.92"` (not the extra "=") below then run `cargo update`
 +# that makes MSRV be 1.53.0 minimum, but other things will raise it at 1.57.0
++#MSRV is 1.56.0 due to the above edition="2021"
  
  [build-dependencies]
 -cc = "1.0.18"
@@ -35,7 +41,7 @@ index a2b2d6f..3585934 100644
  pkg-config = "0.3"
  
  [dependencies]
-@@ -30,5 +43,14 @@ wide_chtype = []
+@@ -30,5 +48,14 @@ wide_chtype = []
  mouse_v1 = []
  extended_colors = ["wide"]
  
@@ -51,10 +57,10 @@ index a2b2d6f..3585934 100644
  [lib]
  name = "ncurses"
 diff --git a/build.rs b/build.rs
-index 1489d53..a22a2fd 100644
+index 1489d53..b036b3a 100644
 --- a/build.rs
 +++ b/build.rs
-@@ -1,173 +1,1670 @@
+@@ -1,173 +1,1656 @@
 +// To test some of build.rs' code correctness run:
 +// cargo build --features=test_build_rs_of_ncurses_rs
 +// when doing that, the following cfg_attr ensures there are no warnings about unused stuff.
@@ -299,12 +305,8 @@ index 1489d53..a22a2fd 100644
 +            if let Ok(value) = env::var(var) {
 +                //we make sure to warn on openbsd if we don't find UTF-8 exactly!
 +                //on others, we just case insensitively check if it ends with utf-8/utf8
-+                const CASENESS: bool = if cfg!(target_os = "openbsd") {
-+                    true
-+                } else {
-+                    false
-+                };
-+                if ends_in_utf8(&value, CASENESS) {
++                const CASE_SENSITIVE: bool = cfg!(target_os = "openbsd");
++                if ends_in_utf8(&value, CASE_SENSITIVE) {
 +                    first_one_set = Some((true, var, value));
 +                } else {
 +                    first_one_set = Some((false, var, value));
@@ -416,7 +418,7 @@ index 1489d53..a22a2fd 100644
 +                } else { false };
 +                ret
 +            })
-+            .unwrap_or_else(|| &"") // found no tinfo that links without errors which may be ok(eg. on Nixos)
++            .unwrap_or(&"") // found no tinfo that links without errors which may be ok(eg. on Nixos)
 +            .to_string()
 +    };
 +    if IS_WIDE_AND_NOT_ON_MACOS
@@ -493,7 +495,7 @@ index 1489d53..a22a2fd 100644
 +        //which also means we must know if we have to use ncurses lib override before even trying
 +        //to link menu,panel,tinfo, and thus need to pass the ncurses lib name to try_link() as third arg.
 +        if let Some(needed_ncurses) =
-+            try_link(sublib_fallback_name, &ncurses_lib, &ncurses_lib_name_to_use)
++            try_link(sublib_fallback_name, ncurses_lib, ncurses_lib_name_to_use)
 +        {
 +            let extra: String = if needed_ncurses {
 +                format!(", but needed '{}' to link  without undefined symbols(known to be true on OpenBSD)", ncurses_lib_name_to_use)
@@ -558,13 +560,12 @@ index 1489d53..a22a2fd 100644
 +const ENV_NAME_OF_OUT_DIR: &str = "OUT_DIR";
 +#[inline]
 +fn internal_get_out_dir() -> impl AsRef<Path> {
-+    let out_dir=env::var(ENV_NAME_OF_OUT_DIR).unwrap_or_else(|err| {
++    env::var(ENV_NAME_OF_OUT_DIR).unwrap_or_else(|err| {
 +        panic!(
 +            "Cannot get env.var. '{}', reason: '{}'. Use `cargo build` instead of running this build script binary directly!",
 +            ENV_NAME_OF_OUT_DIR, err
 +            )
-+    });
-+    out_dir
++    })
 +}
  
 -    command.arg("-o").arg(&bin).arg("src/genconstants.c").arg("-lcurses");
@@ -680,7 +681,7 @@ index 1489d53..a22a2fd 100644
 +    //Include paths(for headers) don't matter! ie. -I
 +    //Presumably the other libs(menu,panel,tinfo) are in the same dir(s) as the ncurses lib,
 +    //because they're part of ncurses even though they're split on some distros/OSs.
-+    let linker_searchdir_args: Vec<String> = get_linker_searchdirs(&ncurses_lib);
++    let linker_searchdir_args: Vec<String> = get_linker_searchdirs(ncurses_lib);
 +    if !linker_searchdir_args.is_empty() {
 +        command.args_checked(linker_searchdir_args);
 +    }
@@ -722,11 +723,11 @@ index 1489d53..a22a2fd 100644
 +        });
 +    }
 +
-+    return if ret {
++    if ret {
 +        Some(requires_ncurses_lib)
 +    } else {
 +        None
-+    };
++    }
 +}
 +
 +#[inline]
@@ -810,7 +811,7 @@ index 1489d53..a22a2fd 100644
  
 -    let consts = Command::new(&bin).output()
 -        .expect(&format!("{} failed", bin));
-+    return build; // explicit return makes it more obvious that the ";" is missing so it's a return!
++    build
 +}
 +
 +fn build_wrap(ncurses_lib: &Option<Library>) {
@@ -835,8 +836,7 @@ index 1489d53..a22a2fd 100644
 +    let compiler = build
 +        .try_get_compiler()
 +        .expect("Failed Build::try_get_compiler");
-+    let command = compiler.to_command();
-+    return command;
++    compiler.to_command()
 +}
 +
 +/// Compiles an existing .c file, runs its bin to generate a .rs file from its output.
@@ -870,7 +870,7 @@ index 1489d53..a22a2fd 100644
 +        .arg_checked(&bin_full)
 +        .arg_checked(source_c_file)
 +        .args_checked(["-l", lib_name]);
-+    let linker_searchdir_args: Vec<String> = get_linker_searchdirs(&ncurses_lib);
++    let linker_searchdir_args: Vec<String> = get_linker_searchdirs(ncurses_lib);
 +    if !linker_searchdir_args.is_empty() {
 +        command.args_checked(linker_searchdir_args);
 +    }
@@ -891,7 +891,7 @@ index 1489d53..a22a2fd 100644
 +    //Write the output from executing the binary into a new rust source file .rs
 +    //That .rs file is later used outside of this build.rs, in the normal build
 +    let gen_rust_file_full_path = Path::new(out_dir.as_ref()).join(gen_rust_file);
-+    overwrite_file_contents(&gen_rust_file_full_path, &output.stdout);
++    overwrite_file_contents(gen_rust_file_full_path, &output.stdout);
 +    //we ignore stderr.
 +    //we don't delete this file because it's used to compile the rest of the crate.
  }
@@ -1208,6 +1208,7 @@ index 1489d53..a22a2fd 100644
 +            eprintln!("{}", additional_msg_when_non_zero_exit_code);
 +            and_panic();
 +        } else {
++            #[allow(clippy::needless_return)] // it's more readable
 +            return output;
 +        }
 +    }
@@ -1432,16 +1433,6 @@ index 1489d53..a22a2fd 100644
 +    }
 +}
 +
-+//// Implement a method to convert Vec<&OsStr> to MyArgs
-+//trait ToMyArgs<'a> {
-+//    fn to_my_args(self) -> MyArgs<'a>;
-+//}
-+//
-+//impl<'a> ToMyArgs<'a> for Vec<&'a OsStr> {
-+//    fn to_my_args(self) -> MyArgs<'a> {
-+//        MyArgs(self)
-+//    }
-+//}
 +/// but this is better:
 +impl<'a> FromIterator<&'a OsStr> for MyArgs<'a> {
 +    fn from_iter<I: IntoIterator<Item = &'a OsStr>>(iter: I) -> Self {
@@ -1451,6 +1442,7 @@ index 1489d53..a22a2fd 100644
 +
 +impl<'a> MyArgs<'a> {
 +    //    // Implement a method to get the length of the arguments
++    //    // don't need this because impl Deref!
 +    //    pub fn len(&self) -> usize {
 +    //        self.0.len()
 +    //        //self.len()//won't use deref, but will infinitely recurse (untested)
@@ -1495,14 +1487,14 @@ index 1489d53..a22a2fd 100644
 +                    humanly_visible_os_chars(f, key)?;
 +                    write!(f, "=")?;
 +                    humanly_visible_os_chars(f, value)?;
-+                    write!(f, "\n")?;
++                    writeln!(f)?;
 +                }
 +                None => {
 +                    // This is how an env. var. is said to be removed, apparently.
 +                    // ie. if parent had it, it's not inherited? somehow. (untested)
 +                    write!(f, "(del) ")?;
 +                    humanly_visible_os_chars(f, key)?;
-+                    write!(f, "\n")?
++                    writeln!(f)?;
 +                }
 +            }
 +        }
@@ -1637,7 +1629,7 @@ index 1489d53..a22a2fd 100644
 +#[allow(dead_code)]
 +fn test_panic_for_command_non_zero_exit() {
 +    let cmd = if cfg!(windows) { "cmd" } else { "sh" };
-+    let args_fail = &["-c", &format!("exit 43")];
++    let args_fail = &["-c", "exit 43"];
 +    let result = std::panic::catch_unwind(|| {
 +        let mut command = Command::new(cmd);
 +        command.args(args_fail);
@@ -1896,9 +1888,20 @@ index 0442e4b..d47cc2f 100644
    ];
  }
 diff --git a/src/constants.rs b/src/constants.rs
-index 9d6487b..4ffb313 100644
+index 9d6487b..7d37b23 100644
 --- a/src/constants.rs
 +++ b/src/constants.rs
+@@ -17,8 +17,8 @@ use super::ll::*;
+ 
+ mod wrapped {
+     use libc::{ c_char, c_int };
+-    use ll::chtype;
+-    use ll::WINDOW;
++    use crate::ll::chtype;
++    use crate::ll::WINDOW;
+ 
+     extern "C"
+     {
 @@ -58,7 +58,9 @@ wrap_extern!(LINES: c_int);
  wrap_extern!(TABSIZE: c_int);
  pub fn acs_map() -> *const chtype {
@@ -1911,10 +1914,10 @@ index 9d6487b..4ffb313 100644
  }
  
 diff --git a/src/genconstants.c b/src/genconstants.c
-index f79e2d1..b7fe694 100644
+index f79e2d1..a86ed3b 100644
 --- a/src/genconstants.c
 +++ b/src/genconstants.c
-@@ -1,14 +1,65 @@
+@@ -1,14 +1,67 @@
 +#include <stdio.h> // for printf/fprintf but curses.h already includes this(everywhere?)
  #include <curses.h>
  
@@ -1942,12 +1945,14 @@ index f79e2d1..b7fe694 100644
 +  do {\
 +    printf("/// For MacOS: `brew install ncurses` then `export PKG_CONFIG_PATH=\"/usr/local/opt/ncurses/lib/pkgconfig\"`\n/// that will give you a compatible/newer ncurses installation.\n");\
 +    printf("#[derive(Debug)] // derive to avoid a warning\n\
++#[allow(non_camel_case_types)] \
 +pub struct "ERROR_MSG_TYPE";\n\n\
 +type "ERROR_MSG_TYPE_ALIAS" = "ERROR_MSG_TYPE";\n\n\
 +#[allow(dead_code)]\n\
 +const "ERROR_MSG_TYPE_CONSTRUCTOR": "ERROR_MSG_TYPE_ALIAS" = "ERROR_MSG_TYPE";\n\n\n");\
 +printf("///Typically, the crate that errors with the following, should be patched to not use the identifier that's tagged with this type, because the latest ncurses installation doesn't have that identifier definition(anymore).\n");\
 +printf("#[derive(Debug)] // derive to avoid a warning\n\
++#[allow(non_camel_case_types)] \
 +pub struct "ERROR_MSG_TYPE_EXPECTED_MISS";\n\n\
 +type "ERROR_MSG_EXPECTED_MISS_TYPE_ALIAS" = "ERROR_MSG_TYPE_EXPECTED_MISS";\n\n\
 +#[allow(dead_code)]\n\
@@ -1984,7 +1989,7 @@ index f79e2d1..b7fe694 100644
  
  	/* Success/Failure. */
  	PCONST(i32, ERR);
-@@ -19,6 +70,8 @@ int main() {
+@@ -19,6 +72,8 @@ int main() {
  	/* Attributes. */
  #ifdef NCURSES_ATTR_SHIFT
  	PCONST(u32, NCURSES_ATTR_SHIFT);
@@ -1993,7 +1998,7 @@ index f79e2d1..b7fe694 100644
  #endif
  
  	/* Colors */
-@@ -34,30 +87,44 @@ int main() {
+@@ -34,30 +89,44 @@ int main() {
  	/* Values for the _flags member */
  #ifdef _SUBWIN
  	PCONST(i32, _SUBWIN);
@@ -2038,7 +2043,7 @@ index f79e2d1..b7fe694 100644
  #endif
  
  	/*
-@@ -66,6 +133,8 @@ int main() {
+@@ -66,6 +135,8 @@ int main() {
  	 */
  #ifdef _NOCHANGE
  	PCONST(i32, _NOCHANGE);
@@ -2047,7 +2052,7 @@ index f79e2d1..b7fe694 100644
  #endif
  
  	/*
-@@ -74,6 +143,8 @@ int main() {
+@@ -74,6 +145,8 @@ int main() {
  	 */
  #ifdef _NEWINDEX
  	PCONST(i32, _NEWINDEX);
@@ -2056,7 +2061,7 @@ index f79e2d1..b7fe694 100644
  #endif
  
  	/* Keys */
-@@ -107,20 +178,30 @@ int main() {
+@@ -107,20 +180,30 @@ int main() {
  	PCONST(i32, KEY_ENTER);
  	PCONST(i32, KEY_PRINT);
  	PCONST(i32, KEY_LL);
@@ -2097,7 +2102,7 @@ index f79e2d1..b7fe694 100644
  #endif
  	PCONST(i32, KEY_BTAB);
  	PCONST(i32, KEY_BEG);
-@@ -180,46 +261,68 @@ int main() {
+@@ -180,46 +263,68 @@ int main() {
  	PCONST(i32, KEY_UNDO);
  	PCONST(i32, KEY_MOUSE);
  	PCONST(i32, KEY_RESIZE);
@@ -2166,7 +2171,7 @@ index f79e2d1..b7fe694 100644
  #endif
  
  	/* event masks */
-@@ -249,22 +352,32 @@ int main() {
+@@ -249,22 +354,32 @@ int main() {
  
  #ifdef BUTTON5_RELEASED
  	PCONST(i32, BUTTON5_RELEASED);
@@ -2199,7 +2204,7 @@ index f79e2d1..b7fe694 100644
  #endif
  
  	PCONST(i32, BUTTON_CTRL);
-@@ -278,6 +391,11 @@ int main() {
+@@ -278,6 +393,11 @@ int main() {
  	PCONSTU(crate::ll::chtype, A_NORMAL);
  	PCONSTU(crate::ll::chtype, A_STANDOUT);
  	PCONSTU(crate::ll::chtype, A_UNDERLINE);
@@ -2211,7 +2216,7 @@ index f79e2d1..b7fe694 100644
  	PCONSTU(crate::ll::chtype, A_REVERSE);
  	PCONSTU(crate::ll::chtype, A_BLINK);
  	PCONSTU(crate::ll::chtype, A_DIM);
-@@ -285,6 +403,8 @@ int main() {
+@@ -285,6 +405,8 @@ int main() {
  
  #ifdef A_BLANK
  	PCONSTU(crate::ll::chtype, A_BLANK);
@@ -2220,7 +2225,7 @@ index f79e2d1..b7fe694 100644
  #endif
  
  	PCONSTU(crate::ll::chtype, A_INVIS);
-@@ -293,4 +413,7 @@ int main() {
+@@ -293,4 +415,7 @@ int main() {
  	PCONSTU(crate::ll::chtype, A_ATTRIBUTES);
  	PCONSTU(crate::ll::chtype, A_CHARTEXT);
  	PCONSTU(crate::ll::chtype, A_COLOR);
@@ -2308,17 +2313,42 @@ index d6916ec..24ef141 100644
  #[cfg(feature = "extended_colors")]
  extern {
      pub fn init_extended_color(_: c_int, _: c_int, _: c_int, _: c_int) -> c_int;
+diff --git a/src/menu/ll.rs b/src/menu/ll.rs
+index 1541ab8..c722184 100644
+--- a/src/menu/ll.rs
++++ b/src/menu/ll.rs
+@@ -2,7 +2,7 @@
+ #![allow(unused_imports)]
+ 
+ use libc::{c_int, c_char, c_void};
+-use ll::{WINDOW, chtype, c_bool};
++use crate::ll::{WINDOW, chtype, c_bool};
+ 
+ pub type MENU = *mut i8;
+ pub type ITEM = *mut i8;
 diff --git a/src/menu/wrapper.rs b/src/menu/wrapper.rs
-index b5d72ec..54016c6 100644
+index b5d72ec..00a334e 100644
 --- a/src/menu/wrapper.rs
 +++ b/src/menu/wrapper.rs
-@@ -1,5 +1,6 @@
+@@ -1,14 +1,15 @@
  #![allow(dead_code)]
  #![allow(unused_imports)]
 +#![warn(temporary_cstring_as_ptr)] // false positives? https://github.com/rust-lang/rust/issues/78691
  
  use std::str;
  use std::ptr;
+ use std::slice;
+ use std::ffi::{CStr, CString};
+ use libc::*;
+-use menu::ll;
+-use ll::{WINDOW, chtype, c_bool};
+-use constants::TRUE;
++use crate::menu::ll;
++use crate::ll::{WINDOW, chtype, c_bool};
++use crate::constants::TRUE;
+ use std::os::raw::c_char;
+ 
+ pub type MENU = ll::MENU;
 @@ -412,7 +413,8 @@ pub fn unpost_menu(menu: MENU) -> i32 {
  #[cfg(feature="menu")]
  pub fn menu_request_by_name<T: Into<Vec<u8>>>(name: T) -> i32 {
@@ -2328,4 +2358,34 @@ index b5d72ec..54016c6 100644
 +    super::ll::menu_request_by_name(cs.as_ptr())
    }
  }
+ 
+diff --git a/src/panel/ll.rs b/src/panel/ll.rs
+index 30f312e..348867e 100644
+--- a/src/panel/ll.rs
++++ b/src/panel/ll.rs
+@@ -2,7 +2,7 @@
+ #![allow(unused_imports)]
+ 
+ use libc::{ c_int, c_void };
+-use ll::WINDOW;
++use crate::ll::WINDOW;
+ 
+ pub type PANEL = *mut i8;
+ 
+diff --git a/src/panel/wrapper.rs b/src/panel/wrapper.rs
+index 8781220..3de709c 100644
+--- a/src/panel/wrapper.rs
++++ b/src/panel/wrapper.rs
+@@ -1,9 +1,9 @@
+ #![allow(dead_code)]
+ #![allow(unused_imports)]
+ 
+-use panel::ll;
+-use ll::WINDOW;
+-use constants::TRUE;
++use crate::panel::ll;
++use crate::ll::WINDOW;
++use crate::constants::TRUE;
+ 
+ pub type PANEL = ll::PANEL;
  
