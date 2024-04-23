@@ -409,6 +409,7 @@ static HOOK_TRACKER: std::sync::LazyLock<HookTracker> = std::sync::LazyLock::new
 struct HookTracker {
     //list: Arc<Mutex<Vec<&'static str>>>, //nopTODO: is Arc really needed tho?! other than futureproofing the code
     list: std::sync::Mutex<Vec<&'static str>>,
+    //TODO: do I need RwLock instead of Mutex here?! think.
 } // struct
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
@@ -429,14 +430,19 @@ impl HookTracker {
     //    where
     //        F: Fn(),
     {
+        // TODO: figure out what happens when panic happens during held lock, ie. poisoning
         // Lock the list to ensure exclusive access
-        let mut guard = self
-            .list
-            .lock()
-            .expect("Unexpected concurrent execution attempted");
+        if let Ok(mut guard) = self.list.lock() {
+            //use if let to keep lock for minimal block
+            //.expect("Unexpected concurrent execution attempted") {
 
-        // Add the name of the function to the list
-        guard.push(func_name);
+            // Add the name of the function to the list
+            guard.push(func_name);//TODO: what if this panics? lock poisoning?
+        }//lock released here.
+        else {
+            // This function might panic when called if the lock is already held by the current thread.
+            panic!("Impossible recursive execution attempted. Couldn't acquire lock!");
+        }
 
         // Print the name of the function
         println!("Executing {}", func_name);
