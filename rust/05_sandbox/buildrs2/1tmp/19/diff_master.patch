@@ -51,10 +51,10 @@ index a2b2d6f..994e33b 100644
  [lib]
  name = "ncurses"
 diff --git a/build.rs b/build.rs
-index 1489d53..10881c2 100644
+index 1489d53..be28188 100644
 --- a/build.rs
 +++ b/build.rs
-@@ -1,173 +1,1600 @@
+@@ -1,173 +1,1599 @@
 +// To test some of build.rs' code correctness run:
 +// cargo build --features=test_build_rs_of_ncurses_rs
 +// when doing that, the following cfg_attr ensures there are no warnings about unused stuff.
@@ -78,7 +78,6 @@ index 1489d53..10881c2 100644
  use std::fs::File;
 -use std::io::Write;
 +use std::io::Write as required_for_write_all_function; //in File
-+use std::iter::FromIterator;
 +use std::os::unix::ffi::OsStrExt;
 +use std::os::unix::ffi::OsStringExt;
  use std::path::Path;
