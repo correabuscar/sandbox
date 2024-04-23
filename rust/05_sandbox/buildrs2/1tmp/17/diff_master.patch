@@ -1708,7 +1708,7 @@ index 1489d53..b036b3a 100644
 +            if !match_with_placeholders(err, expected_panic_message) {
 +                panic!(
 +                "!!! Got different panic message than expected !!!\n\nExpected: '{}'\n\n     Got: '{}'\n",
-+                err, expected_panic_message
++                expected_panic_message, err
 +                );
 +            }
 +        }
