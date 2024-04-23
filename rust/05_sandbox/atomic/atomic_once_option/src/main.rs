@@ -12,7 +12,7 @@ struct AtomicOnceOptionU32 {
 
 unsafe impl Sync for AtomicOnceOptionU32 {}
 
-//FIXME: needs mutex or another atomic bool that says init is in progress.
+//FIXME: needs mutex or another atomic bool that says init is in progress (and then have threads wait until it's not)
 //Instead, it's better to use OnceLock but it has MSRV 1.70.0
 impl AtomicOnceOptionU32 {
     const fn none() -> Self {
