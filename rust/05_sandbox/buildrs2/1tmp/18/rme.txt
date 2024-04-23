@@ -1,0 +1,5 @@
+commit 3aa22bc279e4929e3ab69d49f75a18eda3e431e9 (origin/master, origin/HEAD, master)
+
+in this version of the patch: OnceLock got removed to reduce the MSRV from
+1.70.0 to 1.57.0
+
