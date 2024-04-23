@@ -12,6 +12,8 @@ struct AtomicOnceOptionU32 {
 
 unsafe impl Sync for AtomicOnceOptionU32 {}
 
+//FIXME: needs mutex or another atomic bool that says init is in progress.
+//Instead, it's better to use OnceLock but it has MSRV 1.70.0
 impl AtomicOnceOptionU32 {
     const fn none() -> Self {
         AtomicOnceOptionU32 {
@@ -32,6 +34,8 @@ impl AtomicOnceOptionU32 {
         // In both cases, compare_exchange will never return Ok(true) or Err(false). These situations don't occur in our specific usage of the function for ensuring atomic initialization of the static value. Therefore, we handle these two possible outcomes (Ok(false) and Err(true)) appropriately in our implementation of the store function.
         match self.has_value.compare_exchange(IS_VALUE_INITIALIZED, VALUE_IS_ALREADY_INITIALIZED, Ordering::SeqCst, Ordering::SeqCst) {
             Ok(IS_VALUE_INITIALIZED) => {
+                //XXX: manual delay to catch a race, FIXME: obv. needs mutex! or another atomic bool.
+                std::thread::sleep(std::time::Duration::from_millis(1000));
                 // If the flag was false before and successfully set to true, set the data value
                 if let Some(val) = value {
                     self.data.store(val, Ordering::SeqCst);
@@ -120,4 +124,19 @@ fn test_double_set() {
     assert_eq!(Some(42), value);
 }
 
+
+#[test]
+fn test_race1() {
+    static ATOMIC_ONCE_OPTION: AtomicOnceOptionU32 = AtomicOnceOptionU32::none();
+    let handle = std::thread::spawn(move || {
+        println!("!! Thread starts to store the value.");
+        ATOMIC_ONCE_OPTION.store(Some(44));
+        println!("!! Thread set the value");
+    });
+    std::thread::sleep(std::time::Duration::from_millis(200));
+    let value = ATOMIC_ONCE_OPTION.load();
+    println!("!! Main got: {:?}", value);
+    handle.join().expect("Failed to join thread");
+    assert_eq!(Some(44), value);
+}
 
