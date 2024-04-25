@@ -84,6 +84,7 @@ fn main() {
     match unsafe {
         libc::fork()
         //libc::vfork(); // doesn't use the hooks from pthread_atfork()
+        //vfork got deprecated&removed: https://github.com/rust-lang/libc/pull/3624
         //extern {
         //    fn _exit(code: i32) -> !;
         //}
@@ -95,8 +96,6 @@ fn main() {
             // Child process
             println!("Child process");
             // Do child process work...
-            //std::mem::drop(deferrer);//manually drop
-            //XXX: this exit() bypasses all(?) drop()s; so deferrer.cancel() isn't needed really
             std::process::exit(0); // Example of child process exiting
         }
         child_pid => {
@@ -110,7 +109,6 @@ fn main() {
             );
         }
     }; //match
-       //} // end block
 } //main
 
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
