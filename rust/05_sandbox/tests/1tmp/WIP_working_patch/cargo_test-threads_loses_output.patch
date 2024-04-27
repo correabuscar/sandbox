@@ -500,7 +500,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
  /// Central point for dispatching panics.
  ///
  /// Executes the primary logic for a panic, including checking for recursive
-@@ -738,33 +748,159 @@ fn rust_panic_with_hook(
+@@ -738,33 +748,156 @@ fn rust_panic_with_hook(
      can_unwind: bool,
      force_no_backtrace: bool,
  ) -> ! {
@@ -508,12 +508,9 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
      let must_abort = panic_count::increase(true);
 +    rtprintpanic!("!! must_abort={:?}\n", must_abort);
 +    //rtprintpanic!("must_abort={:?} global_panic_count={}\n", must_abort,panic_count::GLOBAL_PANIC_COUNT.load(Ordering::SeqCst));
-+    //use crate::rt;
-+    //ie. if we're in a forked process or we're unsure if we are(ie. can't determine) then we assume that we are
-+    //so both cases return true.
-+    let is_fork_or_cant_tell=crate::rt::isolated_globals::is_fork_or_cant_tell();//matches!(crate::rt::isolated_globals::is_this_fork_process(), None | Some(true));
-+    rtprintpanic!("!! is_fork_or_cant_tell={:?}\n", is_fork_or_cant_tell);
-+    let must_abort=if is_fork_or_cant_tell {
++    let is_fork=crate::rt::is_this_forked_process();
++    rtprintpanic!("!! is_fork={:?}\n", is_fork);
++    let must_abort=if is_fork {
 +        Some(panic_count::MustAbort::AlwaysAbort)
 +    } else {
 +        must_abort
@@ -670,7 +667,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
      let hook = HOOK.read().unwrap_or_else(PoisonError::into_inner);
      match *hook {
          // Some platforms (like wasm) know that printing to stderr won't ever actually
-@@ -773,31 +909,50 @@ fn rust_panic_with_hook(
+@@ -773,31 +906,50 @@ fn rust_panic_with_hook(
          // methods, this means we avoid formatting the string at all!
          // (The panic runtime might still call `payload.take_box()` though and trigger
          // formatting.)
@@ -817,170 +814,81 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 ===================================================================
 --- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
 +++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
-@@ -68,6 +68,153 @@ macro_rules! rtunwrap {
+@@ -68,6 +68,65 @@ macro_rules! rtunwrap {
      };
  }
  
 +pub mod isolated_globals {
-+    /// Holds the std::process:id() taken before giving control to main()
-+    /// This will be used later to compare to std::process:id() on call, and determine if we're the
-+    /// forked process
-+    static MAIN_PID: AtomicOnceOptionU32 = AtomicOnceOptionU32::none();
-+    //static MAIN_PID: Option<u32> = None;
++    //Initially it's not forked, only after fork() is called.
++    //TODO: do I even need atomic? are writes not sync-ed? presumably the forked process is only 1
++    //thread anyway even before the value is set to 'true', then any new threads(if any are even
++    //allowed), wouldn't need sync-ed read to this bool, would they? visibility-wise.
++    //pub(super) static mut IS_THIS_FORKED_PROCESS:bool=false;
++    use core::sync::atomic::AtomicBool;
++    pub(super) static IS_THIS_FORKED_PROCESS_AB:AtomicBool=AtomicBool::new(false);
 +
-+    use crate::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-+    //initial code via chatgpt 3.5
++//    // TODO: delete this
++//    #[inline]
++//    #[track_caller]
++//    pub fn get_current_process_id() -> u32 {
++//        crate::process::id()
++//    }
 +
-+    /// Set it once and read it from anywhere(thread safe, i think).
-+    /// Meant to be static global
-+    /// with an initial None value
-+    /// Holds Option<u32> which I need to keep a std::process::id() in.
-+    struct AtomicOnceOptionU32 { // FIXME: needs mutex else threads can read uninited yet value by the initing thread!
-+        has_value: AtomicBool,
-+        data: AtomicU32,
-+    }
-+
-+    unsafe impl Sync for AtomicOnceOptionU32 {}
-+
-+    //u32 because std::process::id() returns u32, even tho later libs::kill expects an i32 as the pid
-+    impl AtomicOnceOptionU32 {
-+        const fn none() -> Self {
-+            AtomicOnceOptionU32 {
-+                has_value: AtomicBool::new(false),
-+                data: AtomicU32::new(0),
-+            }
-+        }
-+
-+        #[track_caller]
-+        fn store(&self, value: Option<u32>) {
-+            //using 'const's here will show the hidden relationship between the relevant bools below.
-+            const IS_VALUE_INITIALIZED: bool = false;
-+            const VALUE_IS_ALREADY_INITIALIZED: bool = !IS_VALUE_INITIALIZED;
-+            assert_eq!(false, IS_VALUE_INITIALIZED);
-+            assert_eq!(true, VALUE_IS_ALREADY_INITIALIZED);
-+            // Use compare_exchange to set the has_value flag to true only if it's currently false
-+            // If compare_exchange returns Ok(false), it means that the comparison was successful (i.e., has_value was false before) and the value has been successfully set to true atomically by the current thread.
-+            // If compare_exchange returns Err(true), it means that the comparison failed because has_value was already true (i.e., it was set to true by another thread before the current thread attempted to set it). This indicates that the value has already been set, and attempting to set it again would be an error.
-+            // In both cases, compare_exchange will never return Ok(true) or Err(false). These situations don't occur in our specific usage of the function for ensuring atomic initialization of the static value. Therefore, we handle these two possible outcomes (Ok(false) and Err(true)) appropriately in our implementation of the store function.
-+            match self.has_value.compare_exchange(IS_VALUE_INITIALIZED, VALUE_IS_ALREADY_INITIALIZED, Ordering::SeqCst, Ordering::SeqCst) {
-+                Ok(IS_VALUE_INITIALIZED) => {
-+                    // If the flag was false before and successfully set to true, set the data value
-+                    if let Some(val) = value {
-+                        self.data.store(val, Ordering::SeqCst);
-+                    }
-+                }
-+                Err(VALUE_IS_ALREADY_INITIALIZED) => {
-+                    // If the flag was already true, panic to indicate that the value has already been set
-+                    panic!("AtomicOnceOptionU32 already set");
-+                }
-+                wicked_result => {
-+                    //if wicked_result == Ok(true) || wicked_result == Err(false) => {
-+                    panic!("This should never happen, unless AtomicBool::compare_exchange() if bugged or we didn't understand how it works! Got: '{:?}' but we expected only '{:?}' or '{:?}'",wicked_result, Ok::<bool,bool>(IS_VALUE_INITIALIZED), Err::<bool,bool>(VALUE_IS_ALREADY_INITIALIZED));
-+                }
-+                }
-+        }
-+
-+        #[track_caller]
-+        pub fn load(&self) -> Option<u32> {
-+            if self.has_value.load(Ordering::SeqCst) {
-+                Some(self.data.load(Ordering::SeqCst))
-+            } else {
-+                None
-+            }
-+        }
-+    } // impl
-+
-+
-+
-+    #[inline]
-+    #[track_caller]
-+    pub(super) fn set_main_pid() { // accessible only by the std::rt module ie. by super
-+        let pid=get_current_process_id();
-+        MAIN_PID.store(Some(pid));
-+    }
-+
-+    #[inline]
-+    #[track_caller]
-+    fn get_current_process_id() -> u32 {
-+        crate::process::id()
-+    }
 +
 +    // None means we can't determine.
 +    #[track_caller]
-+    pub fn is_main_pid_changed() -> Option<bool> {
-+        if let Some(main_pid)=MAIN_PID.load() {
-+            if get_current_process_id() != main_pid {
-+                return Some(true)
-+            } else {
-+                return Some(false)
++    #[inline(always)]
++    pub fn is_this_main_process() -> bool {
++        return !super::is_this_forked_process();
++    }
++
++    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
++    pub(super) fn init_fork_hooks() {
++        unsafe {
++            let result: libc::c_int = libc::pthread_atfork(/*prepare*/None, /*parent*/None, Some(child));
++            if result != 0 {
++                //"On success, pthread_atfork() returns zero.  On error, it returns  an  error  number." - man
++                //ERRORS
++                // ENOMEM Could not allocate memory to record the fork handler list entry.
++                //TODO: more details
++                eprintln!("!!! libc::pthread_atfork() failed with error code: '{}'. Forks won't be detected!", result);
++                return;
 +            }
-+        } else { //it wasn't set yet, or maybe because rust was called by something else so it bypassed
-+                 //our rt::init(..)
-+            return None;
-+        }
-+    }
++        }//unsafe
++    }//fn
 +
-+    /// None means we can't determine.
-+    /// So if this process whether it's a direct or indirect descendant of main, was forked.
-+    /// eg. it can be a fork of a forked process, it's still detected as a fork.
-+    #[track_caller]
-+    pub fn is_this_fork_process() -> Option<bool> {
-+        //no_needFIXME: if this is called and determined to be true, then reset MAIN_PID to fork's pid for
-+        //any future forkings of this fork process to be detectable as forks too compared to this
-+        //(forked)process. ie. handle the case when the fork gets forked. XXX: so don't do that;
-+        //instead we keep the main pid as it were, and once a fork was detected in this process,
-+        //then anything that spawns from it should return true from this function.
-+        //TODO:hold a static(ie. cached value) about this ever having been 'true' and not needing to call the rest of the functions to
-+        //determine this is a fork(and always will be)
-+        //FIXME: "account for the scenario where a forked process itself forks and possibly inherits the PID of the original main process after it has exited." src: chatgpt 3.5; ie. indirect descendants of main would fail both test of 'is the current process' pid != main's pid' and 'does current process have same pending signals as main', because the mid fork (ie. fork1 in main->fork1->fork2) would have no such pending signals anymore(cleared by doing the 'fork') and the pid of fork2 could be same as main in certain cases.
-+        //since "there isn't an inherent mechanism for processes to be notified of when they are forked or to receive direct notifications about forks.",
-+        //for example in the case of main->fork1->fork2, if fork1 didn't ever call any of these functions,
-+        //it wouldn't get PIDs updated(if we'd implement this - decided we won't, for now), so given that say main exited before fork2 was created,
-+        //fork2 could've gained same PID as main(altho very rarely to happen unless sysctl kernel.pid_max is low enough I guess),
-+        //thus if fork2 ever calls these functions it would
-+        //see it has the same pid as old main, thus think it's not a fork! so wrongly believes it's main() itself,
-+        //if it weren't for the case that we're also using pending singnals being cleared to detect
-+        //if this is a fork; thus it would see same PID as main but see no pending signals, thus
-+        //know it was a fork itself but that something happened to its PID(like the situation I've just
-+        //described; or like process migration in distributed system or something like that - ask chatgpt again)
-+        //XXX: "A  child  created  via  fork(2) initially has an empty pending signal set; the pending signal set is preserved across an execve(2)." src: `man 2 sigpending` , so then if I wanna detect an execve I'd see the same pending signals from the process that ran execve(2). TODO: if I ever need to detect if my process was execve started by another rust program.
-+        //XXX: pending signals only work for fork1, not for fork2. So FIXME: how to detect fork2?!
-+        return is_main_pid_changed();//FIXME: add the other way too! as this is not good enough to
-+                                     //detect if fork!
++    /// this executes in forked process before returning control from fork() call.
++    //"child specifies a handler that is executed in the child process after fork(2) processing completes." - man
++    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
++    unsafe extern "C" fn child() {
++        //unsafe { // it's always set to same 'true', and it's done in a new process
++        //    IS_THIS_FORKED_PROCESS=true;
++        //}
++        IS_THIS_FORKED_PROCESS_AB.store(true, core::sync::atomic::Ordering::Release);
 +    }
-+    pub fn is_fork_or_cant_tell() -> bool {
-+        //matches!(crate::rt::isolated_globals::is_this_fork_process(), None | Some(true));
-+        match is_this_fork_process() {
-+            Some(false) => false,
-+            None | Some(true) => true,
-+        }
-+    }
-+
-+    // None means we can't determine.
-+    #[track_caller]
-+    pub fn is_this_main_process() -> Option<bool> {
-+        if let Some(impc)=is_main_pid_changed() {
-+            Some(!impc)
-+        } else {
-+            None
-+        }
-+    }
-+
 +}//mod
++
++/// True if this process, whether it's a direct or indirect descendant of main, was forked.
++/// it can be a fork of a forked process, it's still detected as a fork.
++#[track_caller]
++#[inline(always)]
++pub fn is_this_forked_process() -> bool {
++    //return unsafe { isolated_globals::IS_THIS_FORKED_PROCESS };
++    return isolated_globals::IS_THIS_FORKED_PROCESS_AB.load(core::sync::atomic::Ordering::Acquire);
++}
 +
  // One-time runtime initialization.
  // Runs before `main`.
  // SAFETY: must be called only once during runtime initialization.
-@@ -94,7 +241,11 @@ macro_rules! rtunwrap {
+@@ -94,7 +153,10 @@ macro_rules! rtunwrap {
  #[cfg_attr(test, allow(dead_code))]
  unsafe fn init(argc: isize, argv: *const *const u8, sigpipe: u8) {
      unsafe {
 -        sys::init(argc, argv, sigpipe);
 +        sys::init(argc, argv, sigpipe); //TODO: find out where and what this does!
 +
-+        //let pid=crate::process:id();
-+        //MAIN_PID=Some(pid);
-+        isolated_globals::set_main_pid();
++        #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
++        isolated_globals::init_fork_hooks();
  
          let main_guard = sys::thread::guard::init();
          // Next, set up the current Thread with the guard information we just
