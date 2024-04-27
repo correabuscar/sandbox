@@ -618,7 +618,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +               //just print simple+abort.
 +//               if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
 +                //let panicinfo = PanicInfo::internal_constructor(
-+                //    message,//waFIXME: user controlled via Display impl(thus could alloc or panic again there)
++                //    message,//FIXME: user controlled via Display impl(thus could alloc or panic again there)
 +                //    location,
 +                //    can_unwind,
 +                //    force_no_backtrace,
@@ -817,7 +817,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 ===================================================================
 --- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
 +++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
-@@ -68,6 +68,148 @@ macro_rules! rtunwrap {
+@@ -68,6 +68,153 @@ macro_rules! rtunwrap {
      };
  }
  
@@ -835,7 +835,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +    /// Meant to be static global
 +    /// with an initial None value
 +    /// Holds Option<u32> which I need to keep a std::process::id() in.
-+    struct AtomicOnceOptionU32 { //FIXME: this is wrong, needs mutex else threads can see it as inited but it's not yet
++    struct AtomicOnceOptionU32 { // FIXME: needs mutex else threads can read uninited yet value by the initing thread!
 +        has_value: AtomicBool,
 +        data: AtomicU32,
 +    }
@@ -920,19 +920,23 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +        }
 +    }
 +
-+    // None means we can't determine.
++    /// None means we can't determine.
++    /// So if this process whether it's a direct or indirect descendant of main, was forked.
++    /// eg. it can be a fork of a forked process, it's still detected as a fork.
 +    #[track_caller]
 +    pub fn is_this_fork_process() -> Option<bool> {
-+        //FIXME: if this is called and determined to be true, then reset MAIN_PID to fork's pid for
++        //no_needFIXME: if this is called and determined to be true, then reset MAIN_PID to fork's pid for
 +        //any future forkings of this fork process to be detectable as forks too compared to this
-+        //(forked)process. ie. handle the case when the fork gets forked.
-+        //And hold a static(ie. cached value) about this ever having been 'true' and not needing to call the rest of the functions to
++        //(forked)process. ie. handle the case when the fork gets forked. XXX: so don't do that;
++        //instead we keep the main pid as it were, and once a fork was detected in this process,
++        //then anything that spawns from it should return true from this function.
++        //TODO:hold a static(ie. cached value) about this ever having been 'true' and not needing to call the rest of the functions to
 +        //determine this is a fork(and always will be)
-+        //FIXME: "account for the scenario where a forked process itself forks and possibly inherits the PID of the original main process after it has exited." src: chatgpt 3.5
++        //FIXME: "account for the scenario where a forked process itself forks and possibly inherits the PID of the original main process after it has exited." src: chatgpt 3.5; ie. indirect descendants of main would fail both test of 'is the current process' pid != main's pid' and 'does current process have same pending signals as main', because the mid fork (ie. fork1 in main->fork1->fork2) would have no such pending signals anymore(cleared by doing the 'fork') and the pid of fork2 could be same as main in certain cases.
 +        //since "there isn't an inherent mechanism for processes to be notified of when they are forked or to receive direct notifications about forks.",
 +        //for example in the case of main->fork1->fork2, if fork1 didn't ever call any of these functions,
-+        //it wouldn't get PIDs updated(if we'd implement this), so given that say main exited before fork2 was created,
-+        //fork2 could've gained same PID as main(altho very rarely to happend unless sysctl kernel.pid_max is low enough I guess),
++        //it wouldn't get PIDs updated(if we'd implement this - decided we won't, for now), so given that say main exited before fork2 was created,
++        //fork2 could've gained same PID as main(altho very rarely to happen unless sysctl kernel.pid_max is low enough I guess),
 +        //thus if fork2 ever calls these functions it would
 +        //see it has the same pid as old main, thus think it's not a fork! so wrongly believes it's main() itself,
 +        //if it weren't for the case that we're also using pending singnals being cleared to detect
@@ -940,6 +944,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +        //know it was a fork itself but that something happened to its PID(like the situation I've just
 +        //described; or like process migration in distributed system or something like that - ask chatgpt again)
 +        //XXX: "A  child  created  via  fork(2) initially has an empty pending signal set; the pending signal set is preserved across an execve(2)." src: `man 2 sigpending` , so then if I wanna detect an execve I'd see the same pending signals from the process that ran execve(2). TODO: if I ever need to detect if my process was execve started by another rust program.
++        //XXX: pending signals only work for fork1, not for fork2. So FIXME: how to detect fork2?!
 +        return is_main_pid_changed();//FIXME: add the other way too! as this is not good enough to
 +                                     //detect if fork!
 +    }
@@ -966,7 +971,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
  // One-time runtime initialization.
  // Runs before `main`.
  // SAFETY: must be called only once during runtime initialization.
-@@ -94,7 +236,11 @@ macro_rules! rtunwrap {
+@@ -94,7 +241,11 @@ macro_rules! rtunwrap {
  #[cfg_attr(test, allow(dead_code))]
  unsafe fn init(argc: isize, argv: *const *const u8, sigpipe: u8) {
      unsafe {
