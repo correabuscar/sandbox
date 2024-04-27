@@ -835,7 +835,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +    /// Meant to be static global
 +    /// with an initial None value
 +    /// Holds Option<u32> which I need to keep a std::process::id() in.
-+    struct AtomicOnceOptionU32 {
++    struct AtomicOnceOptionU32 { //FIXME: this is wrong, needs mutex else threads can see it as inited but it's not yet
 +        has_value: AtomicBool,
 +        data: AtomicU32,
 +    }

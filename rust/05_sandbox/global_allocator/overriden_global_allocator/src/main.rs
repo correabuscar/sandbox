@@ -37,6 +37,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for PrintingAllocator<A> {
         // Call the inner allocator's alloc function
         let ptr = self.inner.alloc(layout);
 
+        //well, it's thread local now!
         //XXX: so this is same var for all threads, not thread-local; TODO: see if this is right
         //But if thread-local is wanted it should wrap an atomic to ensure thread migration can
         //still see the correct bool value(it would if atomic), even tho it's rare that it would happen to see it

@@ -10,7 +10,7 @@ struct AtomicOnceOptionU32 {
     data: AtomicU32,
 }
 
-unsafe impl Sync for AtomicOnceOptionU32 {}
+//unsafe impl Sync for AtomicOnceOptionU32 {} //FIXME: it's not thread safe atm., needs mutex
 
 //FIXME: needs mutex or another atomic bool that says init is in progress (and then have threads wait until it's not)
 //Instead, it's better to use OnceLock but it has MSRV 1.70.0
