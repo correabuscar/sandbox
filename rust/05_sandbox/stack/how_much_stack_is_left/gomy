@@ -3,4 +3,10 @@
 #export RUST_BACKTRACE=1
 unset RUST_BACKTRACE
 export RUSTC="$(realpath ./myrust)"
-cargo run
+cargo clean
+RUSTFLAGS="-Z print-type-sizes" cargo run
+#This works but useless:
+#RUSTFLAGS="-Z emit-stack-sizes=true" cargo run
+#exe="$(find target -maxdepth 2 -executable -type f)"
+#objdump -s --section .stack_sizes -- "$exe"
+#should maybe use: https://github.com/japaric/cargo-call-stack?tab=readme-ov-file

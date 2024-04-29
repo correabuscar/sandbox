@@ -7,3 +7,7 @@ edition = "2021"
 
 [dependencies]
 stacker="0.1.15"
+
+[profile.dev]
+#lto='fat' #for https://github.com/japaric/cargo-call-stack?tab=readme-ov-file
+#^ changes the current stack calculations that I've done manually in the program, like depth is <=54 not 58
