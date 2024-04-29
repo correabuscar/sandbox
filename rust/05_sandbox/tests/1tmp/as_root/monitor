@@ -25,6 +25,7 @@ echo
 #chmod o+rx,g+rx /var/tmp/portage/dev-lang/rust-1.75.0-r1{,/work}
 #chmod o+rx,g+rx /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/{../../,../}
 chmod o+rx,g+rx "${dir}/"{../../,../}
+sleep 2 #just in case it kills it too soon!
 pkill --echo -u portage -- 'rustc'
 
 echo "Waiting for next recompilation...C-c if not."
