@@ -10,5 +10,6 @@ ebuild `equery w rust` clean prepare
 #dir="/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/"
 source vars.sh
 cd "$dir"
-patch -p8 -i /quilt_patches/cargo_test-threads_loses_output.patch
+#patch -p8 -i /quilt_patches/cargo_test-threads_loses_output.patch
+patch -p8 -i /quilt_patches/cargo_test-threads_loses_output2.patch
 echo "$dir"
