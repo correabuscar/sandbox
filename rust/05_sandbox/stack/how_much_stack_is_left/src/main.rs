@@ -5,8 +5,6 @@ fn recurse(depth: usize) {
     // Print the current depth to observe stack usage
     println!("Depth: {}, stack left: {:?}", depth, stacker::remaining_stack());
     let cloj=|| {
-        //let mut _buffer = [0u8; 1136];//1137 is overflow! but says 1104 stack left hmm
-        //let mut _buffer = [0u8; 100];
         //XXX: so array allocs stack mem in multiples of 16?
         let mut _buffer = [0u8; 16*10];//960 left for 16 or less, but 944 left for 17 hmmm
         //816 left for 16*10, and 16*10+1 is overflow! so 816 or less, or maybe <=800 is overflow!
@@ -27,7 +25,6 @@ fn recurse(depth: usize) {
 fn main() {
     println!("Hello, main world! {:?}", stacker::remaining_stack());
     // Set the desired stack size
-    //let stack_size = 132*192-576;//on playground, 132 depth, 131 is minimum.
     let stack_size = 150*128+5696;//via `cargo run` to 150 depth, 149 is min.
 
     // Create a new thread with the specified stack size
