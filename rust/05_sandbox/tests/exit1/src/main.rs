@@ -71,8 +71,8 @@ fn test_abort() {
     thread::sleep(Duration::from_secs(2));
     //set_exit_hook();
     println!("Hello from the invisible test* named test_abort!");
-    //std::process::abort()//uncaught!
-    std::process::exit(6);
+    std::process::abort()//uncaught!
+    //std::process::exit(6);
 }
 #[test]
 fn test_ok2() {
