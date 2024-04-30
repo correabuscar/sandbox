@@ -719,7 +719,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
  fn run_test_in_process(
      id: TestId,
      desc: TestDesc,
-@@ -639,28 +709,233 @@ fn run_test_in_process(
+@@ -639,31 +709,250 @@ fn run_test_in_process(
      monitor_ch: Sender<CompletedTest>,
      time_opts: Option<time::TestTimeOptions>,
  ) {
@@ -958,7 +958,24 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
      monitor_ch.send(message).unwrap();
  }
  
-@@ -686,6 +961,10 @@ fn spawn_test_subprocess(
++/*
++ "When you call libc::abort() from within your program, Rust first searches for the abort() symbol within the current binary. If it finds a matching symbol (i.e., your custom implementation), it uses that instead of the libc::abort() function from the standard C library.
++
++This behavior is consistent with Rust's symbol resolution rules and allows you to override standard library functions with custom implementations within your program. "  - chatgpt 3.5
++*/
++#[no_mangle] //needed for the name override/overwrite to work!
++#[inline(never)] //dno if needed, making sure?
++pub extern "C" fn abort() {
++    // overrides& prevents the real libc::abort() from executing
++    // executes this instead.
++    eprintln!("!!! Abort intercepted! Will exit(134) instead(that's 128+6 aka SIGABRT exit code).");
++    std::process::exit(128+6); //134 is SIGABRT's exit code 128+6
++}
++
+ fn fold_err<T, E>(
+     result: Result<Result<T, E>, Box<dyn Any + Send>>,
+ ) -> Result<T, Box<dyn Any + Send>>
+@@ -686,6 +975,10 @@ fn spawn_test_subprocess(
      time_opts: Option<time::TestTimeOptions>,
      bench_benchmarks: bool,
  ) {
@@ -969,7 +986,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
      let (result, test_output, exec_time) = (|| {
          let args = env::args().collect::<Vec<_>>();
          let current_exe = &args[0];
-@@ -755,9 +1034,12 @@ fn run_test_in_spawned_subprocess(desc:
+@@ -755,9 +1048,12 @@ fn run_test_in_spawned_subprocess(desc:
          }
  
          if let TrOk = test_result {
