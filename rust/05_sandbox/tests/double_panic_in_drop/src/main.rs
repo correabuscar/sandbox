@@ -4,13 +4,19 @@ struct Double;
 impl Drop for Double {
     fn drop(&mut self) {
         // 2 panics are active at once, but this is fine since it is caught.
-        std::panic::catch_unwind(|| panic!("twice"));
+        let _ =std::panic::catch_unwind(|| panic!("twice"));
     }
 }
 
 
 fn main() {
    // println!("Hello, world!");
+	let _d = Double;
+	panic!("once");
+}
+
+#[test]
+fn test_double_panic() {
 	let _d = Double;
 	panic!("once");
 }

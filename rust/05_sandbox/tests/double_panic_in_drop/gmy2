@@ -2,6 +2,6 @@
 export RUSTC="$(realpath ./myrust)"
 export RUST_BACKTRACE=1
 cargo clean
-echo "Double panic as main()"
-cargo run ; ec="$?"
+echo "Double panic as a test"
+TEAPANICHOOK=1 cargo test ; ec="$?"
 echo "exit code: $ec"

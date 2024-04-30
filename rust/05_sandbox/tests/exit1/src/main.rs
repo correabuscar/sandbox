@@ -1,3 +1,4 @@
+#![feature(panic_always_abort)]
 use libc::atexit;
 use std::thread;
 use std::time::Duration;
@@ -71,9 +72,97 @@ fn test_abort() {
     thread::sleep(Duration::from_secs(2));
     //set_exit_hook();
     println!("Hello from the invisible test* named test_abort!");
-    std::process::abort()//uncaught!
+    std::process::abort()//uncaught! well, caught with patch.
     //std::process::exit(6);
 }
+#[test]
+fn test_abort2() {
+    set_exit_hook();
+    thread::sleep(Duration::from_secs(2));
+    //set_exit_hook();
+    println!("Hello from the invisible test* named test_abort2!");
+    std::process::abort()//uncaught! well, caught with patch.
+    //std::process::exit(6);
+}
+
+#[test]
+fn test_abort_due_to_double_panic() {
+    set_exit_hook();
+    thread::sleep(Duration::from_secs(2));
+    //set_exit_hook();
+    println!("Hello from the invisible test* named test_abort_due_to_double_panic!");
+
+    use std::fmt::{Display, self};
+
+    struct MyStruct;
+    impl Display for MyStruct {
+        fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+            //todo!()
+            panic!("oh no panic in Display");
+        }
+    }
+    let instance = MyStruct;
+
+    println!("{}", instance);
+}
+
+#[test]
+#[ignore] //TODO: not yet ready to test this!
+fn test_abort_due_to_double_panic_when_always_abort_is_set() {
+    set_exit_hook();
+    thread::sleep(Duration::from_secs(2));
+    //set_exit_hook();
+    println!("Hello from the invisible test* named test_abort_due_to_double_panic_when_always_abort_is_set!");
+
+    use std::fmt::{Display, self};
+
+    struct MyStruct;
+    impl Display for MyStruct {
+        fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+            //todo!()
+            panic!("oh no panic in Display");
+        }
+    }
+    let instance = MyStruct;
+
+    //FIXME: if always_abort() then this causes an exit(128+6), probably due to missing one more atexit handler in test harness!
+    std::panic::always_abort();//issue: https://github.com/rust-lang/rust/issues/122940
+    println!("{}", instance);
+}
+
+#[test]
+#[ignore] //TODO: not yet ready to test this!
+fn test_abort_due_to_infinitely_nested_panics() {
+    set_exit_hook();
+    thread::sleep(Duration::from_secs(2));
+    //set_exit_hook();
+    println!("Hello from the invisible test* named test_abort_due_to_infinitely_nested_panics!");
+
+    use std::fmt::{Display, self};
+
+    struct MyStruct2;
+    impl Display for MyStruct2 {
+        fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+            //todo!()
+            let instance = MyStruct;
+            panic!("oh1 no, '{}' was unexpected", instance);
+        }
+    }
+    struct MyStruct;
+    impl Display for MyStruct {
+        fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+            let instance2 = MyStruct2;
+            panic!("oh2 no, '{}' was unexpected", instance2);
+            //todo!()
+        }
+    }
+    let instance = MyStruct;
+
+    std::panic::always_abort();//issue: https://github.com/rust-lang/rust/issues/122940
+    //actually attempts to do infinite recurios of panics
+    println!("{}", instance);
+}
+
 #[test]
 fn test_ok2() {
     set_exit_hook();
