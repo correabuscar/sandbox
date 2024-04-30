@@ -1,2 +1,4 @@
 so this is an override, we can't call the original due to infinite recursion,
  while using this implementation of how we did things here.
+
+this is the best way so far, for what i need.
