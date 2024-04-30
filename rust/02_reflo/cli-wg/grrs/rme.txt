@@ -1,0 +1,6 @@
+what was here got removed because I don't remember if it was taken from
+somewhere else, or what, plus it uses atty indirectly(through structopt) which
+isn't updated to fix some irrelevant security issue: https://github.com/correabuscar/sandbox/security/dependabot/110
+
+For similars maybe see: https://github.com/clap-rs/clap/tree/master/examples
+

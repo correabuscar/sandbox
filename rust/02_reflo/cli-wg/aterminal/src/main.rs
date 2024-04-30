@@ -1,6 +1,6 @@
-use atty::Stream;
+use std::io::IsTerminal;
 fn main() {
-    if atty::is(Stream::Stdout) {
+    if std::io::stdout().is_terminal() {
         println!("I'm a terminal");
     } else {
         println!("I'm not");
