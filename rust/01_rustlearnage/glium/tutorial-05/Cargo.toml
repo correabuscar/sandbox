@@ -2,7 +2,10 @@
 name = "tutorial-05"
 version = "0.1.0"
 authors = [ "CExftNSroxORgpxED" ]
+edition = "2021"
 
 [dependencies]
-glium = "0.25"
+glium = "0.34"
+winit = "0.29"
+
 
