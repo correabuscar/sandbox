@@ -1,1 +1,6 @@
 should be more up to date than the one in ../../dir/WIP*/$0 dirs
+
+
+cargo_test-threads_loses_output2.patch pulled in an in progress PR so it's got
+that PR's code mixed in, there's a link to it too: https://github.com/rust-lang/rust/pull/122565
+
