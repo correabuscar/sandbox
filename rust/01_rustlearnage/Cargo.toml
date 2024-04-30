@@ -6,6 +6,9 @@ exclude = ["helper_scripts", ".git", "**/.git", "target", "**/target",
 #Avoids this: error: two packages named `example_project` in this workspace
 "built_example/built",
 "built_example2/binprog/built",
+#Actually go further and exclude these 2 due to using old libs that have sec. issues and can't patch due to needing this old version for proof of concept:
+"built_example",
+"built_example2",
 ]
 #^ https://doc.rust-lang.org/glob/glob/struct.Pattern.html
 

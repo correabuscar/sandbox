@@ -1,5 +1,6 @@
 note: this was supposed to err on trying to build it! to show you the error's not pointing to the filename!
 https://github.com/lukaslueg/built/issues/14
+so it still errs now, but not by default!
 
 For how to do it right: https://sabrinajewson.org/blog/errors
 
