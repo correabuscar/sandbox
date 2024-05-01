@@ -725,7 +725,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
  fn run_test_in_process(
      id: TestId,
      desc: TestDesc,
-@@ -639,31 +715,285 @@ fn run_test_in_process(
+@@ -639,31 +715,290 @@ fn run_test_in_process(
      monitor_ch: Sender<CompletedTest>,
      time_opts: Option<time::TestTimeOptions>,
  ) {
@@ -744,7 +744,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
 +//    let _=stdout().flush();
 +    //println!("!!!!!!! way before calling .run() for test={:?} pid={}", &desc.name, std::process::id());
 +
-+    //use libc::atexit;//TODO: ideally use libc which is in ../../vendor/libc/Cargo.toml (from libtest's project root) - don't know how yet without needing Cargo.lock modification which is forbidden from this gentoo .ebuild due to --locked
++    //use libc::atexit;//nvmTODO: ideally use libc which is in ../../vendor/libc/Cargo.toml (from libtest's project root) - don't know how yet without needing Cargo.lock modification which is forbidden from this gentoo .ebuild due to --locked; on_exit() isn't in libc:: so using it raw.
 +
 +    // Declare the external C function atexit
 +    //use std::os::raw::c_int;
@@ -760,14 +760,18 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
 +    //already be user-set ones TODO: test for this, see how this behaves!
 +
 +    static SHOULD_CLEANUP: AtomicU64 = AtomicU64::new(0);
-+    use std::os::raw::c_int;
++    use std::os::raw::{c_int, c_void};
++    type ExitFn = extern "C" fn(exit_code: c_int, extra_data_passed_from_on_exit: *mut c_void);
 +    extern "C" {
-+        pub fn atexit(callback: extern "C" fn()) -> c_int;
++        //pub fn atexit(callback: extern "C" fn()) -> c_int;
++
 +        //on_exit() isn't in libc 0.2.154(latest) yet:
-+        //pub fn on_exit(callback: extern "C" fn()) -> c_int;//TODO: replace atexit with on_exit
++        // Declare the `on_exit` function
++        fn on_exit(callback: ExitFn, extra_data_passed_to_callback: *mut c_void) -> c_int;
 +    }
 +    #[allow(dead_code)]
-+    extern "C" fn cleanup() {
++    //extern "C" fn cleanup() {
++    extern "C" fn cleanup(exit_code:c_int, _extra_data_passed_from_on_exit: *mut c_void) {
 +        //once you hit this point it means u're in atexit hook so it won't run again on
 +        //panic!+unwind_catch, thus need to "say" it's deregistered as hook:
 +        REGISTERED_HOOKS_SO_FAR.fetch_sub(1, Ordering::SeqCst);
@@ -776,7 +780,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
 +        let active_threads = SHOULD_CLEANUP.load(Ordering::SeqCst);
 +        if active_threads > 0 {
 +            tea!(5,{
-+                println!("!!!! atexit HOOK hit! pid={}",std::process::id());
++                println!("!!!! atexit HOOK hit! pid={} exit_code={}",std::process::id(), exit_code);
 +            });
 +            //TODO: find out what this does again, does it silence output basically? we might not
 +            //wanna set it then?!
@@ -791,13 +795,13 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
 +            let how_many_aborts_in_this_thread=ABORT_WAS_CALLED_THIS_MANY_TIMES_IN_THIS_THREAD.with(|count| {
 +                count.load(Ordering::SeqCst)
 +            });
-+            let exit_or_abort_msg=if how_many_aborts_in_this_thread>=1 {
++            let exit_or_abort_msg:String=if how_many_aborts_in_this_thread>=1 {
 +                let how_many_aborts=ABORT_WAS_CALLED_THIS_MANY_TIMES.load(Ordering::SeqCst);
 +                //either the test hit abort() directly or indirectly by double(or more) panicking?
 +                format!("encountered an abort() call '{}' times (and globally so far abort() was called '{}' times) either directly calling it or indirectly via nested panicking", how_many_aborts_in_this_thread, how_many_aborts)
 +            } else {
 +                //the tets called exit()
-+                "issued a std::process::exit(?)".to_string()
++                format!("issued a std::process::exit({})", exit_code)
 +            };
 +            //this next panic + catch_unwind below acts like an unregistering of this atexit hook.
 +            //TODO: how to know exit code here? looks like i'd have to use `man 3 on_exit` instead
@@ -805,7 +809,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
 +            panic!("!!!! Test has {}, we're panicking to allow the test harness to catch this and properly report the test results. If you used --test-threads=1 you can still see which test caused this even without this workaround implemented!", exit_or_abort_msg);
 +        } else {
 +            tea!(2,{
-+                println!("!!!! nothing to clean up, test(s) behaved. hooks so far={}", REGISTERED_HOOKS_SO_FAR.load(Ordering::SeqCst));
++                println!("!!!! nothing to clean up, test(s) behaved. hooks so far={} exit_code={}", REGISTERED_HOOKS_SO_FAR.load(Ordering::SeqCst), exit_code);
 +            });
 +        }
      }
@@ -830,7 +834,8 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
 +    //abort() or exit(), but not when they just end normally!
 +        // Register the exit handler
 +        unsafe {
-+            let result = atexit(cleanup);
++            //let result = atexit(cleanup);//replacing with on_exit()
++            let result = on_exit(cleanup, std::ptr::null_mut());
 +            if result != 0 {
 +                //FIXME: test how this panic behaves here.
 +                panic!("Failed to register exit handler(for test='{:?}') which would handle the case when a test used std::process::exit(?) instead of panic!()", &desc.name);
@@ -1016,7 +1021,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
  fn fold_err<T, E>(
      result: Result<Result<T, E>, Box<dyn Any + Send>>,
  ) -> Result<T, Box<dyn Any + Send>>
-@@ -686,6 +1016,10 @@ fn spawn_test_subprocess(
+@@ -686,6 +1021,10 @@ fn spawn_test_subprocess(
      time_opts: Option<time::TestTimeOptions>,
      bench_benchmarks: bool,
  ) {
@@ -1027,7 +1032,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
      let (result, test_output, exec_time) = (|| {
          let args = env::args().collect::<Vec<_>>();
          let current_exe = &args[0];
-@@ -755,9 +1089,12 @@ fn run_test_in_spawned_subprocess(desc:
+@@ -755,9 +1094,12 @@ fn run_test_in_spawned_subprocess(desc:
          }
  
          if let TrOk = test_result {
