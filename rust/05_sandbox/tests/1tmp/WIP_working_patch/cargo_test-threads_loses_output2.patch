@@ -218,7 +218,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
  /// Central point for dispatching panics.
  ///
  /// Executes the primary logic for a panic, including checking for recursive
-@@ -738,33 +799,156 @@ fn rust_panic_with_hook(
+@@ -738,33 +799,157 @@ fn rust_panic_with_hook(
      can_unwind: bool,
      force_no_backtrace: bool,
  ) -> ! {
@@ -227,6 +227,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +    rtprintpanic!("!! must_abort={:?}\n", must_abort);
 +    //rtprintpanic!("must_abort={:?} global_panic_count={}\n", must_abort,panic_count::GLOBAL_PANIC_COUNT.load(Ordering::SeqCst));
 +    let is_fork=crate::rt::is_this_forked_process();
++    //let is_fork=crate::rt::isolated_globals::IS_THIS_FORKED_PROCESS_AB;//good: error[E0603]: static `IS_THIS_FORKED_PROCESS_AB` is private
 +    rtprintpanic!("!! is_fork={:?}\n", is_fork);
 +    let must_abort=if is_fork {
 +        Some(panic_count::MustAbort::AlwaysAbort)
@@ -385,7 +386,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
      let hook = HOOK.read().unwrap_or_else(PoisonError::into_inner);
      match *hook {
          // Some platforms (like wasm) know that printing to stderr won't ever actually
-@@ -773,31 +957,50 @@ fn rust_panic_with_hook(
+@@ -773,31 +958,50 @@ fn rust_panic_with_hook(
          // methods, this means we avoid formatting the string at all!
          // (The panic runtime might still call `payload.take_box()` though and trigger
          // formatting.)
@@ -444,7 +445,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 ===================================================================
 --- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
 +++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
-@@ -68,6 +68,65 @@ macro_rules! rtunwrap {
+@@ -68,6 +68,60 @@ macro_rules! rtunwrap {
      };
  }
  
@@ -457,23 +458,18 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +    use core::sync::atomic::AtomicBool;
 +    pub(super) static IS_THIS_FORKED_PROCESS_AB:AtomicBool=AtomicBool::new(false);
 +
-+//    // TODO: delete this
-+//    #[inline]
-+//    #[track_caller]
-+//    pub fn get_current_process_id() -> u32 {
-+//        crate::process::id()
-+//    }
-+
-+
-+    // None means we can't determine.
 +    #[track_caller]
 +    #[inline(always)]
 +    pub fn is_this_main_process() -> bool {
 +        return !super::is_this_forked_process();
 +    }
 +
++    //Only these target OSes have fork() and pthread_atfork():
 +    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 +    pub(super) fn init_fork_hooks() {
++        // NOTE: this is not guaranteed to run, for example when Rust code is called externally.
++        // because init() below is same ^.
++        // so TODO: maybe return an Option in super::is_this_forked_process() to signify this?
 +        unsafe {
 +            let result: libc::c_int = libc::pthread_atfork(/*prepare*/None, /*parent*/None, Some(child));
 +            if result != 0 {
@@ -499,7 +495,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +}//mod
 +
 +/// True if this process, whether it's a direct or indirect descendant of main, was forked.
-+/// it can be a fork of a forked process, it's still detected as a fork.
++/// It can be a fork of a forked process, it's still detected as a fork.
 +#[track_caller]
 +#[inline(always)]
 +pub fn is_this_forked_process() -> bool {
@@ -510,7 +506,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
  // One-time runtime initialization.
  // Runs before `main`.
  // SAFETY: must be called only once during runtime initialization.
-@@ -94,7 +153,10 @@ macro_rules! rtunwrap {
+@@ -94,7 +148,10 @@ macro_rules! rtunwrap {
  #[cfg_attr(test, allow(dead_code))]
  unsafe fn init(argc: isize, argv: *const *const u8, sigpipe: u8) {
      unsafe {
@@ -711,15 +707,21 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
                  let cfg = thread::Builder::new().name(name.as_slice().to_owned());
                  let mut runtest = Arc::new(Mutex::new(Some(runtest)));
                  let runtest2 = runtest.clone();
-@@ -630,6 +699,7 @@ fn __rust_begin_short_backtrace<T, F: Fn
+@@ -630,6 +699,13 @@ fn __rust_begin_short_backtrace<T, F: Fn
      black_box(result)
  }
  
 +
++use std::sync::atomic::{AtomicU64,Ordering};
++static ABORT_WAS_CALLED_THIS_MANY_TIMES: AtomicU64 = AtomicU64::new(0);
++thread_local!(
++    static ABORT_WAS_CALLED_THIS_MANY_TIMES_IN_THIS_THREAD: AtomicU64 = AtomicU64::new(0);
++    );
++
  fn run_test_in_process(
      id: TestId,
      desc: TestDesc,
-@@ -639,29 +709,232 @@ fn run_test_in_process(
+@@ -639,31 +715,290 @@ fn run_test_in_process(
      monitor_ch: Sender<CompletedTest>,
      time_opts: Option<time::TestTimeOptions>,
  ) {
@@ -730,13 +732,15 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
      // Buffer for capturing standard I/O
      let data = Arc::new(Mutex::new(Vec::new()));
  
+-    if !nocapture {
+-        io::set_output_capture(Some(data.clone()));
 +//    use std::io::stdout;
 +//    let _=stdout().flush();
 +    //use std::io::stdout;
 +//    let _=stdout().flush();
 +    //println!("!!!!!!! way before calling .run() for test={:?} pid={}", &desc.name, std::process::id());
 +
-+    //use libc::atexit;//TODO: ideally use libc which is in ../../vendor/libc/Cargo.toml (from libtest's project root) - don't know how yet without needing Cargo.lock modification which is forbidden from this gentoo .ebuild due to --locked
++    //use libc::atexit;//nvmTODO: ideally use libc which is in ../../vendor/libc/Cargo.toml (from libtest's project root) - don't know how yet without needing Cargo.lock modification which is forbidden from this gentoo .ebuild due to --locked; on_exit() isn't in libc:: so using it raw.
 +
 +    // Declare the external C function atexit
 +    //use std::os::raw::c_int;
@@ -747,17 +751,23 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
 +    //}
 +    // Atomic flag to determine whether cleanup should be performed
 +    //use std::sync::atomic::AtomicBool;//,Ordering};
-+    use std::sync::atomic::{AtomicU64,Ordering};
 +    static REGISTERED_HOOKS_SO_FAR: AtomicU64 = AtomicU64::new(0);
 +    //presumably you can't/shouldn't register more than 32 (man 3 atexit) and there may
 +    //already be user-set ones TODO: test for this, see how this behaves!
 +
 +    static SHOULD_CLEANUP: AtomicU64 = AtomicU64::new(0);
++    use std::os::raw::{c_int, c_void};
++    type ExitFn = extern "C" fn(exit_code: c_int, extra_data_passed_from_on_exit: *mut c_void);
 +    extern "C" {
-+        pub fn atexit(callback: extern "C" fn()) -> std::os::raw::c_int;
++        //pub fn atexit(callback: extern "C" fn()) -> c_int;
++
++        //on_exit() isn't in libc 0.2.154(latest) yet:
++        // Declare the `on_exit` function
++        fn on_exit(callback: ExitFn, extra_data_passed_to_callback: *mut c_void) -> c_int;
 +    }
 +    #[allow(dead_code)]
-+    extern "C" fn cleanup() {
++    //extern "C" fn cleanup() {
++    extern "C" fn cleanup(exit_code:c_int, _extra_data_passed_from_on_exit: *mut c_void) {
 +        //once you hit this point it means u're in atexit hook so it won't run again on
 +        //panic!+unwind_catch, thus need to "say" it's deregistered as hook:
 +        REGISTERED_HOOKS_SO_FAR.fetch_sub(1, Ordering::SeqCst);
@@ -766,20 +776,40 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
 +        let active_threads = SHOULD_CLEANUP.load(Ordering::SeqCst);
 +        if active_threads > 0 {
 +            tea!(5,{
-+                println!("!!!! atexit HOOK hit! pid={}",std::process::id());
++                println!("!!!! atexit HOOK hit! pid={} exit_code={}",std::process::id(), exit_code);
 +            });
-+            //io::set_output_capture(None);//FIXME: this can't exec after we've paniced(when we return
++            //TODO: find out what this does again, does it silence output basically? we might not
++            //wanna set it then?!
++            //println!("!!!! before io::try_set_output_capture pid={}",std::process::id());
++            io::try_set_output_capture(None).ok();//doesn't panic!
++            //println!("!!!! after io::try_set_output_capture pid={}",std::process::id());
++            //^ both println to stdout are seen, so unclear what's that supposed to (un)do.
++            //io::set_output_capture(None);//doneFIXME: this can't exec after we've panicked(when we return
 +                                         //from run() below, else it will double panic); double
 +                                         //panics still even here!
++            //presumably thread is same thing as test!
++            let how_many_aborts_in_this_thread=ABORT_WAS_CALLED_THIS_MANY_TIMES_IN_THIS_THREAD.with(|count| {
++                count.load(Ordering::SeqCst)
++            });
++            let exit_or_abort_msg:String=if how_many_aborts_in_this_thread>=1 {
++                let how_many_aborts=ABORT_WAS_CALLED_THIS_MANY_TIMES.load(Ordering::SeqCst);
++                //either the test hit abort() directly or indirectly by double(or more) panicking?
++                format!("encountered an abort() call '{}' times (and globally so far abort() was called '{}' times) either directly calling it or indirectly via nested panicking", how_many_aborts_in_this_thread, how_many_aborts)
++            } else {
++                //the tets called exit()
++                format!("issued a std::process::exit({})", exit_code)
++            };
 +            //this next panic + catch_unwind below acts like an unregistering of this atexit hook.
-+            panic!("!!!! Test has issued a std::process::exit(?), we're panicking to allow the test harness to catch this and properly report the test results. If you used --test-threads=1 you can still see which test caused this even without this workaround implemented!");
++            //TODO: how to know exit code here? looks like i'd have to use `man 3 on_exit` instead
++            //of atexit
++            panic!("!!!! Test has {}, we're panicking to allow the test harness to catch this and properly report the test results. If you used --test-threads=1 you can still see which test caused this even without this workaround implemented!", exit_or_abort_msg);
 +        } else {
 +            tea!(2,{
-+                println!("!!!! nothing to clean up, test(s) behaved. hooks so far={}", REGISTERED_HOOKS_SO_FAR.load(Ordering::SeqCst));
++                println!("!!!! nothing to clean up, test(s) behaved. hooks so far={} exit_code={}", REGISTERED_HOOKS_SO_FAR.load(Ordering::SeqCst), exit_code);
 +            });
 +        }
-+    }
-+
+     }
+ 
 +    SHOULD_CLEANUP.fetch_add(1, Ordering::SeqCst);//XXX: must be +1 before the 'if' below!
 +
 +    //FIXME: this check then add should be atomic, maybe use .with() ? what about the other
@@ -800,7 +830,8 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
 +    //abort() or exit(), but not when they just end normally!
 +        // Register the exit handler
 +        unsafe {
-+            let result = atexit(cleanup);
++            //let result = atexit(cleanup);//replacing with on_exit()
++            let result = on_exit(cleanup, std::ptr::null_mut());
 +            if result != 0 {
 +                //FIXME: test how this panic behaves here.
 +                panic!("Failed to register exit handler(for test='{:?}') which would handle the case when a test used std::process::exit(?) instead of panic!()", &desc.name);
@@ -822,15 +853,14 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
 +    tea!(4,{
 +        println!("!!!! BEFORE RUN, should={} tid={:?}", SHOULD_CLEANUP.load(Ordering::SeqCst),tid);
 +    });
-     if !nocapture {
-+        //TODO: look at how this was used before and restore it; also maybe use
++    if !nocapture {
++        //doneTODO: look at how this was used before and restore it; also maybe use
 +        //try_set_output_capture() to avoid a panic? note: this was called in 2 places(at least) one with None
-         io::set_output_capture(Some(data.clone()));
-+    //} else {
-+    //io::set_output_capture(None);
-     }
- 
-+    if "0" != std::env::var("TEAPANICHOOK").unwrap_or("0".to_string()) {
++        //see: https://github.com/rust-lang/rust/pull/122882 for how to use it.
++        io::try_set_output_capture(Some(data.clone())).ok();//won't panic
++    }
++
++   if "0" != std::env::var("TEAPANICHOOK").unwrap_or("0".to_string()) {
 +    //let old_hook = panic::take_hook();
 +    // Install a custom panic handler XXX: apparently it's needed else "thread panicked while processing panic. aborting." while doing the cc-rs 'cargo test' with clang_android test failing(unshimmed llvm-ar PR 1016)
 +    // ok this is needed because of double panic without "--no-capture" arg, in the panic hook at line 147 in this file,
@@ -875,11 +905,11 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
 +        }
 +
 +        if double_panic {
-+            println!("Aborting the process due to double panic detected...");
++            println!("Double panic detected... but can't really abort() here, must fall thru to let test harness exit cleanly or something");//TODO: unsure what to do here, other than nothing.
 +            println!("{}", std::backtrace::Backtrace::capture());
 +            // Deregister the current panic hook to let the normal panic hook take over
 +                //panic::set_hook(old_hook);
-+                //process::abort();
++                //process::abort();//XXX: not actually aborting, hence commented out!
 +                //let _ = panic::take_hook(); //Unregisters the current panic hook and returns it, registering the default hook in its place. If the default hook is registered it will be returned, but remain registered.
 +                //panic!("{}", panic_info);
 +                //let def_hook = panic::take_hook();
@@ -899,70 +929,95 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
 +        //    });
 +        //}
 +    }));
-+    }//if TEAPANICHOOK
++   }//if TEAPANICHOOK
 +
++    //XXX: So at this point, we want the test to "exit" via panic, not via SIGABRT or exit()
++    //that's why we trap both and make them into panics, so we can catch them.
++    //This then allows the test harness to still capture/show the output and the test that failed!
      let start = report_time.then(Instant::now);
      let result = fold_err(catch_unwind(AssertUnwindSafe(|| runnable_test.run())));
 +    //SHOULD_CLEANUP.with(|flag| *flag.borrow_mut() = false);//test is done, don't panic anymore after this
 +    //SHOULD_CLEANUP.store(false, Ordering::Relaxed);
++    //FIXME: the ordering(s) are probably overkill?!
 +    SHOULD_CLEANUP.fetch_sub(1, Ordering::SeqCst);
      let exec_time = start.map(|start| {
          let duration = start.elapsed();
          TestExecTime(duration)
      });
--
--    io::set_output_capture(None);
--
--    let test_result = match result {
--        Ok(()) => calc_result(&desc, Ok(()), &time_opts, &exec_time),
--        Err(e) => calc_result(&desc, Err(e.as_ref()), &time_opts, &exec_time),
--    };
--    let stdout = data.lock().unwrap_or_else(|e| e.into_inner()).to_vec();
--    let message = CompletedTest::new(id, desc, test_result, exec_time, stdout);
--    monitor_ch.send(message).unwrap();
 +    //io::set_output_capture(None);//this causes double panic hmmm, first being in atexit hook!
++    io::try_set_output_capture(None).ok(); //this won't panic!
 +    //println!("!!!!!!! returned from .run() of test={:?}", &desc.name);
 +    //println!("!!!! AFTER RUN, should={}", SHOULD_CLEANUP.with(|flag| *flag.borrow()));
 +    //let result = fold_err(catch_unwind(|| runnable_test.run()));
 +    //cleanup();
-+
-+
-+        let test_result = match result {
-+            Ok(()) => {
-+                io::set_output_capture(None);//this panics(ie. double) if not here in Ok()
-+
-+                //FIXME: dedup, but must be after io::set_output_capture(None);
-+                tea!(4,{
-+                    println!("!!!! AFTER RUN(good), should={} tid={:?} test={:?}", SHOULD_CLEANUP.load(Ordering::SeqCst),tid, &desc.name);
-+                });
-+
-+                let tid_after=thread::current().id();//this panics if it was a test that used
-+                                                     //abort() or process::exit()
-+                if tid != tid_after {
-+                    println!("!!!! thread ID before/after run differ {:?}!={:?}",tid, tid_after);
-+                }
-+                assert_eq!(tid, tid_after);
-+                //hmm can't really know, tid would be same if forked.
-+                calc_result(&desc, Ok(()), &time_opts, &exec_time)
-+            },
-+            Err(e) => {
-+                //FIXME: dedup, but must be after io::set_output_capture(None);
-+                tea!(4,{
-+                    println!("!!!! AFTER RUN(err), should={} tid={:?} test={:?}", SHOULD_CLEANUP.load(Ordering::SeqCst),tid, &desc.name);
-+                });
-+                calc_result(&desc, Err(e.as_ref()), &time_opts, &exec_time)
-+            },
-+        };
-+        let stdout = data.lock().unwrap_or_else(|e| e.into_inner()).to_vec();
-+        let message = CompletedTest::new(id, desc, test_result, exec_time, stdout);
-+        tea!(11,{
-+            println!("!!!!!!! message={:?}", String::from_utf8_lossy(&message.stdout));
-+        });
-+        monitor_ch.send(message).unwrap();
++    tea!(4,{
++        println!("!!!! AFTER RUN(err), should={} tid={:?} test={:?}", SHOULD_CLEANUP.load(Ordering::SeqCst),tid, &desc.name);
++    });
+ 
+-    io::set_output_capture(None);
+ 
+     let test_result = match result {
+-        Ok(()) => calc_result(&desc, Ok(()), &time_opts, &exec_time),
+-        Err(e) => calc_result(&desc, Err(e.as_ref()), &time_opts, &exec_time),
++        Ok(()) => {
++            let tid_after=thread::current().id();//this panics if it was a test that used
++                                                 //abort() or process::exit()
++                                                 //but if we're here test passed Ok
++                                                 //TODO: try tests that should_panic?
++            if tid != tid_after {
++                println!("!!!! thread ID before/after run differ {:?}!={:?} (was it forked process?)",tid, tid_after);
++            }
++            assert_eq!(tid, tid_after);
++            calc_result(&desc, Ok(()), &time_opts, &exec_time)
++        },
++        Err(e) => {
++            calc_result(&desc, Err(e.as_ref()), &time_opts, &exec_time)
++        },
+     };
++//    let test_result = match result {
++//        Ok(()) => calc_result(&desc, Ok(()), &time_opts, &exec_time),
++//        Err(e) => calc_result(&desc, Err(e.as_ref()), &time_opts, &exec_time),
++//    };
++    //let test_result =calc_result(&desc, result, &time_opts, &exec_time); // ^^^^^^ expected `Result<(), &dyn Any + Send>`, found `Result<(), Box<dyn Any + Send>>`
+     let stdout = data.lock().unwrap_or_else(|e| e.into_inner()).to_vec();
+     let message = CompletedTest::new(id, desc, test_result, exec_time, stdout);
++    tea!(11,{
++        println!("!!!!!!! message={:?}", String::from_utf8_lossy(&message.stdout));
++    });
+     monitor_ch.send(message).unwrap();
  }
  
++/*
++ "When you call libc::abort() from within your program, Rust first searches for the abort() symbol within the current binary. If it finds a matching symbol (i.e., your custom implementation), it uses that instead of the libc::abort() function from the standard C library.
++
++This behavior is consistent with Rust's symbol resolution rules and allows you to override standard library functions with custom implementations within your program. "  - chatgpt 3.5
++*/
++#[no_mangle] //needed for the name override/overwrite to work!
++#[inline(never)] //dno if needed, making sure?
++pub extern "C" fn abort() {
++    // overrides& prevents the real libc::abort() from executing
++    // executes this instead.
++    // So why we exit instead of panic here? in case that panic panics again, perhaps recursively
++    // until it hits the need to SIGABRT again, we reach this, which would wanna panic again, maybe
++    // infinite loop that way. TODO: maybe find a better way ? this way test harness(well, above)
++    // thinks test itself has issued exit() instead of this abort() issuing it! Maybe a
++    // thread_local(or AtomicBool?) var that says that abort was issued, so when we reach that atexit hook, we know
++    // to say it's exit()-ed due to abort() not due to test issuing exit().
++    let prev=ABORT_WAS_CALLED_THIS_MANY_TIMES.fetch_add(1, Ordering::SeqCst);
++    eprintln!("!!! Abort intercepted (globally '{}' times)! Will exit(134) instead(that's 128+6 aka SIGABRT exit code) which will be transformed into a panic to allow the test harness to exit cleanly with failure(s).", prev+1);
++    //FIXME: this^ gets seen by all concurrent tests, but we might not want that. So thread_local this?!
++    // Increment the value of the thread-local variable
++    ABORT_WAS_CALLED_THIS_MANY_TIMES_IN_THIS_THREAD.with(|count| {
++        count.fetch_add(1, Ordering::SeqCst);
++    });
++    std::process::exit(128+6); //134 is SIGABRT's exit code 128+6
++    //panic!("!!! panicking instead of abort()");
++}
++
  fn fold_err<T, E>(
-@@ -686,6 +959,10 @@ fn spawn_test_subprocess(
+     result: Result<Result<T, E>, Box<dyn Any + Send>>,
+ ) -> Result<T, Box<dyn Any + Send>>
+@@ -686,6 +1021,10 @@ fn spawn_test_subprocess(
      time_opts: Option<time::TestTimeOptions>,
      bench_benchmarks: bool,
  ) {
@@ -973,7 +1028,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/te
      let (result, test_output, exec_time) = (|| {
          let args = env::args().collect::<Vec<_>>();
          let current_exe = &args[0];
-@@ -755,9 +1032,12 @@ fn run_test_in_spawned_subprocess(desc:
+@@ -755,9 +1094,12 @@ fn run_test_in_spawned_subprocess(desc:
          }
  
          if let TrOk = test_result {
