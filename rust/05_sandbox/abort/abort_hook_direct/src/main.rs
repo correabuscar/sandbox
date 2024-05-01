@@ -6,8 +6,14 @@ This behavior is consistent with Rust's symbol resolution rules and allows you t
 #[no_mangle]
 pub extern "C" fn abort() {
     eprintln!("Abort intercepted!");
+    //unsafe { original_abort(); };
     std::process::exit(128+6); //134 is SIGABRT's exit code 128+6
 }
+
+//extern "C" {
+//    #[link_name="abort"] // doesn't work, still infinite recursion
+//    fn original_abort() -> !;
+//}
 
 fn main() {
     println!("Hello, world!");
