@@ -17,8 +17,17 @@ struct LocationGuard {
     location: Location,
 }
 
-impl Drop for LocationGuard {
-    fn drop(&mut self) {
+//if it's a trait, the funcs within can be overridden by user(s) by implementing trait extension(s)
+//AND still be able to call the original functions here via like UnVisit::unvisit(self)
+//ah crap, nevermind this, I can still use LocationGuard::unvisit(self) even if I don't have a
+//trait, which in retrospect makes sense, heh.
+//trait UnVisit {
+//    fn unvisit(&self);
+//}
+
+//impl UnVisit for LocationGuard {
+impl LocationGuard {
+    fn unvisit(&self) {
         //unvisits
         //TODO: handle error cases, ie. what if can't borrow, or stuff.
         let res=VISITED_LOCATIONS.try_with(|locations| {
@@ -33,6 +42,12 @@ impl Drop for LocationGuard {
             }
         });
         eprintln!("res={:?}",res);
+    }
+}
+
+impl Drop for LocationGuard {
+    fn drop(&mut self) {
+        self.unvisit();
     }
 }
 
