@@ -218,7 +218,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
  /// Central point for dispatching panics.
  ///
  /// Executes the primary logic for a panic, including checking for recursive
-@@ -738,33 +799,156 @@ fn rust_panic_with_hook(
+@@ -738,33 +799,157 @@ fn rust_panic_with_hook(
      can_unwind: bool,
      force_no_backtrace: bool,
  ) -> ! {
@@ -227,6 +227,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +    rtprintpanic!("!! must_abort={:?}\n", must_abort);
 +    //rtprintpanic!("must_abort={:?} global_panic_count={}\n", must_abort,panic_count::GLOBAL_PANIC_COUNT.load(Ordering::SeqCst));
 +    let is_fork=crate::rt::is_this_forked_process();
++    //let is_fork=crate::rt::isolated_globals::IS_THIS_FORKED_PROCESS_AB;//good: error[E0603]: static `IS_THIS_FORKED_PROCESS_AB` is private
 +    rtprintpanic!("!! is_fork={:?}\n", is_fork);
 +    let must_abort=if is_fork {
 +        Some(panic_count::MustAbort::AlwaysAbort)
@@ -385,7 +386,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
      let hook = HOOK.read().unwrap_or_else(PoisonError::into_inner);
      match *hook {
          // Some platforms (like wasm) know that printing to stderr won't ever actually
-@@ -773,31 +957,50 @@ fn rust_panic_with_hook(
+@@ -773,31 +958,50 @@ fn rust_panic_with_hook(
          // methods, this means we avoid formatting the string at all!
          // (The panic runtime might still call `payload.take_box()` though and trigger
          // formatting.)
@@ -444,7 +445,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 ===================================================================
 --- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
 +++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
-@@ -68,6 +68,65 @@ macro_rules! rtunwrap {
+@@ -68,6 +68,57 @@ macro_rules! rtunwrap {
      };
  }
  
@@ -457,21 +458,13 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +    use core::sync::atomic::AtomicBool;
 +    pub(super) static IS_THIS_FORKED_PROCESS_AB:AtomicBool=AtomicBool::new(false);
 +
-+//    // TODO: delete this
-+//    #[inline]
-+//    #[track_caller]
-+//    pub fn get_current_process_id() -> u32 {
-+//        crate::process::id()
-+//    }
-+
-+
-+    // None means we can't determine.
 +    #[track_caller]
 +    #[inline(always)]
 +    pub fn is_this_main_process() -> bool {
 +        return !super::is_this_forked_process();
 +    }
 +
++    //Only these target OSes have fork() and pthread_atfork():
 +    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 +    pub(super) fn init_fork_hooks() {
 +        unsafe {
@@ -510,7 +503,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
  // One-time runtime initialization.
  // Runs before `main`.
  // SAFETY: must be called only once during runtime initialization.
-@@ -94,7 +153,10 @@ macro_rules! rtunwrap {
+@@ -94,7 +145,10 @@ macro_rules! rtunwrap {
  #[cfg_attr(test, allow(dead_code))]
  unsafe fn init(argc: isize, argv: *const *const u8, sigpipe: u8) {
      unsafe {
