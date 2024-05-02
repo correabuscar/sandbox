@@ -12,4 +12,4 @@ source vars.sh
 cd "$dir"
 #patch -p8 -i /quilt_patches/cargo_test-threads_loses_output.patch
 patch -p8 -i /quilt_patches/cargo_test-threads_loses_output2.patch
-echo "$dir"
+echo "`tput setab 2`$dir`tput sgr0`"
