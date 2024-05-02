@@ -6,8 +6,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 fn main() {
     // Shared flag to indicate if both threads succeeded
-    // ignore the name of this var:
-    let both_succeeded = Arc::new(AtomicBool::new(false));
+    let cas_var = Arc::new(AtomicBool::new(false));
 
     let exit_all=Arc::new(AtomicBool::new(false));
     const SUCCESS_ORDERING:Ordering=Ordering::Acquire;
@@ -17,7 +16,7 @@ fn main() {
     // Create 12 threads
     let mut threads = vec![];
     for i in 1..=12 {
-        let both_succeeded_clone = Arc::clone(&both_succeeded);
+        let cas_var_clone = Arc::clone(&cas_var);
         let exit_all_clone=Arc::clone(&exit_all);
 
         // Define a closure to be used by each thread
@@ -25,7 +24,7 @@ fn main() {
             loop {
                 // Perform the CAS operation
                 for _j in 1..=5*i {
-                    let result = both_succeeded_clone.compare_exchange(false, true, SUCCESS_ORDERING, FAILURE_ORDERING);
+                    let result = cas_var_clone.compare_exchange(false, true, SUCCESS_ORDERING, FAILURE_ORDERING);
                     match result {
                         Ok(false) | Err(true) => {
                             //got to next CAS
@@ -42,7 +41,7 @@ fn main() {
                         },
                     }
                     //thread::sleep_ms(1);
-                    let result = both_succeeded_clone.compare_exchange(true, false, SUCCESS_ORDERING, FAILURE_ORDERING);
+                    let result = cas_var_clone.compare_exchange(true, false, SUCCESS_ORDERING, FAILURE_ORDERING);
                     match result {
                         Ok(true) | Err(false) => {
                             continue;
@@ -78,11 +77,5 @@ fn main() {
         thread.join().unwrap();
     }
 
-    // Check if both threads succeeded
-    if both_succeeded.load(Ordering::SeqCst) {
-        println!("Both threads succeeded!");
-    } else {
-        println!("At least one thread failed.");
-    }
 }
 
