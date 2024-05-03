@@ -445,7 +445,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 ===================================================================
 --- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
 +++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/rt.rs
-@@ -68,6 +68,57 @@ macro_rules! rtunwrap {
+@@ -68,6 +68,113 @@ macro_rules! rtunwrap {
      };
  }
  
@@ -456,7 +456,8 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +    //allowed), wouldn't need sync-ed read to this bool, would they? visibility-wise.
 +    //pub(super) static mut IS_THIS_FORKED_PROCESS:bool=false;
 +    use core::sync::atomic::AtomicBool;
-+    pub(super) static IS_THIS_FORKED_PROCESS_AB:AtomicBool=AtomicBool::new(false);
++    static IS_THIS_FORKED_PROCESS_AB:AtomicBool=AtomicBool::new(false);
++    //pub(super) static IS_THIS_FORKED_PROCESS_AB:AtomicBool=AtomicBool::new(false);
 +
 +    #[track_caller]
 +    #[inline(always)]
@@ -466,8 +467,13 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +
 +    //Only these target OSes have fork() and pthread_atfork():
 +    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-+    pub(super) fn init_fork_hooks() {
++    pub(super) fn init_for_fork() {
++        // NOTE: this is not guaranteed to run, for example when Rust code is called externally.
++        // because init() aka our caller from below, is same ^.
++        //TODO: save main pid here.
++        // so TODO: maybe return an Option in super::is_this_forked_process() to signify this?
 +        unsafe {
++            //doneTODO: find out if these hooks are ever cleared (apparently not, they live in fork too) - they're never cleared!
 +            let result: libc::c_int = libc::pthread_atfork(/*prepare*/None, /*parent*/None, Some(child));
 +            if result != 0 {
 +                //"On success, pthread_atfork() returns zero.  On error, it returns  an  error  number." - man
@@ -480,30 +486,80 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +        }//unsafe
 +    }//fn
 +
++    //"prepare specifies a handler that is executed in the parent process before fork(2) processing starts." - man
++    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
++    unsafe extern "C" fn prepare() {
++        if super::is_this_forked_process() {
++            return; //early, since we already know it's 'true'
++        }
++        //TODO: set a thread_local bool to true, then to false in parent() hook. The bool would say
++        //forking is in process.
++        //Now if any of the hooks(that aren't ours) are calling super::is_this_forked_process()
++        //we'd base our return on that bool, if the func. would've otherwise returned false, that is.
++        todo!();
++    }
++
++    //"parent specifies a handler that is executed in the parent process after fork(2) processing completes." - man
++    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
++    unsafe extern "C" fn parent() {
++        if super::is_this_forked_process() {
++            return; //early, since we already know it's 'true'
++        }
++        todo!();
++    }
++
 +    /// this executes in forked process before returning control from fork() call.
 +    //"child specifies a handler that is executed in the child process after fork(2) processing completes." - man
++    //this runs in fork of a fork too! and in any (later) fork(aka child)s!
 +    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 +    unsafe extern "C" fn child() {
++        if super::is_this_forked_process() {
++            return; //early, no need to set the bool to 'true' again!
++        }
 +        //unsafe { // it's always set to same 'true', and it's done in a new process
 +        //    IS_THIS_FORKED_PROCESS=true;
 +        //}
 +        IS_THIS_FORKED_PROCESS_AB.store(true, core::sync::atomic::Ordering::Release);
++        /* "When you write with Release, the memory operations prior to that write are guaranteed to be completed and visible to other threads before the write itself. However, the write operation itself might not be immediately visible to other threads depending on the ordering semantics of their subsequent read operations.
++
++           To ensure that the write operation is immediately visible to other threads, you need to use appropriate ordering semantics for their read operations. If you want the write to be immediately visible, you should pair it with Acquire ordering for the reading threads. This establishes a synchronization relationship that ensures the write will be visible to any threads reading with Acquire.
++
++           So, to make sure your write with Release is immediately visible to other threads, those threads should read with Acquire ordering. This combination ensures the desired synchronization and visibility of the write operation."
++           - chatgpt 3.5
++        */
++        /*
++         * "On strongly-ordered platforms most accesses have release or acquire semantics, making
++         * release and acquire often totally free. This is not the case on weakly-ordered
++         * platforms."
++         * "There's rarely a benefit in making an operation relaxed on strongly-ordered platforms,
++         * since they usually provide release-acquire semantics anyway. However relaxed operations
++         * can be cheaper on weakly-ordered platforms."
++         * both quotes from: https://doc.rust-lang.org/nomicon/atomics.html#relaxed
++         */
++    }
++
++    /// True if this process, whether it's a direct(fork) or indirect(fork of a fork) descendant of main, was forked.
++    /// It can be a fork of a forked process, it's still detected as a fork.
++    #[track_caller]
++    #[inline(always)]
++    pub fn is_this_forked_process() -> bool {
++        //FIXME: this has to return true even if called within a user's hook made via pthread_atfork
++        //tha happens before out 'child' hook gets to run, and even if those hooks spawned threads even
++        //though it's not allowed to do that in multithreaded program(ie. any rust program)
++
++        //return unsafe { isolated_globals::IS_THIS_FORKED_PROCESS };
++        return IS_THIS_FORKED_PROCESS_AB.load(core::sync::atomic::Ordering::Acquire);
 +    }
 +}//mod
++/// Allow using it like crate::rt::is_this_forked_process() or std::rt::is_this_forked_process()
++// i wonder which doc will this show? TODO: find out somehow.
++pub use isolated_globals::is_this_forked_process;
 +
-+/// True if this process, whether it's a direct or indirect descendant of main, was forked.
-+/// it can be a fork of a forked process, it's still detected as a fork.
-+#[track_caller]
-+#[inline(always)]
-+pub fn is_this_forked_process() -> bool {
-+    //return unsafe { isolated_globals::IS_THIS_FORKED_PROCESS };
-+    return isolated_globals::IS_THIS_FORKED_PROCESS_AB.load(core::sync::atomic::Ordering::Acquire);
-+}
 +
  // One-time runtime initialization.
  // Runs before `main`.
  // SAFETY: must be called only once during runtime initialization.
-@@ -94,7 +145,10 @@ macro_rules! rtunwrap {
+@@ -94,7 +201,10 @@ macro_rules! rtunwrap {
  #[cfg_attr(test, allow(dead_code))]
  unsafe fn init(argc: isize, argv: *const *const u8, sigpipe: u8) {
      unsafe {
@@ -511,7 +567,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +        sys::init(argc, argv, sigpipe); //TODO: find out where and what this does!
 +
 +        #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
-+        isolated_globals::init_fork_hooks();
++        isolated_globals::init_for_fork();
  
          let main_guard = sys::thread::guard::init();
          // Next, set up the current Thread with the guard information we just
