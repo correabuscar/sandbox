@@ -16,6 +16,24 @@ fn main() {
     panic!("There's no fork() on your OS: {}", std::env::consts::OS);
 }
 
+#[cfg(all(
+        any(unix, target_os = "fuchsia", target_os = "vxworks"),
+        target_pointer_width = "64",
+        ))]
+fn fork_syscall() -> i32 {
+    let result: i64;
+    unsafe {
+        std::arch::asm!(
+            "syscall",
+            inout("rax") 57_i64 => result, // 57 is the syscall number for fork on x86_64
+            lateout("rcx") _, // Preserve rcx register
+            lateout("r11") _, // Preserve r11 register
+            options(nomem, preserves_flags),
+        );
+    }
+    result as i32
+}
+
 #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 fn main() {
     //    // Shared state for boolean flags
@@ -82,7 +100,8 @@ fn main() {
     //    XXX: fork is part of 'unix' cfg: https://github.com/rust-lang/libc/blob/a0f5b4b21391252fe38b2df9310dc65e37b07d9f/src/lib.rs#L92C5-L97C25
     //#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
     match unsafe {
-        libc::fork()
+        libc::fork() //WORKS!
+        //fork_syscall() //WORKS with this too, how teh, i thought it's supposed to miss all hooks!
         //libc::vfork(); // doesn't use the hooks from pthread_atfork()
         //vfork got deprecated&removed: https://github.com/rust-lang/libc/pull/3624
         //extern {
