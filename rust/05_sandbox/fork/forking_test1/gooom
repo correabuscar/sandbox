@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+ulimit -d 1234567
+cargo run
