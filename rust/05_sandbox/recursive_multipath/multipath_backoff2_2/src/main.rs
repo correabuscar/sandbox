@@ -38,6 +38,7 @@ impl LocationGuard {
             //TODO: can this drop() be called again if this panics here? or in some other cases?
             //I think it's more likely drop() won't be called at all in some cases like exit()
             if let Ok(mut locations) = locations.try_borrow_mut() {
+                println!("!{:?}",locations);
                 if let Some(counter) = locations.get_mut(&self.location) {
                     if *counter > 0 {
                         *counter -= 1;
@@ -45,7 +46,7 @@ impl LocationGuard {
                 }
             }
         });
-        eprintln!("res={:?}",res);
+        eprintln!("unvisiting, res={:?}",res);
     }
 }
 
@@ -61,6 +62,14 @@ thread_local! {
 }
 
 // Macro to mark a location as visited
+/// aka "am i recursing due to this"
+/// or better: "if I'm recursing, has this been done/encountered before?"
+/// if I'm not recusing then this is false, even if used in a loop(due to Drop happening after each
+/// loop)
+// so it's more like, have I seen this in this session,
+// and session is the current block. hmm..
+/// aka 'recursion guard' or 'recurse guard', in THIS thread!
+//TODO: should I rename this to something more obvious of what's happening?
 macro_rules! been_here {
     () => {{
         let location = Location {
@@ -101,11 +110,28 @@ fn display_visited_locations() {
 }
 
 // Example usage
-fn recursive_function() {
+fn recursive_function(level:usize) {
+    let leading_spaces = format!("{:width$}", "", width = level as usize);
+
+    //begins an action block that's protected from infinite recursion:
     let visited = been_here!(); // Mark this location as visited, XXX: until caller' scope ends!
-    println!("Visited? {:?}", visited);
+                                // or manually drop()
+    println!("{}Visited? {:?} level={}", leading_spaces,visited, level);
     if !visited.visited {
-        recursive_function();
+        println!("{}!!! recursing1 level={}",leading_spaces,level);
+        recursive_function(level+1);
+    }
+    drop(visited);
+    //^ ends scope early, because we can say the action that this 'visited' was
+    //protecting, has completed successfully.
+    //so then below, any other recursion will allow the above block to execute again as if fresh.
+
+    //begin another action block but protects against inf.rec. until the scope ends.
+    let visited = been_here!(); // Mark this location as visited, XXX: until caller' scope ends!
+    println!("{}Visited2? {:?} level={}", leading_spaces,visited, level);
+    if !visited.visited {
+        println!("{}!!! recursing2 level={}",leading_spaces,level);
+        recursive_function(level+1);
     }
 
     // Your recursive logic here...
@@ -116,10 +142,17 @@ fn main() {
 //        recursive_function(); // Call recursive_function in a separate thread
 //        display_visited_locations();
 //    });
-    recursive_function();
-    recursive_function();
+    recursive_function(1);
+    println!("Starting again.........");
+    recursive_function(1);
     // Wait for the spawned thread to finish
 //    handle.join().unwrap();
+    for i in 1..=5 {
+        let bh=been_here!();
+        if bh.visited {
+            unreachable!("i={}",i);
+        }
+    }//bh is dropped here on every cycle!
 
     // Display the contents of the VisitedLocations hashmap
     display_visited_locations();
