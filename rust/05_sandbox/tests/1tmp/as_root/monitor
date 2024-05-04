@@ -17,7 +17,7 @@ echo "Monitoring current (re)compilation...C-c is your friend."
 libtests=0
 while test "$libtests" -ne "6"; do
   libtests="$(find "${dir}/build/" -iname \*libtest\* 2>/dev/null |grep stage1|wc -l)"
-  sleep 5 #sometimes it kills it too soon
+  sleep 1 #sometimes it kills it too soon
   echo -n "$libtests"
 done
 echo
@@ -25,13 +25,13 @@ echo
 #chmod o+rx,g+rx /var/tmp/portage/dev-lang/rust-1.75.0-r1{,/work}
 #chmod o+rx,g+rx /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/{../../,../}
 chmod o+rx,g+rx "${dir}/"{../../,../}
-sleep 2 #just in case it kills it too soon!
+sleep 5 #just in case it kills it too soon!
 pkill --echo -u portage -- 'rustc'
 
 echo "Waiting for next recompilation...C-c if not."
 while test "$libtests" -eq "6"; do
   libtests="$(find "${dir}/build/" -iname \*libtest\* 2>/dev/null |grep stage1|wc -l)"
-  sleep 5
+  sleep 1
   echo -n "$libtests"
 done
 echo
