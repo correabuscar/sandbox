@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# Get the path to the Rust standard library
+RUST_SYSROOT=$(rustc --print sysroot)
+
+libpath="$RUST_SYSROOT/lib"
+libname="std"
+ls -la "$libpath"
+gcc -o my_program my_c_code.c "-L$libpath" "-Wl,-rpath=$libpath" -lpthread -lgcc_s -lc -lm -lrt -ldl "-l$libname"
+#doesn't work, can't find -lstd
