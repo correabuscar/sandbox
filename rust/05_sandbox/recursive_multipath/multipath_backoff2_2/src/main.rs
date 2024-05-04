@@ -13,7 +13,11 @@ struct Location {
 // Helper struct to decrement counter on Drop
 #[derive(Debug)]
 struct LocationGuard {
+    //this bool is only used to hold the return bool
+    //so doesn't have to be part of this struct actually.
     visited: bool,
+
+    //this location is used to know which location to unvisit when going out of scope!
     location: Location,
 }
 
