@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e
+set -o nounset
+foo() {
+#dir="/var/tmp/portage/dev-lang/rust-1.75.0-r1/work/rustc-1.75.0-src"
+local rustsrcdir="/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src"
+local stage1dir="${rustsrcdir}/build/x86_64-unknown-linux-gnu/stage1"
+export LD_LIBRARY_PATH="${stage1dir}/lib:${stage1dir}/lib/rustlib/x86_64-unknown-linux-gnu/lib"
+export RUSTC="${stage1dir}/bin/rustc"
+#unset rustsrcdir stage1dir
+}
+
+foo
+
+"${RUSTC}" "$@"

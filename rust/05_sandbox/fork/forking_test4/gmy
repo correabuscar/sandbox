@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+libpath="./target/debug/"
+libname="forking_test4"
+export RUSTC="$(realpath ./myrust)"
+export RUST_BACKTRACE=1
+
+set -ex -o nounset
+cargo clean
+cargo build
+gcc -o ./target/debug/my_program src/main.c "-L$libpath" "-l$libname" "-Wl,-rpath,$libpath"
+./target/debug/my_program
+set +ex
+echo "!!! If no panics, then it 'tests' ok!"

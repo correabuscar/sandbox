@@ -25,6 +25,7 @@ fn main() {
     panic!("There's no fork() on your OS: {}", std::env::consts::OS);
 }
 
+#[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
 fn main() {
     println!("Beginning...");
     //for i in 1..=5000 {
