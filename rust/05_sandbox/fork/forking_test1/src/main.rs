@@ -26,7 +26,50 @@ fn main() {
 }
 
 fn main() {
-    println!("Hello, world!");
+    println!("Beginning...");
+    //for i in 1..=5000 {
+    //    //make a lot of entries in the hooks, and hopefully delay our later hook from executing.
+    //    //ok no point
+    //    unsafe {
+    //        let _result: libc::c_int = libc::pthread_atfork(None, None, None);
+    //    }
+    //}
+    // Spawn a new thread so we can find the ForkState::InProgressInsideTheForkHooks
+    use std::thread;
+    use std::time::Duration;
+    // Create a Barrier to coordinate the threads
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(2)); // 2 threads: main thread and spawned thread
+    let barrier_clone = barrier.clone();
+    let _handle = thread::spawn(move|| {
+        // Signal that the thread is running
+        barrier_clone.wait();
+        // Infinite loop
+        loop {
+            let fork_state=is_this_forked_process();
+            //if let std::rt::ForkState::NotForked = fork_state {
+            //    //meh, wtf :D
+            //} else {
+            //    println!("Thread querying fork state...{:?}", fork_state);
+            //}
+            match fork_state {
+                std::rt::ForkState::NotForked => {},
+                _ => {
+                    //won't get here because the ForkState::InProgressInsideTheForkHooks is only
+                    //seen from the same thread and only during the hooks, and those hooks would
+                    //have to have been set before main() got called, like if u called rust init()
+                    //from ffi.
+                    unreachable!("Thread querying fork state...{:?}", fork_state);
+                },
+            }
+            // Sleep for a short duration to avoid busy-waiting
+        }
+    });
+
+    // Wait for the spawned thread to start
+    barrier.wait();
+    println!("Spawned thread has started.");
+    thread::sleep(Duration::from_millis(100));//making sure thread is well into running
+
     unsafe {
         let result: libc::c_int = libc::pthread_atfork(Some(prepare), Some(parent), Some(child));
         if result != 0 {
