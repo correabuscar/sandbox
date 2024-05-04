@@ -48,6 +48,16 @@ impl LocationGuard {
         });
         eprintln!("unvisiting, res={:?}",res);
     }
+
+    #[inline(always)]
+    fn done(self) {
+        self.drop();
+    }
+
+    #[inline(always)]
+    fn drop(self) {
+        drop(self);
+    }
 }
 
 impl Drop for LocationGuard {
@@ -121,8 +131,10 @@ fn recursive_function(level:usize) {
         println!("{}!!! recursing1 level={}",leading_spaces,level);
         recursive_function(level+1);
     }
-    drop(visited);
-    //^ ends scope early, because we can say the action that this 'visited' was
+    //drop(visited);
+    visited.done();
+    //visited.drop();
+    //^(any above) ends scope early, because we can say the action that this 'visited' was
     //protecting, has completed successfully.
     //so then below, any other recursion will allow the above block to execute again as if fresh.
 
