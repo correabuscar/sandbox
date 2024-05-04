@@ -4,4 +4,5 @@ source "/swcode/swcode.bash"
 
 rerunasroot "$@"
 
+rm -- "/var/tmp/portage/dev-lang/rust-1.76.0-r1/.compiled"
 time ebuild `equery w rust` compile > /tmp/compile.output || less /tmp/compile.output
