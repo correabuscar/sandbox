@@ -221,6 +221,9 @@ macro_rules! recursion_detection_zone {
     (mark_beginning) => {
         been_here!()
     };
+    (mark beginning) => {
+        been_here!()
+    };
     (end, $guard:ident) => {
         been_here_end!($guard)
     };
@@ -230,7 +233,16 @@ macro_rules! recursion_detection_zone {
     (finish, $guard:ident) => {
         been_here_end!($guard)
     };
+    (mark end, $guard:ident) => {
+        been_here_end!($guard)
+    };
     (mark_end, $guard:ident) => {
+        been_here_end!($guard)
+    };
+    (mark_ending, $guard:ident) => {
+        been_here_end!($guard)
+    };
+    (mark ending, $guard:ident) => {
         been_here_end!($guard)
     };
 }
