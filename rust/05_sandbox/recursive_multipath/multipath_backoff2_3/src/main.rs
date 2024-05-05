@@ -60,6 +60,7 @@ impl fmt::Display for RecursionDetectionZoneGuard {
 }
 
 impl RecursionDetectionZoneGuard {
+    //mustn't call this manually
     fn unvisit(&self) {
         //unvisits
         //TODO: try_with() "This function will still panic!() if the key is uninitialized and the key’s initializer panics."
@@ -73,6 +74,11 @@ impl RecursionDetectionZoneGuard {
                 if let Some(counter) = locations.get_mut(&self.location) {
                     if *counter > 0 {
                         *counter -= 1;
+                        //XXX: on purpose not removing from the static list! we might wanna know
+                        //which points were hit at all. And maybe even add a max-times-hit.
+                    } else {
+                        //TODO: return Result<> ? but then rename to try_unvisit() ?
+                        panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!", *counter);
                     }
                 }
             }
@@ -84,17 +90,17 @@ impl RecursionDetectionZoneGuard {
 
     #[allow(dead_code)]
     #[inline(always)]
-    fn done(self) {
+    pub fn done(self) {
         self.drop();
     }
 
     #[inline(always)]
-    fn drop(self) {
+    pub fn drop(self) {
         drop(self);
     }
 
     #[inline(always)]
-    fn end_zone_aka_drop(self) {
+    pub fn end_zone_aka_drop(self) {
         self.drop();
     }
 }
@@ -105,10 +111,90 @@ impl Drop for RecursionDetectionZoneGuard {
     }
 }
 
+/// not meant to be accessible by caller
+#[derive(Debug)]
+struct StuffAboutLocation {
+    //this is 1 or more while in the zone
+    //if it's more than 1 it's currently recursing and recursion started from within the zone
+    times_visited_currently: u64,
+
+    //a 1 on this means normal execution
+    //a 2+ means recursed this many times minus 1
+    max_times_visited_ever: u64,
+}
+
+//impl PartialEq for StuffAboutLocation {
+//    fn eq(&self, other: &Self) -> bool {
+//        self.times_visited_currently == other.times_visited_currently
+//    }
+//}
+//
+//impl PartialOrd for StuffAboutLocation {
+//    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+//        self.times_visited_currently.partial_cmp(&other.times_visited_currently)
+//    }
+//}
+
+impl PartialEq<u64> for StuffAboutLocation {
+    fn eq(&self, other: &u64) -> bool {
+        self.times_visited_currently == *other
+    }
+}
+
+impl PartialOrd<u64> for StuffAboutLocation {
+    fn partial_cmp(&self, other: &u64) -> Option<std::cmp::Ordering> {
+        self.times_visited_currently.partial_cmp(other)
+    }
+}
+
+impl fmt::Display for StuffAboutLocation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.times_visited_currently)
+    }
+}
+
+impl std::ops::SubAssign<u64> for StuffAboutLocation {
+    fn sub_assign(&mut self, rhs: u64) {
+        self.times_visited_currently -= rhs;
+        self.update_max();
+    }
+}
+
+
+impl std::ops::AddAssign<u64> for StuffAboutLocation {
+    fn add_assign(&mut self, rhs: u64) {
+        self.times_visited_currently += rhs;
+        self.update_max();
+    }
+}
+
+impl StuffAboutLocation {
+    //FIXME: user can still init the struct with struct initializer syntax and set max to be less
+    //than current(if current is >0), then u'd have to call update_max() from below!
+    pub fn initial() -> StuffAboutLocation {
+        return StuffAboutLocation { times_visited_currently:0, max_times_visited_ever:0 };
+    }
+
+    #[inline(always)]
+    pub fn update_max(&mut self) {
+        if self.times_visited_currently > self.max_times_visited_ever {
+            self.max_times_visited_ever=self.times_visited_currently;
+        }
+    }
+
+    #[allow(dead_code)]
+    #[inline]
+    pub fn get_max_seen(&mut self) -> u64 {
+        self.update_max();
+        self.max_times_visited_ever
+    }
+}
+
 // Thread-local storage for the is_recursing locations
 thread_local! {
-    static PER_THREAD_VISITED_LOCATIONS: RefCell<HashMap<LocationInSourceCode, u64>> = RefCell::new(HashMap::new());
+    static PER_THREAD_VISITED_LOCATIONS: RefCell<HashMap<LocationInSourceCode, StuffAboutLocation>> = RefCell::new(HashMap::new());
     //TODO: unclear why using RefCell instead of Cell
+    //doneTODO: keep a max times visited?
 }
 
 // Macro to mark a location as is_recursing
@@ -156,6 +242,10 @@ macro_rules! been_here_end {
 macro_rules! been_here {
     () => {{ //double curlies, all the way! else 'let' won't work; single {} expects expression,
              //double {{}} is like a normal {} that returns an expression even if it's () unit.
+
+        //XXX: saves the call location and the number of times it was encountered, into a static hashmap,
+        //but the zone in which, if recursing, the number of times encountered is increased can be ended
+        //via dropping the returned guard, which decreases the num.times encountered.
         let location = LocationInSourceCode {
             file: file!(),
             line: line!(),
@@ -163,12 +253,12 @@ macro_rules! been_here {
         };
         let was_visited_before=PER_THREAD_VISITED_LOCATIONS.try_with(|locations| {
             let mut visited_locations = locations.borrow_mut();
-            let counter = visited_locations.entry(location.clone()).or_insert(0);
+            let counter = visited_locations.entry(location.clone()).or_insert(StuffAboutLocation::initial());
             *counter += 1;
             *counter > 1 // Return true if location was previously is_recursing (counter > 1)
         }).unwrap_or(true);
         //XXX: so we say is_recursing=true if failed to acquire lock which means it's likely due to recursion
-        //while inside the try_with() closure, ie. recursion_detection_zone!() is called again while inside the
+        //while inside the try_with() closure, ie. recursion_detection_zone!(start) is called again while inside the
         //above try_with(), how? maybe this is used inside the rust std panic handling code and it
         //panicked inside the try_with() somehow!
         //doneTODO: return the bool and the Option<LocationInSourceCode> so that it can be *counter-=1 later when
@@ -188,7 +278,7 @@ fn display_visited_locations() {
     PER_THREAD_VISITED_LOCATIONS.with(|locations| {
         println!("Visited Locations in thread id='{:?}':", std::thread::current().id());
         for (location, count) in locations.borrow().iter() {
-            println!("{} (Visited {} times)", location, count);
+            println!("{} {:?}", location, count);
         }
     });
 }
@@ -202,26 +292,34 @@ fn recursive_function(level:usize) {
     } else { "".to_string() };
 
     //begins an action block that's protected from infinite recursion:
-    let zone1_guard = recursion_detection_zone!(start); // Mark this location as is_recursing, XXX: until caller' scope ends!
+    let zone1_guard = recursion_detection_zone!(start); // Mark this location as start of zone that needs protection from recursion and the zone ends when manually dropped or until caller' scope ends!
                                 // or manually drop()
-    println!("{}┌zone1, visited? {} level={}", leading_spaces, zone1_guard, level);
+    println!("{}┌zone1, recursing from it? {} level={}", leading_spaces, zone1_guard, level);
     if !zone1_guard.is_recursing {
-        println!("{}{}zone1, recursion starting from level={}",leading_spaces,PIPE,level);
-        recursive_function(level+1);
+        recursion_detection_zone!(end, zone1_guard);//end zone manually
+        let zone2_guard=recursion_detection_zone!(start);
+        println!("{}├zone2, recursing from it? {} level={}", leading_spaces, zone2_guard, level);
+        if !zone2_guard.is_recursing {
+            println!("{}{}zone2, recursion starting from level={}",leading_spaces,PIPE,level);
+            recursive_function(level+1);
+        }
+        recursion_detection_zone!(end, zone2_guard);//explicit tho not needed, if we're relying on end-of-scope drop()
+    } else {
+        //drop(zone1_guard);
+        //zone1_guard.done();
+        //zone1_guard.drop();
+        recursion_detection_zone!(end, zone1_guard);
+        //^(any above) ends scope(aka zone) early, because we can say the action that this 'zone1_guard' was
+        //protecting, has completed successfully.
+        //so then below, any other recursion will allow the above block to execute again as if fresh, because
+        //presumably the recursion wasn't triggered by the above block!
     }
-    //drop(zone1_guard);
-    //zone1_guard.done();
-    //zone1_guard.drop();
-    recursion_detection_zone!(end, zone1_guard);
-    //^(any above) ends scope early, because we can say the action that this 'zone1_guard' was
-    //protecting, has completed successfully.
-    //so then below, any other recursion will allow the above block to execute again as if fresh.
 
     //begin another action block but protects against inf.rec. until the scope ends.
-    let zone2_guard = recursion_detection_zone!(start); // Mark this location as is_recursing, XXX: until caller' scope ends!
-    println!("{}├zone2, visited? {} level={}", leading_spaces,zone2_guard, level);
-    if !zone2_guard.is_recursing {
-        println!("{}{}zone2, recursion starting from level={}",leading_spaces, PIPE,level);
+    let zone3_guard = recursion_detection_zone!(start);
+    println!("{}├zone3, recursing from it? {} level={}", leading_spaces,zone3_guard, level);
+    if !zone3_guard.is_recursing {
+        println!("{}{}zone3, recursion starting from level={}",leading_spaces, PIPE,level);
         recursive_function(level+1);
     }
 
@@ -229,17 +327,17 @@ fn recursive_function(level:usize) {
 }//zone2_guard unvisits here.
 
 fn main() {
-//    let handle = std::thread::spawn(|| {
-//        recursive_function(); // Call recursive_function in a separate thread
-//        display_visited_locations();
-//    });
+    let handle = std::thread::spawn(|| {
+        recursive_function(1); // Call recursive_function in a separate thread
+        display_visited_locations();
+    });
+    // Wait for the spawned thread to finish
+    handle.join().unwrap();
     println!("Recursion test starting.........");
     recursive_function(1);
     println!("Starting again.........");
     recursive_function(1);
     println!("Recursion test done.");
-    // Wait for the spawned thread to finish
-//    handle.join().unwrap();
     for i in 1..=5 {
         let rd_zone_guard=recursion_detection_zone!(start);
         if rd_zone_guard.is_recursing {
