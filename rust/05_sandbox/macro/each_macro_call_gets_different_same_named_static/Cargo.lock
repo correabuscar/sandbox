@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "multipath_backoff3_noheap"
+name = "each_macro_call_gets_different_same_named_static"
 version = "0.1.0"

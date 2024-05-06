@@ -14,8 +14,9 @@ struct LocationWithCounter {
     counter: u32,
 }
 
-// Define the maximum number of threads
-const MAX_NUM_THREADS: usize = 10;
+// Define the maximum number of threads that are concurrently supported in the same zone,
+// before putting new ones on wait until the prev. ones exit the zone.
+const MAX_NUM_THREADS_AT_ONCE: usize = 10;
 
 macro_rules! initialize_thread_location {
     () => {{
