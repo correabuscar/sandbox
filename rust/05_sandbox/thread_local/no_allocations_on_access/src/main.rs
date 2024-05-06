@@ -5,7 +5,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 //static COUNTER_KEY: LocalKey<Cell<usize>> = LocalKey::new(Cell::new(0)); // Allocation happens here (outside function)
 thread_local! {
   static COUNTER: AtomicUsize = AtomicUsize::new(0);
-
+  //apparently doesn't alloc, at least not by using global allocator?! but it should be allocating
+  //somehow at the C level maybe?
 }
 
 fn increment_counter() {
@@ -128,24 +129,27 @@ fn main() {
 //  println!("Thread local counter: {}", count);
 
   // Main thread also increments and prints counter
-    println!("Main started");
-    std::thread::sleep(std::time::Duration::from_secs(1));
+    eprintln!("Main started");
+    let dur=std::time::Duration::from_secs(1);
+    std::thread::sleep(dur);
   increment_counter();
-  println!("Main thread 0+1 counter value: {}", get_counter_value());
+  eprintln!("Main thread 0+1 counter value: {}", get_counter_value());
+    std::thread::sleep(dur);
 
-  let counter_thread = std::thread::spawn(|| {
-    println!("Thread started");
-    std::thread::sleep(std::time::Duration::from_secs(1));
+  let counter_thread = std::thread::spawn(move|| {
+    eprintln!("Thread started(this allocates, apparently)");
+    std::thread::sleep(dur);
     increment_counter();
-    std::thread::sleep(std::time::Duration::from_secs(1));
-    println!("Thread counter +1 value: {}", get_counter_value());
+    std::thread::sleep(dur);
+    eprintln!("Thread counter +1 value: {}", get_counter_value());
   });
+    std::thread::sleep(dur);
 
   // Main thread also increments and prints counter
   increment_counter();
-  println!("Main thread +1 counter value: {}", get_counter_value());
+  eprintln!("Main thread +1 counter value: {}", get_counter_value());
 
   counter_thread.join().unwrap();
-  println!("Main thread counter value after join: {}", get_counter_value());
+  eprintln!("Main thread counter value after join: {}", get_counter_value());
 }
 
