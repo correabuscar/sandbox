@@ -18,7 +18,8 @@ struct NoHeapAllocThreadLocal<const N: usize, T> {
 }
 
 impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
-    const ARRAY_INITIALIZER_REPEAT_VALUE: AtomicU64 = AtomicU64::new(0);
+    const NO_THREAD_ID: u64 = 0; //aka unused slot/element
+    const ARRAY_INITIALIZER_REPEAT_VALUE: AtomicU64 = AtomicU64::new(Self::NO_THREAD_ID);
 
     const fn new() -> Self {
         //const ARRAY_REPEAT_VALUE: Option<T> = None;
@@ -30,22 +31,27 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
         }
     }
 
-    fn acquire(
+    fn acquire_index(
         &self,
-        thread_id: std::num::NonZeroU64,
+        //thread_id: std::num::NonZeroU64,
         timeout: Duration,
     ) -> Option<usize> {
         let start_time = std::time::Instant::now();
-        let expected = 0; //aka unused
-        let new_value: u64 = thread_id.into();
+        let current_thread_id:NonZeroU64 = std::thread::current().id().as_u64();
+        let current_thread_id:u64=current_thread_id.get();
+        assert!(current_thread_id > 0,"impossible");
+        //const expected:u64 = Self::NO_THREAD_ID; //this compile errors!
+        let expected: u64 = Self::NO_THREAD_ID;//but this works, odd.
+        //let new_value: u64 = current_thread_id.into();
+        let new_value: u64 = current_thread_id;
         //if we have already allocated it, return early
-        let mut first_empty: Option<usize> = None; //start of index should be 0
+        let mut index_of_first_empty: Option<usize> = None; //start of index should be 0
         for (index, atomic_value) in self.data.iter().enumerate() {
             let current = atomic_value.load(Ordering::Acquire);
             match current {
-                0 => {
-                    if first_empty.is_none() {
-                        first_empty = Some(index);
+                Self::NO_THREAD_ID => {
+                    if index_of_first_empty.is_none() {
+                        index_of_first_empty = Some(index);
                     }
                     break;
                 }
@@ -60,16 +66,16 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
             } //match
         } //for
 
-        let first_empty:usize=/*shadowed*/ if let Some(index)=first_empty {
+        let index_of_first_empty:usize=/*shadowed*/ if let Some(index)=index_of_first_empty {
             index
         } else {
             //we haven't found any empty, so we try from beginning always
             0
         };
-        assert!(first_empty < N, "we coded it badly");
+        assert!(index_of_first_empty < N, "we coded it badly");
         loop {
             //for (index, atomic_value) in self.data.iter().enumerate() {
-            for index in first_empty..N {
+            for index in index_of_first_empty..N {
                 //attempts to acquire the first one that was found empty,
                 //unless another thread got it already, then we keep trying
                 //TODO: don't get starved
@@ -108,32 +114,32 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
 #[derive(Debug)]
 struct MyType(i32);
 
+const HOW_MANY: usize = 10;
+static FOO: NoHeapAllocThreadLocal<HOW_MANY, MyType> = NoHeapAllocThreadLocal::new();
+
 fn main() {
     println!("Hello thread local without any allocations on heap");
-    const HOW_MANY: usize = 10;
-    let foo: NoHeapAllocThreadLocal<HOW_MANY, MyType> = NoHeapAllocThreadLocal::new();
-    println!("{:?}", foo);
+    println!("{:?}", FOO);
 
-    //let current_thread_id = std::thread::current().id().as_u64();
-    let mut current_thread_id: NonZeroU64 = NonZeroU64::new(1).unwrap();
-    for _i in 1..=HOW_MANY {
-        if let Some(index) =
-            foo.acquire(current_thread_id, std::time::Duration::from_secs(1))
-        {
-            println!(
-                "Slot allocated for thread {} at index: {}",
-                current_thread_id, index
-            );
-        } else {
-            println!("No available slots found for thread {}", current_thread_id);
-        }
-        current_thread_id = NonZeroU64::new(1 + current_thread_id.get()).unwrap();
+    let mut handles = Vec::new();
+    for i in 1..=HOW_MANY*2 {
+        let handle=std::thread::spawn(move || {
+            let current_thread_id = std::thread::current().id().as_u64();
+            if let Some(index) = FOO.acquire_index(std::time::Duration::from_secs((i/2) as u64)) {
+                println!(
+                    "Slot allocated for thread {} at index: {}",
+                    current_thread_id, index
+                );
+            } else {
+                println!("No available slots found for thread {}", current_thread_id);
+            }
+        }); //spawn
+        handles.push(handle);
     }
-    if let Some(index) =
-        foo.acquire(current_thread_id, std::time::Duration::from_secs(1))
-    {
-        println!("Slot allocated for thread at index: {}", index);
-    } else {
-        println!("No available slots found for thread {}", current_thread_id);
+     // Wait for all threads to finish
+    for handle in handles {
+        handle.join().unwrap();
     }
+    println!("{:?}", FOO);
+    println!("All threads have finished");
 }
