@@ -324,7 +324,11 @@ macro_rules! been_here_without_allocating {
         //and have new threads wait if it's full, but with a timeout(5sec?) and if timeout then
         //return what? true that it's recursing or false that it's now? allow user to provide value
         //to be returned if timeout?
-        static mut LOCATION_VAR: LocationWithCounter = LocationWithCounter {
+        static mut LOCATION_VAR: NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter> = NoHeapAllocThreadLocal::new();
+
+        todo!()
+        //This is the location(in source code) of our macro call.
+        LocationWithCounter {
             location: LocationInSourceCode {
                 file: file!(),
                 line: line!(),
