@@ -7,3 +7,4 @@ build = "build.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+no_heap_allocations_thread_local = { path = "../../thread_local/no_heap_allocations_thread_local", version="*" }

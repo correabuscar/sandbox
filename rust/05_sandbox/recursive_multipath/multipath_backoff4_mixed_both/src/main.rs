@@ -112,7 +112,7 @@ impl Drop for RecursionDetectionZoneGuard {
 }
 
 /// not meant to be accessible by caller
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 struct StuffAboutLocation {
     //this is 1 or more while in the zone
     //if it's more than 1 it's currently recursing and recursion started from within the zone
@@ -225,19 +225,22 @@ macro_rules! recursion_detection_zone {
         been_here!()
     };
     (noalloc_start, $timeout:expr, $default_value_on_timeout:expr) => {
-        been_here_without_allocating!($timeout, $default_value_on_timeout);
+        been_here_without_allocating!($timeout, $default_value_on_timeout)
+    };
+    (start noalloc, $timeout:expr, $default_value_on_timeout:expr) => {
+        been_here_without_allocating!($timeout, $default_value_on_timeout)
     };
     (noalloc_begin, $timeout:expr, $default_value_on_timeout:expr) => {
-        been_here_without_allocating!($timeout, $default_value_on_timeout);
+        been_here_without_allocating!($timeout, $default_value_on_timeout)
     };
     (noalloc_new, $timeout:expr, $default_value_on_timeout:expr) => {
-        been_here_without_allocating!($timeout, $default_value_on_timeout);
+        been_here_without_allocating!($timeout, $default_value_on_timeout)
     };
     (noalloc_mark_beginning, $timeout:expr, $default_value_on_timeout:expr) => {
-        been_here_without_allocating!($timeout, $default_value_on_timeout);
+        been_here_without_allocating!($timeout, $default_value_on_timeout)
     };
     (noalloc mark beginning, $timeout:expr, $default_value_on_timeout:expr) => {
-        been_here_without_allocating!($timeout, $default_value_on_timeout);
+        been_here_without_allocating!($timeout, $default_value_on_timeout)
     };
 // -----------
     (end, $guard:ident) => {
@@ -307,6 +310,7 @@ macro_rules! been_here {
     }};
 }
 
+#[derive(Debug, Clone, PartialEq)]
 struct LocationWithCounter {
     location: LocationInSourceCode,
     counter: StuffAboutLocation,
@@ -318,16 +322,17 @@ const MAX_NUM_THREADS_AT_ONCE: usize = 10;
 
 macro_rules! been_here_without_allocating {
     ($timeout:expr, $default_value_on_timeout:expr) => {{
-        //FIXME: well now need this to be thread_local but without allocating, soo... fixed sized
+        //doneFIXME: well now need this to be thread_local but without allocating, soo... fixed sized
         //array which would represent only the currently visiting(counter>0) location paired with
         //thread id number, as one of the elements of the array.
         //and have new threads wait if it's full, but with a timeout(5sec?) and if timeout then
         //return what? true that it's recursing or false that it's now? allow user to provide value
         //to be returned if timeout?
+        use no_heap_allocations_thread_local::NoHeapAllocThreadLocal;
         static LOCATION_VAR: NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter> = NoHeapAllocThreadLocal::new();
 
-        todo!();
-        let mut counter=LOCATION_VAR.get_or_set(
+        //todo!();
+        let loc_of_this_macro_call=
             //This is the location(in source code) of our macro call.
             LocationWithCounter {
                 location: LocationInSourceCode {
@@ -336,22 +341,34 @@ macro_rules! been_here_without_allocating {
                     column: column!(),
                 },
                 counter: StuffAboutLocation::initial(),
-            },
+            };
+        let mut clone=loc_of_this_macro_call.clone();
+        let (was_already_set,lwc)=LOCATION_VAR.get_or_set(
+            loc_of_this_macro_call,
             $timeout
             );
+        if let Some(lwc)=lwc {
+            //let mut lwc=lwc.unwrap();
+            assert_eq!(lwc, &mut clone,"the type of the static is coded wrongly!");
 
-        *counter+=1;
-        // Increment the counter and print the location information
-        //unsafe {
-        //    LOCATION_VAR.counter += 1;
-        //}
+            lwc.counter+=1;
+            let was_visited_before= lwc.counter>1;
+            assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
+            // Increment the counter and print the location information
+            //unsafe {
+            //    LOCATION_VAR.counter += 1;
+            //}
 
-        let guard = RecursionDetectionZoneGuard {
-            is_recursing: was_visited_before,
-            location: unsafe { &mut LOCATION_VAR },
-
-        };
-        guard // Return the guard instance
+            let guard = RecursionDetectionZoneGuard {
+                is_recursing: was_visited_before,
+                location: lwc.location.clone(),//FIXME: clone because it's mutable and want immutable
+            };
+            Some(guard) // Return the guard instance
+        } else {
+            assert!(lwc.is_none());
+            //ie. timeout
+            None
+        }
     }};
 }
 
@@ -422,7 +439,8 @@ fn main() {
     recursive_function(1);
     println!("Recursion test done.");
     for i in 1..=5 {
-        let rd_zone_guard=recursion_detection_zone!(start);
+        let rd_zone_guard=recursion_detection_zone!(start noalloc,std::time::Duration::from_secs(3), true).unwrap();
+        //let rd_zone_guard=recursion_detection_zone!(start);
         if rd_zone_guard.is_recursing {
             unreachable!("i={}",i);
         }
