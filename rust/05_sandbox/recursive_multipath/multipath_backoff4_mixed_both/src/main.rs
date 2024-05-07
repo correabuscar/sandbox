@@ -326,21 +326,25 @@ macro_rules! been_here_without_allocating {
         //to be returned if timeout?
         static LOCATION_VAR: NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter> = NoHeapAllocThreadLocal::new();
 
-        todo!()
-        //This is the location(in source code) of our macro call.
-        LocationWithCounter {
-            location: LocationInSourceCode {
-                file: file!(),
-                line: line!(),
-                column: column!(),
+        todo!();
+        let mut counter=LOCATION_VAR.get_or_set(
+            //This is the location(in source code) of our macro call.
+            LocationWithCounter {
+                location: LocationInSourceCode {
+                    file: file!(),
+                    line: line!(),
+                    column: column!(),
+                },
+                counter: StuffAboutLocation::initial(),
             },
-            counter: StuffAboutLocation::initial(),
-        };
+            $timeout
+            );
 
+        *counter+=1;
         // Increment the counter and print the location information
-        unsafe {
-            LOCATION_VAR.counter += 1;
-        }
+        //unsafe {
+        //    LOCATION_VAR.counter += 1;
+        //}
 
         let guard = RecursionDetectionZoneGuard {
             is_recursing: was_visited_before,
