@@ -7,6 +7,7 @@ use std::num::NonZeroU64;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
+use std::mem::MaybeUninit;
 
 #[derive(Debug)]
 pub struct NoHeapAllocThreadLocal<const N: usize, T> {
@@ -14,8 +15,21 @@ pub struct NoHeapAllocThreadLocal<const N: usize, T> {
     //data: [Mutex<Option<T>>; N],
     //data: [Option<T>; N],
     data: [AtomicU64; N],
-    //values: [MaybeUninit<T>; N],
-    values: [T; N],
+    values: [MaybeUninit<T>; N],//FIXME: ensure that i properly r/w this below
+    //values: [T; N],
+}
+
+impl<const N: usize, T> Drop for NoHeapAllocThreadLocal<N, T> {
+    fn drop(&mut self) {
+        //FIXME: ensure this is properly implemented!
+        // For safety, we should ensure that any partially initialized values are properly dropped
+        for elem in &mut self.values {
+            unsafe {
+                // Manually drop the value if it's initialized
+                elem.as_mut_ptr().drop_in_place();
+            }
+        }
+    }
 }
 
 impl<const N: usize, T/*:std::fmt::Debug + PartialEq + Clone*/> NoHeapAllocThreadLocal<N, T> {
@@ -49,6 +63,10 @@ impl<const N: usize, T/*:std::fmt::Debug + PartialEq + Clone*/> NoHeapAllocThrea
 //        }
 //    }
 
+    //TODO: a fn that drops our value from both fields!
+    pub fn unset(&self) {
+        todo!("teehee");
+    }
 
     /// returns true if it was already set(and thus we just found it again)
     /// returns false if it wasn't already set, and either we found a spot for it or we didn't.

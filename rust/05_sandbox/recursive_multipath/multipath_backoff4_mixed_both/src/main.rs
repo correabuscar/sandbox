@@ -44,25 +44,47 @@ impl fmt::Display for LocationInSourceCode {
 
 // Helper struct to decrement location's in-use counter on Drop
 #[derive(Debug)]
-struct RecursionDetectionZoneGuard {
+struct RecursionDetectionZoneGuard<T> {
     //this bool is only used to hold the return bool
     //so doesn't have to be part of this struct actually.
     is_recursing: bool,
+    //can_heap_alloc:bool,
 
     //this location is used to know which location to unvisit when going out of scope!
-    location: LocationInSourceCode,
+    location: T,//LocationInSourceCode,
 }
 
-impl fmt::Display for RecursionDetectionZoneGuard {
+impl fmt::Display for RecursionDetectionZoneGuard<LocationInSourceCode> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} {})", self.is_recursing, self.location)
     }
 }
 
-impl RecursionDetectionZoneGuard {
+trait UnvisitTrait {
+    fn unvisit(&self);
+}
+//impl<T> UnvisitTrait for RecursionDetectionZoneGuard<T> {
+//    fn unvisit(&self) {
+//        todo!("oh snep");
+//    }
+//}
+
+// Define the maximum number of threads that are concurrently supported in the same zone,
+// before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
+const MAX_NUM_THREADS_AT_ONCE: usize = 10;
+
+impl<T> UnvisitTrait for RecursionDetectionZoneGuard<no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,T>> {
+    fn unvisit(&self) {
+        self.location.unset();
+    }
+}
+
+//impl<T:Drop+std::fmt::Display> RecursionDetectionZoneGuard<T> {
+impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
     //mustn't call this manually
     fn unvisit(&self) {
         //unvisits
+        //if self.can_heap_alloc {
         //TODO: try_with() "This function will still panic!() if the key is uninitialized and the key’s initializer panics."
         //TODO: handle error cases, ie. what if can't borrow, or stuff.
         let res=PER_THREAD_VISITED_LOCATIONS.try_with(|locations| {
@@ -86,7 +108,17 @@ impl RecursionDetectionZoneGuard {
         if let Err(err)=res {
             eprintln!("unvisiting errored, error={}",err);
         }
+        //} else {
+        //    //no heap allocs
+        //    todo!("oh snap, do i wanna do them inside one type both?");
+        //}
     }
+}//impl
+
+impl<T> RecursionDetectionZoneGuard<T> {
+//    fn unvisit(&self) {
+//        todo!("oh snep");
+//    }
 
     #[allow(dead_code)]
     #[inline(always)]
@@ -105,7 +137,7 @@ impl RecursionDetectionZoneGuard {
     }
 }
 
-impl Drop for RecursionDetectionZoneGuard {
+impl<T> Drop for RecursionDetectionZoneGuard<T> {
     fn drop(&mut self) {
         self.unvisit();
     }
@@ -224,22 +256,50 @@ macro_rules! recursion_detection_zone {
     (mark beginning) => {
         been_here!()
     };
-    (noalloc_start, $timeout:expr, $default_value_on_timeout:expr) => {
+// -----------
+    (end, $guard:ident) => {
+        been_here_end!($guard)
+    };
+    (end_zone_aka_drop, $guard:ident) => {
+        been_here_end!($guard)
+    };
+    (done, $guard:ident) => {
+        been_here_end!($guard)
+    };
+    (drop, $guard:ident) => {
+        been_here_end!($guard)
+    };
+    (finish, $guard:ident) => {
+        been_here_end!($guard)
+    };
+    (mark end, $guard:ident) => {
+        been_here_end!($guard)
+    };
+    (mark_end, $guard:ident) => {
+        been_here_end!($guard)
+    };
+    (mark_ending, $guard:ident) => {
+        been_here_end!($guard)
+    };
+    (mark ending, $guard:ident) => {
+        been_here_end!($guard)
+    };
+}
+
+macro_rules! recursion_detection_zone_noalloc {
+    (start, $timeout:expr, $default_value_on_timeout:expr) => {
         been_here_without_allocating!($timeout, $default_value_on_timeout)
     };
-    (start noalloc, $timeout:expr, $default_value_on_timeout:expr) => {
+    (begin, $timeout:expr, $default_value_on_timeout:expr) => {
         been_here_without_allocating!($timeout, $default_value_on_timeout)
     };
-    (noalloc_begin, $timeout:expr, $default_value_on_timeout:expr) => {
+    (new, $timeout:expr, $default_value_on_timeout:expr) => {
         been_here_without_allocating!($timeout, $default_value_on_timeout)
     };
-    (noalloc_new, $timeout:expr, $default_value_on_timeout:expr) => {
+    (mark_beginning, $timeout:expr, $default_value_on_timeout:expr) => {
         been_here_without_allocating!($timeout, $default_value_on_timeout)
     };
-    (noalloc_mark_beginning, $timeout:expr, $default_value_on_timeout:expr) => {
-        been_here_without_allocating!($timeout, $default_value_on_timeout)
-    };
-    (noalloc mark beginning, $timeout:expr, $default_value_on_timeout:expr) => {
+    (mark beginning, $timeout:expr, $default_value_on_timeout:expr) => {
         been_here_without_allocating!($timeout, $default_value_on_timeout)
     };
 // -----------
@@ -271,6 +331,7 @@ macro_rules! recursion_detection_zone {
         been_here_end!($guard)
     };
 }
+
 macro_rules! been_here_end {
     ($guard:ident) => {
         $guard.end_zone_aka_drop();
@@ -301,7 +362,7 @@ macro_rules! been_here {
         //doneTODO: return the bool and the Option<LocationInSourceCode> so that it can be *counter-=1 later when
         //done; i don't think we can do this on Drop because catch_unwind() would trigger it, hmm,
         //maybe this is a good thing? didn't think this thru.
-        let guard = RecursionDetectionZoneGuard {
+        let guard:RecursionDetectionZoneGuard<LocationInSourceCode> = RecursionDetectionZoneGuard {
             is_recursing: was_visited_before,
             location: location,
 
@@ -316,9 +377,6 @@ struct LocationWithCounter {
     counter: StuffAboutLocation,
 }
 
-// Define the maximum number of threads that are concurrently supported in the same zone,
-// before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
-const MAX_NUM_THREADS_AT_ONCE: usize = 10;
 
 macro_rules! been_here_without_allocating {
     ($timeout:expr, $default_value_on_timeout:expr) => {{
@@ -349,7 +407,9 @@ macro_rules! been_here_without_allocating {
             );
         if let Some(lwc)=lwc {
             //let mut lwc=lwc.unwrap();
-            assert_eq!(lwc, &mut clone,"the type of the static is coded wrongly!");
+            if !was_already_set {
+                assert_eq!(lwc, &mut clone,"the type of the static is coded wrongly!");
+            }
 
             lwc.counter+=1;
             let was_visited_before= lwc.counter>1;
@@ -361,7 +421,7 @@ macro_rules! been_here_without_allocating {
 
             let guard = RecursionDetectionZoneGuard {
                 is_recursing: was_visited_before,
-                location: lwc.location.clone(),//FIXME: clone because it's mutable and want immutable
+                location: &LOCATION_VAR,//lwc.location.clone(),//FIXME: clone because it's mutable and want immutable
             };
             Some(guard) // Return the guard instance
         } else {
@@ -439,7 +499,7 @@ fn main() {
     recursive_function(1);
     println!("Recursion test done.");
     for i in 1..=5 {
-        let rd_zone_guard=recursion_detection_zone!(start noalloc,std::time::Duration::from_secs(3), true).unwrap();
+        let rd_zone_guard=recursion_detection_zone_noalloc!(start,std::time::Duration::from_secs(3), true).unwrap();
         //let rd_zone_guard=recursion_detection_zone!(start);
         if rd_zone_guard.is_recursing {
             unreachable!("i={}",i);
