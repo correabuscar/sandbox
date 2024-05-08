@@ -8,41 +8,78 @@ use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 use std::mem::MaybeUninit;
+use std::cell::RefCell;
 
 #[derive(Debug)]
 pub struct NoHeapAllocThreadLocal<const N: usize, T> {
-    //data: [Option<Mutex<T>>; N],
-    //data: [Mutex<Option<T>>; N],
-    //data: [Option<T>; N],
-    data: [AtomicU64; N],
-    values: [MaybeUninit<T>; N],//FIXME: ensure that i properly r/w this below
-    //values: [T; N],
+    //create 3 static arrays of size N, preallocated, presumably on stack, but depends on caller doesn't it!
+    before: [AtomicU64; N],
+    values: [MaybeUninit<RefCell<T>>; N],//FIXME: ensure that i properly r/w this below
+    after: [AtomicU64; N],
 }
+
+/* FALSE(chatgpt):" RefCell does use heap allocation internally to manage its borrow checking. It uses dynamic borrowing rules at runtime rather than static borrowing rules enforced by the Rust compiler. This dynamic borrowing is implemented through reference counting and interior mutability, which involves heap allocation for the reference count and the data being managed. This allows RefCell to provide runtime borrow checking and interior mutability without violating Rust's borrowing rules." - chatgpt 3.5
+ * ^ apparely a lie because I've found this (and Gemini) that says no heap alloc: https://users.rust-lang.org/t/is-refcell-allocated-in-the-heap/9173/2
+ * (true):"RefCell does not allocate, but it contains an additional "borrow state" indicator (one word in size) along with the data.
+
+At runtime each borrow causes a modification/check of the refcount." -src: https://doc.rust-lang.org/1.30.0/book/first-edition/choosing-your-guarantees.html#cost-2
+ */
 
 impl<const N: usize, T> Drop for NoHeapAllocThreadLocal<N, T> {
     fn drop(&mut self) {
+        //TODO: can this be called concurrently? then we may have a problem.
+        //TODO: can this be called by one thread while another one tries to set a value?!
         //FIXME: ensure this is properly implemented!
-        // For safety, we should ensure that any partially initialized values are properly dropped
-        for elem in &mut self.values {
-            unsafe {
-                // Manually drop the value if it's initialized
-                elem.as_mut_ptr().drop_in_place();
+        for (index, _elem) in &mut self.values.iter().enumerate() {
+            //match self.after[index].compare_exchange(what_was,
+
+            //We don't know what thread id was there before, to compare_exchange()
+            let was_set=Self::NO_THREAD_ID != self.after[index].load(Ordering::Release);
+            self.after[index].store(Self::NO_THREAD_ID, Ordering::Release);
+            if was_set {
+                // Calling this when the content is not yet fully initialized causes undefined behavior.
+                unsafe { self.values[index].assume_init_drop(); }
             }
+            self.before[index].store(Self::NO_THREAD_ID, Ordering::Release);
         }
+        drop(self.after);
+        drop(self.values);
+        drop(self.before);
     }
 }
 
-impl<const N: usize, T/*:std::fmt::Debug + PartialEq + Clone*/> NoHeapAllocThreadLocal<N, T> {
+//impl<const N: usize, T> Drop for NoHeapAllocThreadLocal<N, T> {
+//    fn drop(&self) {
+//        self.unset();
+//    }
+//}
+
+//impl<const N: usize, T/*:std::fmt::Debug + PartialEq + Clone*/> NoHeapAllocThreadLocal<N, T> {
+impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
     const NO_THREAD_ID: u64 = 0; //aka unused slot/element
     const ARRAY_INITIALIZER_REPEAT_VALUE: AtomicU64 = AtomicU64::new(Self::NO_THREAD_ID);
 
+    // this const fn gets computed at compile time.
     pub const fn new() -> Self {
-        //const ARRAY_REPEAT_VALUE: Option<T> = None;
-        //const ARRAY_REPEAT_VALUE: Mutex<Option<T>> = Mutex::new(None);
+        let mut index = 0;
+        /* "This line initializes each element of the values array with uninitialized memory and then assumes that the uninitialized memory represents valid instances of RefCell<T>. This is done by calling assume_init()." */
+        //let mut values: [MaybeUninit<RefCell<T>>; N] = unsafe { MaybeUninit::uninit().assume_init() };
+        /* "After this initialization, the values array contains elements that are zeroed out, but they are not valid instances of RefCell<T>. They are simply zeroed memory." */
+        let mut values: [MaybeUninit<RefCell<T>>; N] = unsafe { std::mem::zeroed() };
+
+        // Use while loop for initialization
+        while index < N {
+            // Initialize each element with MaybeUninit::zeroed()
+            values[index] = MaybeUninit::uninit();
+            index += 1;
+        }
+
         Self {
-            //data: unsafe { std::mem::zeroed() }, //[None; N], // that fails needed T:Copy
-            data: [Self::ARRAY_INITIALIZER_REPEAT_VALUE; N],
-            values: unsafe { std::mem::zeroed() }, //[None; N], // that fails needed T:Copy
+            before: [Self::ARRAY_INITIALIZER_REPEAT_VALUE; N],
+            //In uninitialized state initially, these will never be read before overwriting with valid T instance first! on a per element basis!
+            //values: unsafe { std::mem::zeroed() },//good! //[None; N], // that fails needed T:Copy
+            values,
+            after: [Self::ARRAY_INITIALIZER_REPEAT_VALUE; N],
         }
     }
 
@@ -65,8 +102,51 @@ impl<const N: usize, T/*:std::fmt::Debug + PartialEq + Clone*/> NoHeapAllocThrea
 
     //TODO: a fn that drops our value from both fields!
     pub fn unset(&self) {
-        todo!("teehee");
+        if let Some((index,_ref_cell))=self.maybe_get_ref_if_set() {
+            let my_tid=get_current_thread_id();
+            let expected=my_tid;
+            let new_value=Self::NO_THREAD_ID;
+            match self.after[index].compare_exchange(expected,new_value,Ordering::Release, Ordering::Acquire) {
+                Ok(prev_val) => {
+                    assert_eq!(prev_val, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1)");
+                    drop(self.values[index]);
+                    self.values[index]=MaybeUninit::uninit();
+                    match self.before[index].compare_exchange(expected,new_value, Ordering::Release, Ordering::Acquire) {
+                        Ok(prev_val) => {
+                            assert_eq!(prev_val, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(2)");
+                            //ok, successfully unset that, in 3 thread-safe steps.
+                            //fall thru
+                        },
+                        Err(prev_val) => {
+                            assert_ne!(prev_val, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(3)");
+                            panic!("This should not have happened, something's broken in our code logic(1)");
+                        }
+                    }//match
+                },
+                Err(prev_val) => {
+                    assert_ne!(prev_val, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(4)");
+                    //unless our current thread calls this unset() and a fn. that sets somehow concurrently, this shouldn't happen! like the set fn would happen between the 'maybe' and 'compare' from above, like if get_current_thread_id() panics for example.
+                    panic!("This should not have happened, something's broken in our code logic(2)");
+                },
+            }//match
+
+        }//if
+        //else, it was already unset.
     }
+    pub fn maybe_get_ref_if_set(&self) -> Option<(usize,&RefCell<T>)> {
+        let our_current_tid: u64 = get_current_thread_id();
+        for (index, atomic_value) in self.after.iter().enumerate() {
+            //TODO: fix the orderings, if they're too strict.
+            let thread_id_at_index = atomic_value.load(Ordering::Acquire);
+            if our_current_tid == thread_id_at_index {
+                //let value_ptr = unsafe { self.values.as_ptr().offset(index as isize) as *mut T};
+                //let mut_ref_to_value=unsafe { &mut *value_ptr };
+                let current_val=unsafe { self.values[index].assume_init_ref() };
+                return Some((index,current_val));
+            }
+        } //for
+        None
+    }//fn
 
     /// returns true if it was already set(and thus we just found it again)
     /// returns false if it wasn't already set, and either we found a spot for it or we didn't.
@@ -147,7 +227,7 @@ impl<const N: usize, T/*:std::fmt::Debug + PartialEq + Clone*/> NoHeapAllocThrea
                         //somehow(like this is used in panic handling code and we've panicked
                         //during the period of time aforementioned).
                         //TODO: don't actually panic anywhere? or maybe expect caller to catch_unwind() ?
-                        assert_eq!(what_was, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly");
+                        assert_eq!(what_was, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(5)");
                         // it didn't exist before, we must add it
                         //self.values[index].write(to_val);
                         //self.values[index]=to_val;//cannot assign to `self.values[_]`, which is behind a `&` reference: `self` is a `&` reference, so the data it refers to
@@ -168,7 +248,7 @@ impl<const N: usize, T/*:std::fmt::Debug + PartialEq + Clone*/> NoHeapAllocThrea
                         return (false,Some(mut_ref_to_value));//self.values[index]));
                     }
                     Err(what_was) => {
-                        assert_ne!(what_was, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly");
+                        assert_ne!(what_was, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(6)");
                         if start_time.elapsed() >= timeout {
                             // Timeout reached
                             return (false,None);
@@ -209,6 +289,7 @@ impl<const N: usize, T/*:std::fmt::Debug + PartialEq + Clone*/> NoHeapAllocThrea
 }//impl
 
     pub fn get_current_thread_id() -> u64 {
+        //TODO: here's a question, does this alloc on heap anything, internally?! because that'd be bad.
         let current_thread_id:NonZeroU64 = std::thread::current().id().as_u64();
         let current_thread_id:u64=current_thread_id.get();
         assert!(current_thread_id > 0,"impossible");

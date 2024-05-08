@@ -51,6 +51,7 @@ struct RecursionDetectionZoneGuard<T> {
     //can_heap_alloc:bool,
 
     //this location is used to know which location to unvisit when going out of scope!
+    //it still accesses the global static to make the modifications
     location: T,//LocationInSourceCode,
 }
 
@@ -79,8 +80,9 @@ impl<T> UnvisitTrait for RecursionDetectionZoneGuard<no_heap_allocations_thread_
     }
 }
 
-//impl<T:Drop+std::fmt::Display> RecursionDetectionZoneGuard<T> {
-impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
+impl<T> RecursionDetectionZoneGuard<T> {
+//impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
+
     //mustn't call this manually
     fn unvisit(&self) {
         //unvisits
@@ -88,12 +90,15 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
         //TODO: try_with() "This function will still panic!() if the key is uninitialized and the key’s initializer panics."
         //TODO: handle error cases, ie. what if can't borrow, or stuff.
         let res=PER_THREAD_VISITED_LOCATIONS.try_with(|locations| {
+            //let i:i32=locations;//&RefCell<HashMap<LocationInSourceCode, StuffAboutLocation>>
             //TODO: can this drop() be called again if this panics here? or in some other cases?
             //I think it's more likely drop() won't be called at all in some cases like exit()
             if let Ok(mut locations) = locations.try_borrow_mut() {
+                //let i:i32=locations;//RefMut<'_, HashMap<LocationInSourceCode, StuffAboutLocation>>
                 //println!("!{}",self.location);
                 //display_visited_locations();//this does cause borrow error
                 if let Some(counter) = locations.get_mut(&self.location) {
+                    //let i:i32=counter;//&mut StuffAboutLocation
                     if *counter > 0 {
                         *counter -= 1;
                         //XXX: on purpose not removing from the static list! we might wanna know
@@ -227,6 +232,7 @@ thread_local! {
     static PER_THREAD_VISITED_LOCATIONS: RefCell<HashMap<LocationInSourceCode, StuffAboutLocation>> = RefCell::new(HashMap::new());
     //TODO: unclear why using RefCell instead of Cell
     //doneTODO: keep a max times visited?
+    //XXX: HashMap and thread local itself does heap alloc!
 }
 
 // Macro to mark a location as is_recursing
@@ -369,7 +375,7 @@ macro_rules! been_here {
         };
         guard // Return the guard instance
     }};
-}
+}//macro
 
 #[derive(Debug, Clone, PartialEq)]
 struct LocationWithCounter {
@@ -430,7 +436,7 @@ macro_rules! been_here_without_allocating {
             None
         }
     }};
-}
+}//macro
 
 
 // Function to display the contents of the VisitedLocations hashmap
