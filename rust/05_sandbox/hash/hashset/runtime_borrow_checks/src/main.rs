@@ -38,6 +38,7 @@ fn main() {
 
     let elem_ref = set.get(&MyType(42));
     //XXX: can remove an element while holding a ref to another elem.
+    //normally hashset wouldn't allow this because the returned ref holds whole set as borrowed.
     println!("{:?}", set.get(&MyType(43)));
     set.remove(&MyType(43));
     println!("{:?}", set.get(&MyType(43)));

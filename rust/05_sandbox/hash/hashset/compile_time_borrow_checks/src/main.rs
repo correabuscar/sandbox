@@ -58,8 +58,8 @@ fn main() {
     let mut set = CustomHashSet::new();
     let value1 = MyType(42); // Using MyType wrapper for i32
     let value2 = MyType(43); // Using MyType wrapper for i32
-    set.insert(value1, &42);
-    set.insert(value2, &43);
+    set.insert(value1, &MyType(42));
+    set.insert(value2, &MyType(43));
 
     let elem_ref = set.get(&MyType(42)).unwrap(); // Using MyType wrapper for i32
     set.remove(&MyType(43)); // Using MyType wrapper for i32
