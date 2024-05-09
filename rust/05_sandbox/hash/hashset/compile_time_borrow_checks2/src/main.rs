@@ -54,6 +54,10 @@ where
             println!("{:?}", key);
         }
     }
+    // Method to get a borrow of an element
+    fn get(&self, key: &T) -> Option<&T> {
+        self.data.get_key_value(key).map(|(k, _)| k)
+    }
 }
 
 fn main() {
@@ -65,7 +69,8 @@ fn main() {
     set.insert(a);
     set.insert(b);
 
-        let borrowed_a = MyType { data: 1 };
+        //let borrowed_a = MyType { data: 1 };
+        let borrowed_a = set.get(&MyType { data: 1 });
         //set.remove(&borrowed_a);
         set.remove(&MyType { data: 2 });
         println!("borrowed still: {:?}", borrowed_a);
