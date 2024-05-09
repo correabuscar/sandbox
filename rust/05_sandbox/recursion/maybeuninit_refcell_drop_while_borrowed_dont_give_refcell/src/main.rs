@@ -1,6 +1,6 @@
 //#![feature(stmt_expr_attributes)]
 
-use std::cell::{RefCell,Ref};
+use std::cell::{RefCell,Ref, RefMut};
 use std::mem::MaybeUninit;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::borrow::BorrowMut;
@@ -28,7 +28,7 @@ impl<const N:usize, T> Foo<N,T> {
         }
     }
 
-    fn try_get_or_set(&self, value:T) -> Option<Ref<T>> {
+    fn try_get_or_set(&self, value:T) -> Option<RefMut<T>> {
         let index=N-1;
         #[allow(unused_comparisons)]
         {
@@ -71,7 +71,7 @@ impl<const N:usize, T> Foo<N,T> {
         //let refcell=unsafe { self.values[index].assume_init_ref() };
         let ref_to_refcell=unsafe { self.values[index].assume_init_ref() };
         //return Some(unsafe { self.values[index].assume_init_ref() });
-        return Some(ref_to_refcell.borrow());
+        return Some(ref_to_refcell.borrow_mut());
     }//fn
 
     fn drop_elem(&self) {
@@ -127,16 +127,21 @@ fn main() {
     println!("Hello, world!");
     let inst:Foo<10,MyType>=Foo::new();
     let my=MyType(100);
-    let ref_to_refcell=inst.try_get_or_set(my).unwrap();
+    let mut ref_to_refcell=inst.try_get_or_set(my).unwrap();
     println!("Got {:?}", ref_to_refcell);
-    //ref_to_refcell.borrow_mut();
+    let foo_w=ref_to_refcell.borrow_mut();//no panic, which is ok!
+    //let foo_r=ref_to_refcell.borrow();//no panic, which is ok!
+    foo_w.0=1;//panic, which is good
+    println!("direct access={:?}", foo_w);
+    println!("Still got {:?}", ref_to_refcell);
+    inst.drop_elem();//FIXME: I shouldn't be able to call this while still having outstanding borrows(ie. given out)
+    println!("after dropStill got {:?}", ref_to_refcell);
     let my2=MyType(200);
-    let ref_to_refcell2=inst.try_get_or_set(my2).unwrap();
+    let ref_to_refcell2=inst.try_get_or_set(my2).unwrap();//panics, which is good but not enough
     println!("Got2 {:?}", ref_to_refcell2);
-    inst.drop_elem();
 
     //ref_to_refcell.borrow_mut();//this panics, so it's good
-    ref_to_refcell.borrow();//this doesn't panic, so it's bad
+    //ref_to_refcell.borrow();//this doesn't panic, so it's bad
     //FIXME: well this is very bad! the refcell is still alive and sees a ref to a value of 0
     //so this memory location that's being referenced is now uninited!
     println!("Still got {:?}", ref_to_refcell);
