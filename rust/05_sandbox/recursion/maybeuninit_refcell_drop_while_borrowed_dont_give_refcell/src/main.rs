@@ -28,7 +28,7 @@ impl<const N:usize, T> Foo<N,T> {
         }
     }
 
-    fn try_get_or_set(&self, value:T) -> Option<RefMut<T>> {
+    fn try_get_or_set<'a>(&'a self, value:T) -> Option<RefMut<'a,T>> {
         let index=N-1;
         #[allow(unused_comparisons)]
         {
