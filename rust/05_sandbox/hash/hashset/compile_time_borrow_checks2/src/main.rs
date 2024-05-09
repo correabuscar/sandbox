@@ -1,27 +1,27 @@
 use std::collections::hash_map::RandomState;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::marker::PhantomData;
 use std::fmt::Debug;
 
 // Define the wrapper type MyType<T>
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Hash)]
 struct MyType<T> {
     data: T,
 }
 
 // Implementing Hash for MyType<T> requires Hash for T
-impl<T> Hash for MyType<T>
-where
-    T: Hash,
-{
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.data.hash(state);
-    }
-}
+//impl<T> Hash for MyType<T>
+//where
+//    T: Hash,
+//{
+//    fn hash<H: Hasher>(&self, state: &mut H) {
+//        self.data.hash(state);
+//    }
+//}
 
 // Custom hash set using compile-time borrow checks
 struct CustomHashSet<'a, T> {
-    data: std::collections::HashMap<MyType<T>, (), RandomState>,
+    data: std::collections::HashMap<T, (), RandomState>,
     _marker: PhantomData<&'a T>,
 }
 
@@ -39,12 +39,12 @@ where
     }
 
     // Method to insert an element into the set
-    fn insert(&mut self, element: MyType<T>) {
+    fn insert(&mut self, element: T) {
         self.data.insert(element, ());
     }
 
     // Method to remove an element from the set
-    fn remove(&mut self, element: &MyType<T>) {
+    fn remove(&mut self, element: &T) {
         self.data.remove(element);
     }
 
