@@ -1,0 +1,6 @@
+so the point here is that each element of the vector is independent, so a
+mut borrow of one element doesn't lock the whole vector and disallow other
+elements' borrows.
+
+however, the borrow checks are done at runtime due to RefCell.
+doesn't seem possible at compile-time
