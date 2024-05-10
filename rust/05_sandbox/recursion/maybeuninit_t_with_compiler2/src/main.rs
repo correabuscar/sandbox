@@ -28,7 +28,7 @@ impl<const N:usize, T> Foo<N,T> {
     }
 
     //fn try_get_or_set<'a>(&'a self, value:T) -> Option<RefMut<'a,T>> {
-    fn try_get_or_set<'a>(&'a mut self, value:T) -> Option<&'a mut T> {
+    fn try_get_or_set<'a>(&'a self, value:T) -> Option<&'a T> {
         let index=N-1;
         #[allow(unused_comparisons)]
         {
@@ -46,9 +46,9 @@ impl<const N:usize, T> Foo<N,T> {
                     //this seems to work without needing &mut self:
                     //XXX: it should be ok to mutate this due to self.is_set protecting it from concurrent mutation!
                     //FIXME: the only quesion is, am I doing this mutation right?!
-                    //let value_ptr = unsafe { self.values.as_ptr().offset(index as isize) as *mut T};
-                    //unsafe { *value_ptr=value; }
-                    self.values[index]=value;
+                    let value_ptr = unsafe { self.values.as_ptr().offset(index as isize) as *mut T};
+                    unsafe { *value_ptr=value; }
+                    //self.values[index]=value;
 
                     //now let's mark it as set step3of3:
                     match self.is_set[index].compare_exchange(false, true, Ordering::Release, Ordering::Acquire) {
@@ -74,13 +74,13 @@ impl<const N:usize, T> Foo<N,T> {
         //let ref_to_refcell=unsafe { self.values[index].assume_init_ref() };
         //let value_ptr = unsafe { self.values.as_ptr().offset(index as isize) as *mut T};
         //let a_ref=unsafe { &mut *value_ptr };
-        let a_ref=&mut self.values[index];
+        let a_ref=&self.values[index];
         //let value_ptr = unsafe { self.values.as_ptr().offset(index as isize) as *mut RefCell<T>};
         //return Some(unsafe { self.values[index].assume_init_ref() });
         return Some(a_ref);
     }//fn
 
-    fn try_drop_elem(&mut self) -> Result<(), &'static str> {
+    fn try_drop_elem(&self) -> Result<(), &'static str> {
         let index=N-1;
         #[allow(unused_comparisons)]
         {
@@ -129,28 +129,28 @@ impl<const N:usize, T> Foo<N,T> {
 
 #[derive(Debug)]
 struct MyType(i32);
-static mut INST:Foo<10,MyType>=Foo::new();
+static INST:Foo<10,MyType>=Foo::new();
 
 fn main() -> Result<(),&'static str> {
     println!("Hello, world!");
     //let mut INST:Foo<10,MyType>=Foo::new();
     let my=MyType(100);
-    //let a_ref:&mut MyType;
+    let a_ref:&MyType;
     {
         let ref_to_refcell=INST.try_get_or_set(my).unwrap();
         println!("Got {:?}", ref_to_refcell);
-        let foo_w=ref_to_refcell.borrow_mut();//no panic, which is ok!
+        let foo_w=ref_to_refcell.borrow();//no panic, which is ok!
                                               //let foo_r=ref_to_refcell.borrow();//no panic, which is ok!
                                               //foo_w.0=1;//panic, which is good
         println!("direct access={:?}", foo_w);
         println!("Still got {:?}", ref_to_refcell);
-        //a_ref=ref_to_refcell;
+        a_ref=ref_to_refcell;
         //drop(INST);
     }
     //drop(ref_to_refcell);
     INST.try_drop_elem()?;//FIXME: I shouldn't be able to call this while still having outstanding borrows(ie. given out)
     //println!("after dropStill got {:?}", ref_to_refcell);
-    //println!("after dropStill got {:?}", a_ref);
+    println!("after dropStill got {:?}", a_ref);
     let my2=MyType(200);
     let ref_to_refcell2=INST.try_get_or_set(my2).unwrap();//panics, which is good but not enough
     println!("Got2 {:?}", ref_to_refcell2);
