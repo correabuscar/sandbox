@@ -129,14 +129,15 @@ impl<const N:usize, T> Foo<N,T> {
 
 #[derive(Debug)]
 struct MyType(i32);
+static mut INST:Foo<10,MyType>=Foo::new();
 
 fn main() -> Result<(),&'static str> {
     println!("Hello, world!");
-    let mut inst:Foo<10,MyType>=Foo::new();
+    //let mut INST:Foo<10,MyType>=Foo::new();
     let my=MyType(100);
     //let a_ref:&mut MyType;
     {
-        let ref_to_refcell=inst.try_get_or_set(my).unwrap();
+        let ref_to_refcell=INST.try_get_or_set(my).unwrap();
         println!("Got {:?}", ref_to_refcell);
         let foo_w=ref_to_refcell.borrow_mut();//no panic, which is ok!
                                               //let foo_r=ref_to_refcell.borrow();//no panic, which is ok!
@@ -144,14 +145,14 @@ fn main() -> Result<(),&'static str> {
         println!("direct access={:?}", foo_w);
         println!("Still got {:?}", ref_to_refcell);
         //a_ref=ref_to_refcell;
-        //drop(inst);
+        //drop(INST);
     }
     //drop(ref_to_refcell);
-    inst.try_drop_elem()?;//FIXME: I shouldn't be able to call this while still having outstanding borrows(ie. given out)
+    INST.try_drop_elem()?;//FIXME: I shouldn't be able to call this while still having outstanding borrows(ie. given out)
     //println!("after dropStill got {:?}", ref_to_refcell);
     //println!("after dropStill got {:?}", a_ref);
     let my2=MyType(200);
-    let ref_to_refcell2=inst.try_get_or_set(my2).unwrap();//panics, which is good but not enough
+    let ref_to_refcell2=INST.try_get_or_set(my2).unwrap();//panics, which is good but not enough
     println!("Got2 {:?}", ref_to_refcell2);
 
     //ref_to_refcell.borrow_mut();//this panics, so it's good
@@ -162,10 +163,10 @@ fn main() -> Result<(),&'static str> {
     println!("Still Got2 {:?}", ref_to_refcell2);
 
     let my3=MyType(33);
-//    let ref_to_refcell3=inst.try_get_or_set(my3).unwrap();
+//    let ref_to_refcell3=INST.try_get_or_set(my3).unwrap();
   //  println!("Got3 {:?}", ref_to_refcell3);
     let my4=MyType(44);
-//    let ref_to_refcell4=inst.try_get_or_set(my4).unwrap();
+//    let ref_to_refcell4=INST.try_get_or_set(my4).unwrap();
  //   println!("Got4 {:?}", ref_to_refcell4);
 
     //println!("Still got {:?}", ref_to_refcell);
