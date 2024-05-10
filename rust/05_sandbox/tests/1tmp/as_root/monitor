@@ -15,10 +15,16 @@ while true; do
 echo "Monitoring current (re)compilation...C-c is your friend."
 
 libtests=0
+charsperline=0
 while test "$libtests" -ne "6"; do
   libtests="$(find "${dir}/build/" -iname \*libtest\* 2>/dev/null |grep stage1|wc -l)"
   sleep 1 #sometimes it misses the kill because it had nothing new/modded to compile, so this must be low
   echo -n "$libtests"
+  ((charsperline++))
+  if (( charsperline > 200 )); then
+    echo #new line, to ease the load on terminal!
+    charsperline=0
+  fi
 done
 echo
 
@@ -29,10 +35,16 @@ sleep 5 #just in case it kills it too soon!
 pkill --echo -u portage -- 'rustc'
 
 echo "Waiting for next recompilation...C-c if not."
+charsperline=0
 while test "$libtests" -eq "6"; do
   libtests="$(find "${dir}/build/" -iname \*libtest\* 2>/dev/null |grep stage1|wc -l)"
   sleep 1
   echo -n "$libtests"
+  ((charsperline++))
+  if (( charsperline > 200 )); then
+    echo #new line, to ease the load on terminal!
+    charsperline=0
+  fi
 done
 echo
 
