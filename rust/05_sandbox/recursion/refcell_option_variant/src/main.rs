@@ -41,7 +41,7 @@ fn main() {
     my_vector.insert(2, MyType(3));
 
     // Borrow an element
-    let borrowed_element = my_vector.borrow(0);
+    let mut borrowed_element = my_vector.borrow_mut(0);
 
     // Define a value to insert
     let new_value = MyType(42); // Replace 42 with your desired value
@@ -51,8 +51,13 @@ fn main() {
     my_vector.insert(2, new_value);
 
     println!("{:?}", borrowed_element);
+    if let Some(ref mut elem)=*borrowed_element{
+        elem.0=200;
+    }
+    println!("{:?}", borrowed_element);
     drop(borrowed_element);//fails at runtime, w/o this!
     //my_vector.remove(0);//works too
+    println!("{:?}", my_vector);
     my_vector.insert(0, MyType(101));
 
     println!("{:?}", my_vector);
