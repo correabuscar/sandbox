@@ -17,7 +17,7 @@ echo "Monitoring current (re)compilation...C-c is your friend."
 libtests=0
 while test "$libtests" -ne "6"; do
   libtests="$(find "${dir}/build/" -iname \*libtest\* 2>/dev/null |grep stage1|wc -l)"
-  sleep 1 #sometimes it kills it too soon
+  sleep 1 #sometimes it misses the kill because it had nothing new/modded to compile, so this must be low
   echo -n "$libtests"
 done
 echo
