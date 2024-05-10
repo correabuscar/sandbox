@@ -1,27 +1,92 @@
 use std::cell::{Ref, RefCell, RefMut};
 use std::mem::ManuallyDrop;
 
-
+//XXX: just to see if it calls drop() on it if panic!() in happens in certain places!
 #[derive(Debug)]
-struct MyVector<T, const N:usize> {
-    data: [ManuallyDrop<RefCell<Option<T>>>; N],
+struct Wrapper<T:std::fmt::Debug> {
+    inner: RefCell<T>,
 }
 
-impl<T, const N:usize> MyVector<T,N> {
+impl<T:std::fmt::Debug> Wrapper<T> {
+    const fn new(inner: T) -> Self {
+        Wrapper {
+            inner: RefCell::new(inner),
+        }
+    }
+
+    // Add methods to interact with the inner RefCell<T> here
+    fn borrow(&self) -> Ref<T> {
+        self.inner.borrow()
+    }
+
+    fn borrow_mut(&self) -> RefMut<T> {
+        self.inner.borrow_mut()
+    }
+
+}
+
+impl<T:std::fmt::Debug> Drop for Wrapper<T> {
+    fn drop(&mut self) {
+        // Perform any necessary cleanup logic here
+        // For example, you might want to borrow_mut() the RefCell and perform cleanup
+        //self.inner.borrow_mut().cleanup();
+        //drop(self.inner);
+        println!("Dropping {:?}", self);
+    }
+}
+
+
+#[derive(Debug)]
+struct MyVector<T:std::fmt::Debug, const N:usize> {
+    //data: [ManuallyDrop<RefCell<Option<T>>>; N],
+    data: [ManuallyDrop<Wrapper<Option<T>>>; N],
+}
+
+impl<T:std::fmt::Debug, const N:usize> Drop for MyVector<T,N> {
+    fn drop(&mut self) {
+        let mut count:usize=0;
+        for each in &mut self.data {
+            println!("Dropping element with index: {}",count);
+            //drop(*each)
+            // Access the inner RefCell<Option<T>> and then drop it
+            unsafe { ManuallyDrop::drop(each) };//XXX: else they won't be dropped, doh
+            //*each=None;
+            count+=1;
+        }
+        //println!("end of vector drop {:?}", self);//XXX: this prints the stale ones but shouldn't even be working here, kinda, i mean that's why the above is 'unsafe'
+        println!("end of vector drop");
+    }
+}
+
+//the `Drop` trait may only be implemented for local structs, enums, and unions: must be a struct, enum, or union in the current crate
+//impl<T> Drop for RefCell<T> {
+//    fn drop(&mut self) {
+//        println!("Dropping RefCell {:?}", self);
+//        // Perform any necessary cleanup logic here
+//        // For example, you might want to call `take()` to release the inner value
+//        // self.take();
+//    }
+//}
+
+impl<T:std::fmt::Debug, const N:usize> MyVector<T,N> {
     const fn new() -> Self {
         //const ARRAY_REPEAT_VALUE: RefCell<Option<T>> = RefCell::new(None);//can't use generic parameters from outer item: use of generic parameter from outer item
 
-        let mut data:[ManuallyDrop<RefCell<Option<T>>>; N]=unsafe { std::mem::zeroed() };
+        //let mut data:[ManuallyDrop<RefCell<Option<T>>>; N]=unsafe { std::mem::zeroed() };
+        let mut data:[ManuallyDrop<Wrapper<Option<T>>>; N]=unsafe { std::mem::zeroed() };
         //let mut data = core::array::from_fn(|_foo| RefCell::new(None::<T>));//non-const fn
+        //panic!("foo");
         let mut index=0;
         while index < N {
             //std::mem::forget(&data[index]);
             // E0493: destructor of `RefCell<Option<T>>` cannot be evaluated at compile-time value is dropped here
             // problem is, it thinks it needs to drop() the prev value which is the mem::zeroed() one.
-            data[index]=ManuallyDrop::new(RefCell::new(None));
+            data[index]=ManuallyDrop::new(Wrapper::new(None));
             /* "In your case, you're using ManuallyDrop around RefCell<Option<T>>. This means that ManuallyDrop prevents the automatic dropping of the RefCell<Option<T>> instances themselves, but it doesn't prevent the automatic dropping of the T values stored within those RefCell<Option<T>> instances." -chatgpt 3.5 */
             index+=1;
+            //panic!("foo");
         }
+        //panic!("foo");
         MyVector {
             data,//: [ARRAY_REPEAT_VALUE; N],//Default::default(),
         }
@@ -45,21 +110,30 @@ impl<T, const N:usize> MyVector<T,N> {
 }
 
 #[derive(Debug)]
-struct MyType(i32);
+struct MyType(usize);
+
+impl Drop for MyType {
+    fn drop(&mut self) {
+        println!("Dropping MyType({})",self.0);
+    }
+}
+
 
 const VECTOR_SIZE: usize = 5;
 
 fn main() {
     let my_vector = MyVector::<MyType, VECTOR_SIZE>::new();
+    //panic!("foo");
     my_vector.insert(0, MyType(1));
     my_vector.insert(1, MyType(2));
     my_vector.insert(2, MyType(3));
+    //panic!("foo");
 
     // Borrow an element
     let mut borrowed_element = my_vector.borrow_mut(0);
 
     // Define a value to insert
-    let new_value = MyType(42); // Replace 42 with your desired value
+    let new_value = MyType(42);
 
     // Modify or remove other elements
     my_vector.remove(1);
@@ -70,12 +144,11 @@ fn main() {
         elem.0=200;
     }
     println!("{:?}", borrowed_element);
-    drop(borrowed_element);//fails at runtime, w/o this!
+    drop(borrowed_element);
     //my_vector.remove(0);//works too
-    println!("{:?}", my_vector);
+    println!("{:#?}", my_vector);
     my_vector.insert(0, MyType(101));
 
-    println!("{:?}", my_vector);
-    // Continue using borrowed_element
+    println!("{:#?}", my_vector);
 }
 
