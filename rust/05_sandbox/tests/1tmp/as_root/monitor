@@ -24,11 +24,11 @@ while test "$libtests" -ne "6"; do
   if test "$prev" != "$now"; then
     prev="$now"
     echo -n "$libtests"
-  fi
-  ((charsperline++))
-  if (( charsperline > 200 )); then
-    echo #new line, to ease the load on terminal!
-    charsperline=0
+    ((charsperline++))
+    if (( charsperline > 200 )); then
+      echo #new line, to ease the load on terminal!
+      charsperline=0
+    fi
   fi
 done
 echo
@@ -49,11 +49,11 @@ while test "$libtests" -eq "6"; do
   if test "$prev" != "$now"; then
     prev="$now"
     echo -n "$libtests"
-  fi
-  ((charsperline++))
-  if (( charsperline > 200 )); then
-    echo #new line, to ease the load on terminal!
-    charsperline=0
+    ((charsperline++))
+    if (( charsperline > 200 )); then
+      echo #new line, to ease the load on terminal!
+      charsperline=0
+    fi
   fi
 done
 echo
