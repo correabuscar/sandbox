@@ -8,7 +8,7 @@ struct MyVector<T> {
 }
 
 impl<T> MyVector<T> {
-    fn new() -> MyVector<T> {
+    fn new() -> Self {
         MyVector {
             data: Default::default(),
         }
@@ -49,9 +49,12 @@ fn main() {
     // Modify or remove other elements
     my_vector.remove(1);
     my_vector.insert(2, new_value);
-    //my_vector.remove(0);//XXX: fails at runtime, obviously!
 
     println!("{:?}", borrowed_element);
+    drop(borrowed_element);//fails at runtime, w/o this!
+    //my_vector.remove(0);//works too
+    my_vector.insert(0, MyType(101));
+
     println!("{:?}", my_vector);
     // Continue using borrowed_element
 }
