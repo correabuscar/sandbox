@@ -1,23 +1,25 @@
 use std::cell::{Ref, RefCell, RefMut};
+use std::mem::ManuallyDrop;
 
 
 #[derive(Debug)]
 struct MyVector<T, const N:usize> {
-    data: [RefCell<Option<T>>; N],
+    data: [ManuallyDrop<RefCell<Option<T>>>; N],
 }
 
 impl<T, const N:usize> MyVector<T,N> {
     const fn new() -> Self {
         //const ARRAY_REPEAT_VALUE: RefCell<Option<T>> = RefCell::new(None);//can't use generic parameters from outer item: use of generic parameter from outer item
 
-        let mut data:[RefCell<Option<T>>; N]=unsafe { std::mem::zeroed() };
+        let mut data:[ManuallyDrop<RefCell<Option<T>>>; N]=unsafe { std::mem::zeroed() };
         //let mut data = core::array::from_fn(|_foo| RefCell::new(None::<T>));//non-const fn
         let mut index=0;
         while index < N {
-            //std::mem::forget(data[index]);
+            //std::mem::forget(&data[index]);
             // E0493: destructor of `RefCell<Option<T>>` cannot be evaluated at compile-time value is dropped here
             // problem is, it thinks it needs to drop() the prev value which is the mem::zeroed() one.
-            data[index]=RefCell::new(None);
+            data[index]=ManuallyDrop::new(RefCell::new(None));
+            /* "In your case, you're using ManuallyDrop around RefCell<Option<T>>. This means that ManuallyDrop prevents the automatic dropping of the RefCell<Option<T>> instances themselves, but it doesn't prevent the automatic dropping of the T values stored within those RefCell<Option<T>> instances." -chatgpt 3.5 */
             index+=1;
         }
         MyVector {
