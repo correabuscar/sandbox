@@ -1,16 +1,27 @@
 use std::cell::{Ref, RefCell, RefMut};
 
-const VECTOR_SIZE: usize = 5;
 
 #[derive(Debug)]
-struct MyVector<T> {
-    data: [RefCell<Option<T>>; VECTOR_SIZE],
+struct MyVector<T, const N:usize> {
+    data: [RefCell<Option<T>>; N],
 }
 
-impl<T> MyVector<T> {
-    fn new() -> Self {
+impl<T, const N:usize> MyVector<T,N> {
+    const fn new() -> Self {
+        //const ARRAY_REPEAT_VALUE: RefCell<Option<T>> = RefCell::new(None);//can't use generic parameters from outer item: use of generic parameter from outer item
+
+        let mut data:[RefCell<Option<T>>; N]=unsafe { std::mem::zeroed() };
+        //let mut data = core::array::from_fn(|_foo| RefCell::new(None::<T>));//non-const fn
+        let mut index=0;
+        while index < N {
+            //std::mem::forget(data[index]);
+            // E0493: destructor of `RefCell<Option<T>>` cannot be evaluated at compile-time value is dropped here
+            // problem is, it thinks it needs to drop() the prev value which is the mem::zeroed() one.
+            data[index]=RefCell::new(None);
+            index+=1;
+        }
         MyVector {
-            data: Default::default(),
+            data,//: [ARRAY_REPEAT_VALUE; N],//Default::default(),
         }
     }
 
@@ -34,8 +45,10 @@ impl<T> MyVector<T> {
 #[derive(Debug)]
 struct MyType(i32);
 
+const VECTOR_SIZE: usize = 5;
+
 fn main() {
-    let my_vector = MyVector::new();
+    let my_vector = MyVector::<MyType, VECTOR_SIZE>::new();
     my_vector.insert(0, MyType(1));
     my_vector.insert(1, MyType(2));
     my_vector.insert(2, MyType(3));
