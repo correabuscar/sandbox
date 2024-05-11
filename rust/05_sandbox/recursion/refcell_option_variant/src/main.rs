@@ -58,6 +58,27 @@ impl<T:std::fmt::Debug, const N:usize> Drop for MyVector<T,N> {
     }
 }
 
+// Implement Display for MyVector
+impl<T: std::fmt::Debug, const N: usize> fmt::Display for MyVector<T, N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Start building the string representation
+        write!(f, "MyVector {{ ")?;
+
+        // Iterate through each element in the array
+        for (i, item) in self.data.iter().enumerate() {
+            // Print the index and the content of the element
+            write!(f, "[{}: {:?}]", i, item)?;
+            // Add a comma and space unless it's the last element
+            if i < N - 1 {
+                write!(f, ",\n")?;
+            }
+        }
+
+        // End the string representation
+        write!(f, " }}")
+    }
+}
+
 //the `Drop` trait may only be implemented for local structs, enums, and unions: must be a struct, enum, or union in the current crate
 //impl<T> Drop for RefCell<T> {
 //    fn drop(&mut self) {
@@ -101,6 +122,7 @@ impl<T:std::fmt::Debug, const N:usize> MyVector<T,N> {
     }
 
     fn remove(&self, index: usize) {
+        //old one gets auto dropped by rust
         *self.data[index].borrow_mut() = None;
     }
 
@@ -109,7 +131,7 @@ impl<T:std::fmt::Debug, const N:usize> MyVector<T,N> {
     }
 }
 
-#[derive(Debug)]
+//#[derive(Debug)]
 struct MyType(usize);
 
 impl Drop for MyType {
@@ -117,6 +139,34 @@ impl Drop for MyType {
         println!("Dropping MyType({})",self.0);
     }
 }
+
+use std::fmt;
+impl fmt::Display for MyType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Here you define how MyType should be formatted when displayed.
+        // For example, let's say you want to display it as "MyType(value)",
+        // where "value" is the value inside the struct.
+        write!(f, "{}", self.0)
+    }
+}
+impl fmt::Debug for MyType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Here you define how MyType should be formatted when displayed.
+        // For example, let's say you want to display it as "MyType(value)",
+        // where "value" is the value inside the struct.
+        write!(f, "{}", self.0)
+    }
+}
+
+//only traits defined in the current crate can be implemented for types defined outside of the crate: impl doesn't use only types from inside the current crate
+//impl fmt::Display for Option<MyType> {
+//    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//        match self {
+//            Some(inner) => write!(f, "{}", inner),
+//            None => write!(f, "None"),
+//        }
+//    }
+//}
 
 
 const VECTOR_SIZE: usize = 5;
@@ -129,6 +179,7 @@ fn main() {
     my_vector.insert(2, MyType(3));
     //panic!("foo");
 
+    println!("{}", my_vector);
     // Borrow an element
     let mut borrowed_element = my_vector.borrow_mut(0);
 
@@ -137,18 +188,20 @@ fn main() {
 
     // Modify or remove other elements
     my_vector.remove(1);
+    my_vector.remove(1);//no bad effects
     my_vector.insert(2, new_value);
 
-    println!("{:?}", borrowed_element);
+    println!("{}", my_vector);
+    println!("borrowed is:{:?}", borrowed_element);
     if let Some(ref mut elem)=*borrowed_element{
         elem.0=200;
     }
-    println!("{:?}", borrowed_element);
+    println!("borrowed is:{:?}", borrowed_element);
     drop(borrowed_element);
     //my_vector.remove(0);//works too
-    println!("{:#?}", my_vector);
+    println!("{}", my_vector);
     my_vector.insert(0, MyType(101));
 
-    println!("{:#?}", my_vector);
+    println!("{}", my_vector);
 }
 
