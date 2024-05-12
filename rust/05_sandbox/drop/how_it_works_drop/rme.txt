@@ -1,0 +1,8 @@
+all 3 variants are dropped in same order due to hierarchy being:
+parent
+\- inner1
+\- inner2
+
+- no matter when either of the 2(parent vs inners) were created
+- but since the 2 inners are at same level, their order, between them matters on
+which inner's dropped first.

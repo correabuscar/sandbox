@@ -1,0 +1,27 @@
+Example1:
+Creating Parent
+Creating Inner: Inner 1i
+Creating Inner: Inner 2i
+Dropping Parent
+Dropping Inner: Inner 1i
+Dropping Inner: Inner 2i
+Example2:
+Creating Inner: New Inner 1
+Creating Inner: New Inner 2
+Creating Parent
+Dropping Parent
+Dropping Inner: New Inner 1
+Dropping Inner: New Inner 2
+Example3:
+Creating Parent
+Creating Inner: Inner 1i
+Creating Inner: Inner 2i
+Creating Inner: New Inner 1
+Dropping Inner: Inner 1i
+Creating Inner: New Inner 2
+Dropping Inner: Inner 2i
+Exiting inner scope
+Dropping Parent
+Dropping Inner: New Inner 1
+Dropping Inner: New Inner 2
+Exiting main scope
