@@ -1,0 +1,28 @@
+Example1:
+Creating Parent
+Creating Inner: Inner 2i
+Creating Inner: Inner 1i
+Dropping Parent, manually dropping begins:
+Dropping Inner: Inner 2i
+Dropping Inner: Inner 1i
+Dropping Parent done manually dropping
+Example2:
+Creating Inner: New Inner 2
+Creating Inner: New Inner 1
+Creating Parent
+Dropping Parent, manually dropping begins:
+Dropping Inner: New Inner 2
+Dropping Inner: New Inner 1
+Dropping Parent done manually dropping
+Example3:
+Creating Parent
+Creating Inner: Inner 2i
+Creating Inner: Inner 1i
+Creating Inner: New Inner 2
+Creating Inner: New Inner 1
+Exiting inner scope
+Dropping Parent, manually dropping begins:
+Dropping Inner: New Inner 2
+Dropping Inner: New Inner 1
+Dropping Parent done manually dropping
+Exiting main scope

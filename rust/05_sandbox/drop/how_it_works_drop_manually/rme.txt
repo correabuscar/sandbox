@@ -1,0 +1,4 @@
+manually drop the fields
+
+but notice how if replacing the old ones directly, the old ones don't get
+dropped, due to ManuallyDrop which means, they're leaked?!
