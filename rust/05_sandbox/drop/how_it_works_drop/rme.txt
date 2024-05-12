@@ -4,5 +4,11 @@ parent
 \- inner2
 
 - no matter when either of the 2(parent vs inners) were created
-- but since the 2 inners are at same level, their order, between them matters on
-which inner's dropped first.
+- and the order of the inner fields creation doesn't matter for their drop
+  order, they're dropped in field order, unlike local vars which are dropped
+  in reverse order
+see: https://doc.rust-lang.org/std/ops/trait.Drop.html#drop-order
+"For structs, it’s the same order that they’re declared: first one, then two. If you’d like to try this yourself, you can modify HasDrop above to contain some data, like an integer, and then use it in the println! inside of Drop. This behavior is guaranteed by the language.
+
+Unlike for structs, local variables are dropped in reverse order:"
+

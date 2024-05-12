@@ -26,8 +26,8 @@ impl Parent {
     fn new() -> Self {
         println!("Creating Parent");
         Parent {
+            inner2: Inner::new("Inner 2i"),//order here doesn't matter for dropping
             inner1: Inner::new("Inner 1i"),
-            inner2: Inner::new("Inner 2i"),
         }
     }
     fn new2(i1:Inner, i2:Inner) -> Self {
@@ -53,9 +53,9 @@ fn main() {
         }
         println!("Example2:");
         {
-            //the order of the inners matter when dropping them
-            let inner1 = Inner::new("New Inner 1");
+            //the order of the inners creation does not matter when dropping them, they're dropped in field order
             let inner2 = Inner::new("New Inner 2");
+            let inner1 = Inner::new("New Inner 1");
             //but it doesn't matter which parent/inners were created first
             //in either of the 3 examples in main()
             let mut parent = Parent::new2(inner1, inner2);
@@ -63,8 +63,9 @@ fn main() {
         println!("Example3:");
         let mut parent = Parent::new();
         // Set inner fields to new Inner objects
-        parent.inner1 = Inner::new("New Inner 1");
+        //drop of prev. values matter here only because of which one gets replaced first!
         parent.inner2 = Inner::new("New Inner 2");
+        parent.inner1 = Inner::new("New Inner 1");
         println!("Exiting inner scope");
     }
     println!("Exiting main scope");
