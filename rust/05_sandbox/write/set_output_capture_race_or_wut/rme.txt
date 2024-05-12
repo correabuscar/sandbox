@@ -1,0 +1,4 @@
+no race here.
+yeah this is good, i'm not sure why I thought it might be wrong
+
+one of the *.diff would be required to can compile tho, ie. rust needs to be modified.

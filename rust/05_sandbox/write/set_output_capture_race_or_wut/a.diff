@@ -1,0 +1,12 @@
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/io/stdio.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/io/stdio.rs
++++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/io/stdio.rs
+@@ -1012,6 +1012,7 @@ pub fn try_set_output_capture(
+         return Ok(None);
+     }
+     OUTPUT_CAPTURE_USED.store(true, Ordering::Relaxed);
++    crate::thread::sleep(crate::time::Duration::from_secs(2));
+     OUTPUT_CAPTURE.try_with(move |slot| slot.replace(sink))
+ }
+ 

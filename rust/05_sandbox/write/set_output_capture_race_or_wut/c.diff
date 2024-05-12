@@ -1,0 +1,86 @@
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/io/stdio.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/io/stdio.rs
++++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/io/stdio.rs
+@@ -36,6 +36,9 @@ thread_local! {
+ /// the same thread*. Within the same thread, things always have a perfectly
+ /// consistent order. So Ordering::Relaxed is fine.
+ static OUTPUT_CAPTURE_USED: AtomicBool = AtomicBool::new(false);
++thread_local! {
++    static SOME_PRINT_DELAY_DURATION: Cell<crate::time::Duration> = Cell::new(crate::time::Duration::from_millis(300));
++}
+ 
+ /// A handle to a raw instance of the standard input stream of this process.
+ ///
+@@ -1012,6 +1015,40 @@ pub fn try_set_output_capture(
+         return Ok(None);
+     }
+     OUTPUT_CAPTURE_USED.store(true, Ordering::Relaxed);
++    //crate::thread::sleep(crate::time::Duration::from_secs(2));
++    OUTPUT_CAPTURE.try_with(move |slot| slot.replace(sink))
++}
++
++#[unstable(
++    feature = "internal_output_capture",
++    reason = "this function is meant for use in the test crate \
++        and may disappear in the future",
++    issue = "none"
++)]
++#[doc(hidden)]
++pub fn set_output_capture2(sink: Option<LocalStream>, delay: crate::time::Duration) -> Option<LocalStream> {
++    try_set_output_capture2(sink, delay).expect(
++        "cannot access a Thread Local Storage value \
++         during or after destruction",
++    )
++}
++#[unstable(
++    feature = "internal_output_capture",
++    reason = "this function is meant for use in the test crate \
++    and may disappear in the future",
++    issue = "none"
++)]
++#[doc(hidden)]
++pub fn try_set_output_capture2(
++    sink: Option<LocalStream>, delay: crate::time::Duration,
++) -> Result<Option<LocalStream>, AccessError> {
++    if sink.is_none() && !OUTPUT_CAPTURE_USED.load(Ordering::Relaxed) {
++        // OUTPUT_CAPTURE is definitely None since OUTPUT_CAPTURE_USED is false.
++        return Ok(None);
++    }
++    OUTPUT_CAPTURE_USED.store(true, Ordering::Relaxed);
++    SOME_PRINT_DELAY_DURATION.set(delay);
++    //crate::thread::sleep(delay);
+     OUTPUT_CAPTURE.try_with(move |slot| slot.replace(sink))
+ }
+ 
+@@ -1043,13 +1080,15 @@ where
+ }
+ 
+ fn print_to_buffer_if_capture_used(args: fmt::Arguments<'_>) -> bool {
+-    OUTPUT_CAPTURE_USED.load(Ordering::Relaxed)
++    //OUTPUT_CAPTURE_USED.load(Ordering::Relaxed)
++    true
+         && OUTPUT_CAPTURE.try_with(|s| {
+             // Note that we completely remove a local sink to write to in case
+             // our printing recursively panics/prints, so the recursive
+             // panic/print goes to the global sink instead of our local sink.
+             s.take().map(|w| {
+                 let _ = w.lock().unwrap_or_else(|e| e.into_inner()).write_fmt(args);
++                crate::thread::sleep(SOME_PRINT_DELAY_DURATION.get());
+                 s.set(Some(w));
+             })
+         }) == Ok(Some(()))
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/io/mod.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/io/mod.rs
++++ /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/std/src/io/mod.rs
+@@ -319,6 +319,9 @@ pub use self::stdio::{_eprint, _print};
+ #[unstable(feature = "internal_output_capture", issue = "none")]
+ #[doc(no_inline, hidden)]
+ pub use self::stdio::{set_output_capture, try_set_output_capture};
++#[unstable(feature = "internal_output_capture", issue = "none")]
++#[doc(no_inline, hidden)]
++pub use self::stdio::{set_output_capture2, try_set_output_capture2};
+ #[stable(feature = "rust1", since = "1.0.0")]
+ pub use self::{
+     buffered::{BufReader, BufWriter, IntoInnerError, LineWriter},

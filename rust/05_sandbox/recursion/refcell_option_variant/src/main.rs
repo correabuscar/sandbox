@@ -137,6 +137,7 @@ struct MyType(usize);
 impl Drop for MyType {
     fn drop(&mut self) {
         println!("Dropping MyType({})",self.0);
+        //panic!();//for tests, see the stack
     }
 }
 
