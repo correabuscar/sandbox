@@ -97,7 +97,7 @@ src: https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop */
                     },
                     Err(prev_val) => {
                         assert_ne!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1)");
-                        panic!("this shouldn't have been reached, inconsistency detected there should've been thread id '{}' stored at this index '{}' but it was '{}' instead, OR (todo: check if this is possible here:) some kind of race happened, like one thread called drop() and another called to make a new element for itself, but since the type isn't Send this means it's a static that a thread called drop() on manually while another thread was using it to make a new element...", existing_tid, index, prev_val);
+                        panic!("this shouldn't have been reached, inconsistency detected there should've been thread id='{}' stored at this index='{}' but it was tid='{}' instead, OR (todo: check if this is possible here:) some kind of race happened, like one thread called drop() and another called to make a new element for itself, but since the type isn't Send this means it's a static that a thread called drop() on manually while another thread was using it to make a new element...", existing_tid, index, prev_val);
                     }
             }//match
             index+=1;

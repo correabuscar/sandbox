@@ -38,9 +38,12 @@ fn main() {
                 //works too:
                 //let old:usize=val.clone().unwrap().0;
                 //*val=Some(MyType(old+100));
-                let mut old:MyType=val.clone().unwrap();
-                old.inc(100);
-                *val=Some(old);
+                //let mut old:MyType=val.clone().unwrap();
+                //old.inc(100);
+                //*val=Some(old);
+                if let Some(inner_t) = val.as_mut() {
+                    inner_t.0+=100;
+                }
                 //i.0+=100;//val.unwrap().0+100;
                 drop(val);
                 std::thread::sleep(std::time::Duration::from_secs(1));
