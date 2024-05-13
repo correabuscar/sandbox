@@ -58,8 +58,8 @@ impl<const N: usize, T> Drop for NoHeapAllocThreadLocal<N, T> {
                         panic!("this shouldn't have been reached, some kind of race happened, like one thread called drop() and another called to make a new element for itself, but since the type isn't Send this means it's a static that a thread called drop() on manually while another thread was using it to make a new element...");
                     }
                 }//match
-            //} else {
-                //wasn't set
+
+                //else wasn't set
                 //this should've already existed then.
                 //self.after[index].store(Self::NO_THREAD_ID, Ordering::Release);
             }//if
@@ -67,18 +67,19 @@ impl<const N: usize, T> Drop for NoHeapAllocThreadLocal<N, T> {
             //step2of3: we drop the previously set value
             //ok even if it wasn't set, the RefCell::new(None) still has to be dropped,
             //we've to drop the RefCell, else nothing else will drop it after.
+            println!("Dropping element at index '{}'", index);//FIXME: remove this
             unsafe { ManuallyDrop::drop(elem) }
             //self.values[index]=unsafe { std::mem::zeroed() };
-                //XXX: wait, why did I need to manually drop? oh it's because of the init: the const fn new() to be 'const fn' and make a new RefCell must not drop the prev. value which was just a mem::zeroed() RefCell not a real one.
-                /* "Manually drops the contained value. This is exactly equivalent to calling ptr::drop_in_place with a pointer to the contained value. As such, unless the contained value is a packed struct, the destructor will be called in-place without moving the value, and thus can be used to safely drop pinned data.
+            //XXX: wait, why did I need to manually drop? oh it's because of the init: the const fn new() to be 'const fn' and make a new RefCell must not drop the prev. value which was just a mem::zeroed() RefCell not a real one.
+            /* "Manually drops the contained value. This is exactly equivalent to calling ptr::drop_in_place with a pointer to the contained value. As such, unless the contained value is a packed struct, the destructor will be called in-place without moving the value, and thus can be used to safely drop pinned data.
 
-If you have ownership of the value, you can use ManuallyDrop::into_inner instead.
-Safety
+               If you have ownership of the value, you can use ManuallyDrop::into_inner instead.
+               Safety
 
-This function runs the destructor of the contained value. Other than changes made by the destructor itself, the memory is left unchanged, and so as far as the compiler is concerned still holds a bit-pattern which is valid for the type T.
+               This function runs the destructor of the contained value. Other than changes made by the destructor itself, the memory is left unchanged, and so as far as the compiler is concerned still holds a bit-pattern which is valid for the type T.
 
-However, this “zombie” value should not be exposed to safe code, and this function should not be called more than once. To use a value after it’s been dropped, or drop a value multiple times, can cause Undefined Behavior (depending on what drop does). This is normally prevented by the type system, but users of ManuallyDrop must uphold those guarantees without assistance from the compiler."
-src: https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop */
+               However, this “zombie” value should not be exposed to safe code, and this function should not be called more than once. To use a value after it’s been dropped, or drop a value multiple times, can cause Undefined Behavior (depending on what drop does). This is normally prevented by the type system, but users of ManuallyDrop must uphold those guarantees without assistance from the compiler."
+               src: https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop */
 //            if was_set {
 //                // Calling this when the content is not yet fully initialized causes undefined behavior.
 //                //unsafe { self.values[index].assume_init_drop(); }

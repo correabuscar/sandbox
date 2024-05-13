@@ -1,3 +1,4 @@
+use std::sync::Arc;
 
 use no_heap_allocations_thread_local::NoHeapAllocThreadLocal;
 use no_heap_allocations_thread_local::get_current_thread_id;
@@ -9,16 +10,23 @@ struct MyType(usize);
 //        self.0+=i;
 //    }
 //}
+impl Drop for MyType {
+    fn drop(&mut self) {
+        println!("Dropping {:?}", self);
+    }
+}
 
 const HOW_MANY: usize = 10;
-static FOO: NoHeapAllocThreadLocal<HOW_MANY, MyType> = NoHeapAllocThreadLocal::new();
+//static FOO: NoHeapAllocThreadLocal<HOW_MANY, MyType> = NoHeapAllocThreadLocal::new();
 
 fn main() {
     println!("Hello thread local without any allocations on heap");
+    let FOO: Arc<NoHeapAllocThreadLocal<HOW_MANY, MyType>> = Arc::new(NoHeapAllocThreadLocal::new());
     println!("{:?}", FOO);
 
     let mut handles = Vec::new();
     for i in 1..=HOW_MANY*2 {
+        let FOO=FOO.clone();
         let handle=std::thread::spawn(move || {
             let current_thread_id = get_current_thread_id();//FOO::get  std::thread::current().id().as_u64();
             //let set_to=MyType(current_thread_id.get() as usize * 10);
@@ -47,8 +55,8 @@ fn main() {
                 val.as_mut().unwrap().0+=i;
                 //i.0+=100;//val.unwrap().0+100;
                 drop(val);
-                std::thread::sleep(std::time::Duration::from_millis(300*i as u64));
-                FOO.unset();
+                //std::thread::sleep(std::time::Duration::from_millis(300*i as u64));
+                //FOO.unset();
             } else {
                 println!("No available slots found for thread {}", current_thread_id);
             }
@@ -60,5 +68,10 @@ fn main() {
         handle.join().unwrap();
     }
     println!("{:?}", FOO);
-    println!("All threads have finished");
+    //let f=FOO.clone();
+    drop(FOO);
+    //Arc::drop(&mut FOO);//won't work, need &mut; and "explicit use of destructor method: explicit destructor calls not allowed"
+    //unsafe { std::mem::ManuallyDrop::drop(&mut FOO) };
+    //println!("{:?}", f);
+    println!("All threads have finished. Main is done!");
 }
