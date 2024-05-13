@@ -39,9 +39,23 @@ impl<const N:usize, T> Foo<N,T> {
         }
     }
 
+    fn get_index_for_current_thread(&self) -> Option<usize> {
+        let index=N-1;//XXX: hardcoded, but ideally it'd find a spot for the current thread to use, or return the prev. found one.
+        #[allow(unused_comparisons)]
+        {
+            assert!(index>=0);
+        }
+        assert!(index<N);
+        return Some(index);
+    }
+
     //fn try_get_or_set<'a>(&'a self, value:T) -> Option<RefMut<'a,T>> {
     fn try_get_or_set<'a>(&'a self, value:T) -> Option<RefMut<'a,Option<T>>> {
-        let index=N-1;
+        let index=self.get_index_for_current_thread();
+        if index.is_none() {
+            return None;
+        }
+        let index=index.unwrap();//safe
         #[allow(unused_comparisons)]
         {
             assert!(index>=0);
@@ -94,7 +108,11 @@ impl<const N:usize, T> Foo<N,T> {
     }//fn
 
     fn try_drop_elem(&self) -> Result<(), &'static str> {
-        let index=N-1;
+        let index=self.get_index_for_current_thread();
+        if index.is_none() {
+            return Err("not yet allocated, no space");
+        }
+        let index=index.unwrap();//safe
         #[allow(unused_comparisons)]
         {
             assert!(index>=0);
