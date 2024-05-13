@@ -51,10 +51,24 @@ impl<const N: usize, T> Drop for NoHeapAllocThreadLocal<N, T> {
                 match self.after[index].compare_exchange(existing_tid, Self::NO_THREAD_ID, Ordering::Release, Ordering::Acquire) {
                     Ok(prev_val) => {
                         assert_eq!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1)");
+                        //fall thru
+                    },
+                    Err(prev_val) => {
+                        assert_ne!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1)");
+                        panic!("this shouldn't have been reached, some kind of race happened, like one thread called drop() and another called to make a new element for itself, but since the type isn't Send this means it's a static that a thread called drop() on manually while another thread was using it to make a new element...");
+                    }
+                }//match
+            //} else {
+                //wasn't set
+                //this should've already existed then.
+                //self.after[index].store(Self::NO_THREAD_ID, Ordering::Release);
+            }//if
 
-                        //step2of3: we drop the previously set value
-                        //we've to drop the RefCell, else nothing else will after.
-                        unsafe { ManuallyDrop::drop(elem) }
+            //step2of3: we drop the previously set value
+            //ok even if it wasn't set, the RefCell::new(None) still has to be dropped,
+            //we've to drop the RefCell, else nothing else will drop it after.
+            unsafe { ManuallyDrop::drop(elem) }
+            //self.values[index]=unsafe { std::mem::zeroed() };
                 //XXX: wait, why did I need to manually drop? oh it's because of the init: the const fn new() to be 'const fn' and make a new RefCell must not drop the prev. value which was just a mem::zeroed() RefCell not a real one.
                 /* "Manually drops the contained value. This is exactly equivalent to calling ptr::drop_in_place with a pointer to the contained value. As such, unless the contained value is a packed struct, the destructor will be called in-place without moving the value, and thus can be used to safely drop pinned data.
 
@@ -65,17 +79,6 @@ This function runs the destructor of the contained value. Other than changes mad
 
 However, this “zombie” value should not be exposed to safe code, and this function should not be called more than once. To use a value after it’s been dropped, or drop a value multiple times, can cause Undefined Behavior (depending on what drop does). This is normally prevented by the type system, but users of ManuallyDrop must uphold those guarantees without assistance from the compiler."
 src: https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop */
-                    },
-                    Err(prev_val) => {
-                        assert_ne!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1)");
-                        panic!("this shouldn't have been reached, some kind of race happened, like one thread called drop() and another called to make a new element for itself");
-                    }
-                }//match
-            //} else {
-                //wasn't set
-                //this should've already existed then.
-                //self.after[index].store(Self::NO_THREAD_ID, Ordering::Release);
-            }
 //            if was_set {
 //                // Calling this when the content is not yet fully initialized causes undefined behavior.
 //                //unsafe { self.values[index].assume_init_drop(); }
@@ -86,7 +89,17 @@ src: https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop */
 //                //unsafe { ManuallyDrop::drop(each) }
 //            }//if
             //step3of3
-            self.before[index].store(Self::NO_THREAD_ID, Ordering::Release);
+            //self.before[index].store(Self::NO_THREAD_ID, Ordering::Release);
+            match self.before[index].compare_exchange(existing_tid,Self::NO_THREAD_ID, Ordering::Release, Ordering::Acquire) {
+                    Ok(prev_val) => {
+                        assert_eq!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1)");
+                        //fall thru
+                    },
+                    Err(prev_val) => {
+                        assert_ne!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1)");
+                        panic!("this shouldn't have been reached, inconsistency detected there should've been thread id '{}' stored at this index '{}' but it was '{}' instead, OR (todo: check if this is possible here:) some kind of race happened, like one thread called drop() and another called to make a new element for itself, but since the type isn't Send this means it's a static that a thread called drop() on manually while another thread was using it to make a new element...", existing_tid, index, prev_val);
+                    }
+            }//match
             index+=1;
         }//for
         //drop(self.after);
