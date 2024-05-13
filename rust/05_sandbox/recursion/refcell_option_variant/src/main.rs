@@ -42,6 +42,10 @@ struct MyVector<T:std::fmt::Debug, const N:usize> {
     data: [ManuallyDrop<Wrapper<Option<T>>>; N],
 }
 
+// XXX: this isn't actually true here, so we're lying, it's not thread-safe! (it would be if we'd be using 2 atomics arrays to restrict access for each index to only a specific thread(done this elsewhere))
+// needed to can be used as a type for an immutable 'static' !
+unsafe impl<T: std::fmt::Debug, const N: usize> Sync for MyVector<T, N> {}
+
 impl<T:std::fmt::Debug, const N:usize> Drop for MyVector<T,N> {
     fn drop(&mut self) {
         let mut count:usize=0;
@@ -129,6 +133,10 @@ impl<T:std::fmt::Debug, const N:usize> MyVector<T,N> {
     fn insert(&self, index: usize, value: T) {
         *self.data[index].borrow_mut() = Some(value);
     }
+
+    //fn unset(&self, index:usize) {
+    //    drop(self.data[index]);
+    //}
 }
 
 //#[derive(Debug)]
@@ -172,6 +180,9 @@ impl fmt::Debug for MyType {
 
 const VECTOR_SIZE: usize = 5;
 
+static A_STATIC:MyVector<MyType, VECTOR_SIZE> = MyVector::new();
+//^ `RefCell<Option<MyType>>` cannot be shared between threads safely: `RefCell<Option<MyType>>` cannot be shared between threads safely
+
 fn main() {
     let my_vector = MyVector::<MyType, VECTOR_SIZE>::new();
     //panic!("foo");
@@ -188,6 +199,7 @@ fn main() {
     let new_value = MyType(42);
 
     // Modify or remove other elements
+    println!("Manually removing 1 element and inserting a 2nd");
     my_vector.remove(1);
     my_vector.remove(1);//no bad effects
     my_vector.insert(2, new_value);

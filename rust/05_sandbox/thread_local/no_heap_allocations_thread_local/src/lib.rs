@@ -7,14 +7,19 @@ use std::num::NonZeroU64;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
-use std::mem::MaybeUninit;
-use std::cell::RefCell;
+//use std::mem::MaybeUninit;
+use std::cell::{Ref, RefCell, RefMut};
+use core::mem::ManuallyDrop;
 
 #[derive(Debug)]
 pub struct NoHeapAllocThreadLocal<const N: usize, T> {
-    //create 3 static arrays of size N, preallocated, presumably on stack, but depends on caller doesn't it!
+    //create 3 static arrays of size N, preallocated, presumably on stack, but depends on type T doesn't it!
+    //we need the 2 atomic arrays because a 'values' element is attached to one specific thread which shouldn't outlive it, or may even get manually dropped by caller, to allow for other thread(s) to use that spot
+    //if 'before' is set, this means the value setting is in progress.
     before: [AtomicU64; N],
-    values: [MaybeUninit<RefCell<T>>; N],//FIXME: ensure that i properly r/w this below
+    //values: [MaybeUninit<RefCell<T>>; N],//FIXME: ensure that i properly r/w this below
+    values: [ManuallyDrop<RefCell<Option<T>>>; N],
+    //if 'after' is set, it means the value has already been set and is thus safe to read
     after: [AtomicU64; N],
 }
 
@@ -29,22 +34,40 @@ impl<const N: usize, T> Drop for NoHeapAllocThreadLocal<N, T> {
     fn drop(&mut self) {
         //TODO: can this be called concurrently? then we may have a problem.
         //TODO: can this be called by one thread while another one tries to set a value?!
+        //i guess since our type aka Self is not Send, or it's a static(never dropped), then only one thread will be dropping it at most.
         //FIXME: ensure this is properly implemented!
         for (index, _elem) in &mut self.values.iter().enumerate() {
+        //for each in &mut self.values {
             //match self.after[index].compare_exchange(what_was,
 
             //We don't know what thread id was there before, to compare_exchange()
             let was_set=Self::NO_THREAD_ID != self.after[index].load(Ordering::Release);
+            //step1of3: we say the value in 'values' wasn't set.
             self.after[index].store(Self::NO_THREAD_ID, Ordering::Release);
+            //step2of3: we drop the previously set value
             if was_set {
                 // Calling this when the content is not yet fully initialized causes undefined behavior.
-                unsafe { self.values[index].assume_init_drop(); }
+                //unsafe { self.values[index].assume_init_drop(); }
+                unsafe { ManuallyDrop::drop(&mut self.values[index]) }
+                //unsafe { ManuallyDrop::drop(each) }
+                //XXX: wait, why did I need to manually drop? oh it's because of the init: the const fn new() to be 'const fn' and make a new RefCell must not drop the prev. value which was just a mem::zeroed() RefCell not a real one.
+                /* "Manually drops the contained value. This is exactly equivalent to calling ptr::drop_in_place with a pointer to the contained value. As such, unless the contained value is a packed struct, the destructor will be called in-place without moving the value, and thus can be used to safely drop pinned data.
+
+If you have ownership of the value, you can use ManuallyDrop::into_inner instead.
+Safety
+
+This function runs the destructor of the contained value. Other than changes made by the destructor itself, the memory is left unchanged, and so as far as the compiler is concerned still holds a bit-pattern which is valid for the type T.
+
+However, this “zombie” value should not be exposed to safe code, and this function should not be called more than once. To use a value after it’s been dropped, or drop a value multiple times, can cause Undefined Behavior (depending on what drop does). This is normally prevented by the type system, but users of ManuallyDrop must uphold those guarantees without assistance from the compiler."
+src: https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop */
             }
+            //step3of3
             self.before[index].store(Self::NO_THREAD_ID, Ordering::Release);
         }
-        drop(self.after);
+        //drop(self.after);
+        //drop the array itself:
         drop(self.values);
-        drop(self.before);
+        //drop(self.before);
     }
 }
 
@@ -61,16 +84,24 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
 
     // this const fn gets computed at compile time.
     pub const fn new() -> Self {
-        let mut index = 0;
         /* "This line initializes each element of the values array with uninitialized memory and then assumes that the uninitialized memory represents valid instances of RefCell<T>. This is done by calling assume_init()." */
         //let mut values: [MaybeUninit<RefCell<T>>; N] = unsafe { MaybeUninit::uninit().assume_init() };
         /* "After this initialization, the values array contains elements that are zeroed out, but they are not valid instances of RefCell<T>. They are simply zeroed memory." */
-        let mut values: [MaybeUninit<RefCell<T>>; N] = unsafe { std::mem::zeroed() };
+        //let mut values: [MaybeUninit<RefCell<T>>; N] = unsafe { std::mem::zeroed() };
+        let mut values:[ManuallyDrop<RefCell<Option<T>>>; N]=unsafe { std::mem::zeroed() };
+        //let mut before= [Self::ARRAY_INITIALIZER_REPEAT_VALUE; N];
 
         // Use while loop for initialization
+        let mut index = 0;
         while index < N {
+            //before[index].store(1,Ordering::Relaxed);
             // Initialize each element with MaybeUninit::zeroed()
-            values[index] = MaybeUninit::uninit();
+            //values[index] = MaybeUninit::uninit();
+
+            // E0493: destructor of `RefCell<Option<T>>` cannot be evaluated at compile-time value is dropped here
+            // problem is, it thinks it needs to drop() the prev value which is the mem::zeroed() one.
+            // this is why we must use ManuallyDrop wrapper to thus tell it to not drop the prev. value.
+            values[index]=ManuallyDrop::new(RefCell::new(None));
             index += 1;
         }
 
@@ -106,11 +137,17 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
             let my_tid=get_current_thread_id();
             let expected=my_tid;
             let new_value=Self::NO_THREAD_ID;
+            //step1of3
             match self.after[index].compare_exchange(expected,new_value,Ordering::Release, Ordering::Acquire) {
                 Ok(prev_val) => {
                     assert_eq!(prev_val, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1)");
-                    drop(self.values[index]);
-                    self.values[index]=MaybeUninit::uninit();
+                    //step2of3
+                    //drop(self.values[index]);
+                    //self.values[index]=MaybeUninit::uninit();
+                    //self.values[index]=unsafe{std::mem::zeroed()};
+                    //ok so we don't remove the RefCell, doh! we only remove the inner value, which will call drop() as needed, even tho the RefCell itself is wrapped into ManuallyDrop, it won't affect its inner held value.
+                    *self.values[index].borrow_mut()=None;
+                    //step3of3
                     match self.before[index].compare_exchange(expected,new_value, Ordering::Release, Ordering::Acquire) {
                         Ok(prev_val) => {
                             assert_eq!(prev_val, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(2)");
@@ -217,16 +254,16 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
                     Ordering::Acquire,
                 ) {
                     Ok(what_was) => {
-                        //FIXME:there's a period of time between the compare_exchange call and until the value
+                        //doneFIXME:there's a period of time between the compare_exchange call and until the value
                         //in values[index] is set(below) during which IF the thread now owning it recurses
                         //(or it somehow gets to read that value),
                         //then it can read the unset(or prev.) value!
                         //so maybe we need something like 2 atomics: one saying it's in progress
-                        //and one saying it's update(the assignment below) is finished;
+                        //and one saying its update(the assignment below) is finished;
                         //and if we encounter the in-progress one before setting it, it means we've recursed
                         //somehow(like this is used in panic handling code and we've panicked
                         //during the period of time aforementioned).
-                        //TODO: don't actually panic anywhere? or maybe expect caller to catch_unwind() ?
+                        //TODO: don't actually panic anywhere? or maybe expect caller to catch_unwind() ? even so, it will call same panic handling code where if we're used we'd cause infinite recursion if we panic anywhere!
                         assert_eq!(what_was, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(5)");
                         // it didn't exist before, we must add it
                         //self.values[index].write(to_val);
