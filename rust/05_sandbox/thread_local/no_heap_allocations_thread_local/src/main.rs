@@ -4,11 +4,11 @@ use no_heap_allocations_thread_local::get_current_thread_id;
 
 #[derive(Debug, Clone, PartialEq)]
 struct MyType(usize);
-impl MyType {
-    fn inc(&mut self, i:usize) {
-        self.0+=i;
-    }
-}
+//impl MyType {
+//    fn inc(&mut self, i:usize) {
+//        self.0+=i;
+//    }
+//}
 
 const HOW_MANY: usize = 10;
 static FOO: NoHeapAllocThreadLocal<HOW_MANY, MyType> = NoHeapAllocThreadLocal::new();
@@ -41,9 +41,10 @@ fn main() {
                 //let mut old:MyType=val.clone().unwrap();
                 //old.inc(100);
                 //*val=Some(old);
-                if let Some(inner_t) = val.as_mut() {
-                    inner_t.0+=100;
-                }
+                //if let Some(inner_t) = val.as_mut() {
+                //    inner_t.0+=100;
+                //}
+                val.as_mut().unwrap().0+=100;
                 //i.0+=100;//val.unwrap().0+100;
                 drop(val);
                 std::thread::sleep(std::time::Duration::from_secs(1));
