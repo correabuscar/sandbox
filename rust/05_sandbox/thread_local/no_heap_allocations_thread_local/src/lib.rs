@@ -50,11 +50,11 @@ impl<const N: usize, T> Drop for NoHeapAllocThreadLocal<N, T> {
             if was_set {
                 match self.after[index].compare_exchange(existing_tid, Self::NO_THREAD_ID, Ordering::Release, Ordering::Acquire) {
                     Ok(prev_val) => {
-                        assert_eq!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1)");
+                        assert_eq!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(12)");
                         //fall thru
                     },
                     Err(prev_val) => {
-                        assert_ne!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1)");
+                        assert_ne!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(11)");
                         panic!("this shouldn't have been reached, some kind of race happened, like one thread called drop() and another called to make a new element for itself, but since the type isn't Send this means it's a static that a thread called drop() on manually while another thread was using it to make a new element...");
                     }
                 }//match
@@ -92,11 +92,11 @@ src: https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop */
             //self.before[index].store(Self::NO_THREAD_ID, Ordering::Release);
             match self.before[index].compare_exchange(existing_tid,Self::NO_THREAD_ID, Ordering::Release, Ordering::Acquire) {
                     Ok(prev_val) => {
-                        assert_eq!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1)");
+                        assert_eq!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(10)");
                         //fall thru
                     },
                     Err(prev_val) => {
-                        assert_ne!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1)");
+                        assert_ne!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(9)");
                         panic!("this shouldn't have been reached, inconsistency detected there should've been thread id='{}' stored at this index='{}' but it was tid='{}' instead, OR (todo: check if this is possible here:) some kind of race happened, like one thread called drop() and another called to make a new element for itself, but since the type isn't Send this means it's a static that a thread called drop() on manually while another thread was using it to make a new element...", existing_tid, index, prev_val);
                     }
             }//match
@@ -172,7 +172,8 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
 
     //doneTODO: a fn that drops our value from all 3 fields!
     pub fn unset(&self) {
-        if let Some((index,mut mut_ref_option_t))=self.maybe_get_mut_ref_if_set() {
+        //if let Some((index,mut mut_ref_option_t))=self.maybe_get_mut_ref_if_set() {
+        if let Some(index)=self.maybe_get_index() {
             let my_tid=get_current_thread_id();
             let expected=my_tid;
             let new_value=Self::NO_THREAD_ID;
@@ -185,12 +186,14 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
                     //self.values[index]=MaybeUninit::uninit();
                     //self.values[index]=unsafe{std::mem::zeroed()};
                     //ok so we don't remove the RefCell, doh! we only remove the inner value, which will call drop() as needed, even tho the RefCell itself is wrapped into ManuallyDrop, it won't affect its inner held value.
+                    let mut mut_ref_option_t=self.values[index].borrow_mut();
                     if mut_ref_option_t.is_some() {
-                        //TODO: does that .borrow_mut() end after the statement?
+                        //nvmTODO: does that .borrow_mut() end after the statement? well it's already borrowed from the 'if let'
                         //assert!(self.values[index].borrow_mut().is_some());
-                        *mut_ref_option_t=None;
+                        *mut_ref_option_t=None;//making this None drops the prev value, automagically.
                         //assert!(self.values[index].borrow_mut().is_none());
                     }
+                    drop(mut_ref_option_t);
                     //step3of3
                     match self.before[index].compare_exchange(expected,new_value, Ordering::Release, Ordering::Acquire) {
                         Ok(prev_val) => {
@@ -227,6 +230,24 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
                 //let current_val=unsafe { self.values[index].assume_init_ref() };
                 let current_val=self.values[index].borrow_mut();
                 return Some((index,current_val));
+            }
+        } //for
+        None
+    }//fn
+    pub fn maybe_get_index<'a>(&'a self) -> Option<usize> {
+        let our_current_tid: u64 = get_current_thread_id();
+        assert_ne!(our_current_tid, Self::NO_THREAD_ID);
+        for (index, atomic_value) in self.after.iter().enumerate() {
+            //TODO: fix the orderings for atomics, if they're too strict.
+            //For example: this here below shouldn't be Acquire because when it was stored it was Release for sure, so Acquire here is re-doing the same thing that was already done, besides, we're not reading the value unless it's our thread.
+            let thread_id_at_index = atomic_value.load(Ordering::Acquire);
+            if our_current_tid == thread_id_at_index {
+                //let value_ptr = unsafe { self.values.as_ptr().offset(index as isize) as *mut T};
+                //let mut_ref_to_value=unsafe { &mut *value_ptr };
+                //let current_val=unsafe { self.values[index].assume_init_ref() };
+                //let current_val=self.values[index].borrow_mut();
+                //return Some((index,current_val));
+                return Some(index);
             }
         } //for
         None

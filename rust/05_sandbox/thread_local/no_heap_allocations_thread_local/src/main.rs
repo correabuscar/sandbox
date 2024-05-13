@@ -44,10 +44,10 @@ fn main() {
                 //if let Some(inner_t) = val.as_mut() {
                 //    inner_t.0+=100;
                 //}
-                val.as_mut().unwrap().0+=100;
+                val.as_mut().unwrap().0+=i;
                 //i.0+=100;//val.unwrap().0+100;
                 drop(val);
-                std::thread::sleep(std::time::Duration::from_secs(1));
+                std::thread::sleep(std::time::Duration::from_millis(300*i as u64));
                 FOO.unset();
             } else {
                 println!("No available slots found for thread {}", current_thread_id);
