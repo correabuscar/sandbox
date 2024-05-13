@@ -42,7 +42,7 @@ fn main() {
                 old.inc(100);
                 *val=Some(old);
                 //i.0+=100;//val.unwrap().0+100;
-                drop(val);
+                //drop(val);
             } else {
                 println!("No available slots found for thread {}", current_thread_id);
             }
