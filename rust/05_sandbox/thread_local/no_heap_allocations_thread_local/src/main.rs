@@ -42,12 +42,12 @@ fn main() {
                 old.inc(100);
                 *val=Some(old);
                 //i.0+=100;//val.unwrap().0+100;
-                //drop(val);
+                drop(val);
+                std::thread::sleep(std::time::Duration::from_secs(1));
+                FOO.unset();
             } else {
                 println!("No available slots found for thread {}", current_thread_id);
             }
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            FOO.unset();
         }); //spawn
         handles.push(handle);
     }
