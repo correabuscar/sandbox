@@ -221,7 +221,8 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
         //else, it was already unset.
     }//fn
 
-    pub fn maybe_get_mut_ref_if_set<'a>(&'a self) -> Option<(usize,RefMut<'a, Option<T>>)> {
+    //pub fn maybe_get_mut_ref_if_set<'a>(&'a self) -> Option<(usize,RefMut<'a, Option<T>>)> {
+    pub fn maybe_get_mut_ref_if_set<'a>(&'a self) -> Option<RefMut<'a, Option<T>>> {
         let our_current_tid: u64 = get_current_thread_id();
         assert_ne!(our_current_tid, Self::NO_THREAD_ID);
         for (index, atomic_value) in self.after.iter().enumerate() {
@@ -233,7 +234,8 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
                 //let mut_ref_to_value=unsafe { &mut *value_ptr };
                 //let current_val=unsafe { self.values[index].assume_init_ref() };
                 let current_val=self.values[index].borrow_mut();
-                return Some((index,current_val));
+                //return Some((index,current_val));
+                return Some(current_val);
             }
         } //for
         None
@@ -298,7 +300,10 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
                     let mut mut_ref_to_value:RefMut<Option<T>>=self.values[index].borrow_mut();
                     if ensure_val {
                         if let Some(what_was)=mut_ref_to_value.as_mut() {
+                            //well, we don't have to check at all, thus we won't have to require T traits!
+                            //if *what_was != to_val { //binary operation `!=` cannot be applied to type `T`: T
                             *what_was=to_val;
+                            //}
                         }
                     }
                     //let current_val=&mut self.values[index];
