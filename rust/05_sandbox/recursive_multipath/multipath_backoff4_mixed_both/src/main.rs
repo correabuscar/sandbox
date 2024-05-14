@@ -122,8 +122,8 @@ impl<T> UnvisitTrait for RecursionDetectionZoneGuard<T> {
     }
 }
 //doneTODO: make this a type alias? NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>
-// Define the maximum number of threads that are concurrently supported in the same zone,
-// before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
+/// Define the maximum number of threads that are concurrently supported in the same zone,
+/// before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
 const MAX_NUM_THREADS_AT_ONCE: usize = 10;
 type NoHeapAllocationsThreadLocalForHere=no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>;
 impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocationsThreadLocalForHere> {
@@ -310,7 +310,45 @@ macro_rules! recursion_detection_zone {
         been_here!()
     };
 // -----------
+    (noalloc start, $timeout:expr, $default_value_on_timeout:expr) => {
+        been_here!($timeout, $default_value_on_timeout)
+    };
+    (noalloc begin, $timeout:expr, $default_value_on_timeout:expr) => {
+        been_here!($timeout, $default_value_on_timeout)
+    };
+    (noalloc new, $timeout:expr, $default_value_on_timeout:expr) => {
+        been_here!($timeout, $default_value_on_timeout)
+    };
+    (noalloc mark_beginning, $timeout:expr, $default_value_on_timeout:expr) => {
+        been_here!($timeout, $default_value_on_timeout)
+    };
+    (noalloc mark beginning, $timeout:expr, $default_value_on_timeout:expr) => {
+        been_here!($timeout, $default_value_on_timeout)
+    };
+// -----------
+    (noalloc start, $timeout:expr) => {
+        been_here!($timeout)
+    };
+    (noalloc begin, $timeout:expr) => {
+        been_here!($timeout)
+    };
+    (noalloc new, $timeout:expr) => {
+        been_here!($timeout)
+    };
+    (noalloc mark_beginning, $timeout:expr) => {
+        been_here!($timeout)
+    };
+    (noalloc mark beginning, $timeout:expr) => {
+        been_here!($timeout)
+    };
+// -----------
     (end, $guard:ident) => {
+        been_here_end!($guard)
+    };
+    (end_zone, $guard:ident) => {
+        been_here_end!($guard)
+    };
+    (end zone, $guard:ident) => {
         been_here_end!($guard)
     };
     (end_zone_aka_drop, $guard:ident) => {
@@ -339,51 +377,51 @@ macro_rules! recursion_detection_zone {
     };
 }
 
-macro_rules! recursion_detection_zone_noalloc {
-    (start, $timeout:expr, $default_value_on_timeout:expr) => {
-        been_here_without_allocating!($timeout, $default_value_on_timeout)
-    };
-    (begin, $timeout:expr, $default_value_on_timeout:expr) => {
-        been_here_without_allocating!($timeout, $default_value_on_timeout)
-    };
-    (new, $timeout:expr, $default_value_on_timeout:expr) => {
-        been_here_without_allocating!($timeout, $default_value_on_timeout)
-    };
-    (mark_beginning, $timeout:expr, $default_value_on_timeout:expr) => {
-        been_here_without_allocating!($timeout, $default_value_on_timeout)
-    };
-    (mark beginning, $timeout:expr, $default_value_on_timeout:expr) => {
-        been_here_without_allocating!($timeout, $default_value_on_timeout)
-    };
-// -----------
-    (end, $guard:ident) => {
-        been_here_end!($guard)
-    };
-    (end_zone_aka_drop, $guard:ident) => {
-        been_here_end!($guard)
-    };
-    (done, $guard:ident) => {
-        been_here_end!($guard)
-    };
-    (drop, $guard:ident) => {
-        been_here_end!($guard)
-    };
-    (finish, $guard:ident) => {
-        been_here_end!($guard)
-    };
-    (mark end, $guard:ident) => {
-        been_here_end!($guard)
-    };
-    (mark_end, $guard:ident) => {
-        been_here_end!($guard)
-    };
-    (mark_ending, $guard:ident) => {
-        been_here_end!($guard)
-    };
-    (mark ending, $guard:ident) => {
-        been_here_end!($guard)
-    };
-}
+//macro_rules! recursion_detection_zone_noalloc {
+//    (start, $timeout:expr, $default_value_on_timeout:expr) => {
+//        been_here_without_allocating!($timeout, $default_value_on_timeout)
+//    };
+//    (begin, $timeout:expr, $default_value_on_timeout:expr) => {
+//        been_here_without_allocating!($timeout, $default_value_on_timeout)
+//    };
+//    (new, $timeout:expr, $default_value_on_timeout:expr) => {
+//        been_here_without_allocating!($timeout, $default_value_on_timeout)
+//    };
+//    (mark_beginning, $timeout:expr, $default_value_on_timeout:expr) => {
+//        been_here_without_allocating!($timeout, $default_value_on_timeout)
+//    };
+//    (mark beginning, $timeout:expr, $default_value_on_timeout:expr) => {
+//        been_here_without_allocating!($timeout, $default_value_on_timeout)
+//    };
+//// -----------
+//    (end, $guard:ident) => {
+//        been_here_end!($guard)
+//    };
+//    (end_zone_aka_drop, $guard:ident) => {
+//        been_here_end!($guard)
+//    };
+//    (done, $guard:ident) => {
+//        been_here_end!($guard)
+//    };
+//    (drop, $guard:ident) => {
+//        been_here_end!($guard)
+//    };
+//    (finish, $guard:ident) => {
+//        been_here_end!($guard)
+//    };
+//    (mark end, $guard:ident) => {
+//        been_here_end!($guard)
+//    };
+//    (mark_end, $guard:ident) => {
+//        been_here_end!($guard)
+//    };
+//    (mark_ending, $guard:ident) => {
+//        been_here_end!($guard)
+//    };
+//    (mark ending, $guard:ident) => {
+//        been_here_end!($guard)
+//    };
+//}
 
 macro_rules! been_here_end {
     ($guard:ident) => {
@@ -422,17 +460,50 @@ macro_rules! been_here {
         };
         guard // Return the guard instance
     }};
-}//macro
-
-#[derive(Debug, Clone, PartialEq)]
-struct LocationWithCounter {
-    location: LocationInSourceCode,
-    counter: StuffAboutLocation,
-}
-
-
-macro_rules! been_here_without_allocating {
+    //TODO: code is duplicated in the following 2 macro branches. This is very bad for keeping things in sync when modifying the code in one of them.
     ($timeout:expr, $default_value_on_timeout:expr) => {{
+        static LOCATION_VAR: NoHeapAllocationsThreadLocalForHere = NoHeapAllocationsThreadLocalForHere::new();
+
+        let loc_of_this_macro_call=
+            //This is the location(in source code) of our macro call.
+            LocationWithCounter {
+                location: LocationInSourceCode {
+                    file: file!(),
+                    line: line!(),
+                    column: column!(),
+                },
+                counter: StuffAboutLocation::initial(),
+            };
+        let mut clone=loc_of_this_macro_call.clone();
+        let (was_already_set,lwc_refmut)=LOCATION_VAR.get_or_set(
+            loc_of_this_macro_call,
+            $timeout,
+            true,
+            );
+        let was_visited_before=if let Some(mut lwc)=lwc_refmut {
+            let lwc=lwc.as_mut().unwrap();
+            assert_eq!(lwc, &mut clone,"the type of the static is coded wrongly!");
+            assert!(lwc.counter>=0);
+            let was_visited_before= lwc.counter>0;
+            lwc.counter+=1;
+            assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
+            //drop(lwc);//it's a ref
+            was_visited_before
+        } else {
+            assert!(lwc_refmut.is_none());
+            drop(lwc_refmut);
+            //ie. timeout
+            fn assert_bool(_: bool) {}
+            assert_bool($default_value_on_timeout);
+            $default_value_on_timeout
+        };
+        let guard = RecursionDetectionZoneGuard {
+            is_recursing: was_visited_before,
+            location: &LOCATION_VAR,
+        };
+        guard // Return the guard instance
+    }};
+    ($timeout:expr) => {{
         //doneFIXME: well now need this to be thread_local but without allocating, soo... fixed sized
         //array which would represent only the currently visiting(counter>0) location paired with
         //thread id number, as one of the elements of the array.
@@ -443,7 +514,6 @@ macro_rules! been_here_without_allocating {
         //static LOCATION_VAR: NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter> = NoHeapAllocThreadLocal::new();
         static LOCATION_VAR: NoHeapAllocationsThreadLocalForHere = NoHeapAllocationsThreadLocalForHere::new();
 
-        //todo!();
         let loc_of_this_macro_call=
             //This is the location(in source code) of our macro call.
             LocationWithCounter {
@@ -480,7 +550,7 @@ macro_rules! been_here_without_allocating {
             //drop(lwc);//it's a ref
             let guard = RecursionDetectionZoneGuard {
                 is_recursing: was_visited_before,
-                location: &LOCATION_VAR,//lwc.location.clone(),//FIXME: clone because it's mutable and want immutable
+                location: &LOCATION_VAR,
             };
             Some(guard) // Return the guard instance
         } else {
@@ -491,6 +561,16 @@ macro_rules! been_here_without_allocating {
         }
     }};
 }//macro
+
+#[derive(Debug, Clone, PartialEq)]
+struct LocationWithCounter {
+    location: LocationInSourceCode,
+    counter: StuffAboutLocation,
+}
+
+
+//macro_rules! been_here_without_allocating {
+//}//macro
 
 
 // Function to display the contents of the VisitedLocations hashmap
@@ -559,7 +639,9 @@ fn main() {
     recursive_function(1);
     println!("Recursion test done.");
     for i in 1..=5 {
-        let rd_zone_guard=recursion_detection_zone_noalloc!(start,std::time::Duration::from_secs(3), true).unwrap();
+        //let rd_zone_guard=recursion_detection_zone!(noalloc start,std::time::Duration::from_secs(3)).unwrap();
+        //let rd_zone_guard=recursion_detection_zone!(noalloc start,3, true);
+        let rd_zone_guard=recursion_detection_zone!(noalloc start,std::time::Duration::from_secs(3), true);
         //let rd_zone_guard=recursion_detection_zone!(start);
         if rd_zone_guard.is_recursing {
             unreachable!("i={}",i);
