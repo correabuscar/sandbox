@@ -72,9 +72,6 @@ trait UnvisitTrait {
 //    }
 //}
 
-// Define the maximum number of threads that are concurrently supported in the same zone,
-// before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
-const MAX_NUM_THREADS_AT_ONCE: usize = 10;
 
 
 impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
@@ -116,7 +113,6 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
         //}
     }
 }//impl
-use no_heap_allocations_thread_local::NoHeapAllocThreadLocal;
 //impl<T> UnvisitTrait for RecursionDetectionZoneGuard<no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,T>> {
 impl<T> UnvisitTrait for RecursionDetectionZoneGuard<T> {
     //E0658: specialization is unstable see issue #31844 <https://github.com/rust-lang/rust/issues/31844> for more information add `#![feature(specialization)]` to the crate attributes to enable
@@ -125,8 +121,12 @@ impl<T> UnvisitTrait for RecursionDetectionZoneGuard<T> {
         unimplemented!("not implemented for this type, you must do it manually");
     }
 }
-//TODO: make this a type alias? NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>
-impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>> {
+//doneTODO: make this a type alias? NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>
+// Define the maximum number of threads that are concurrently supported in the same zone,
+// before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
+const MAX_NUM_THREADS_AT_ONCE: usize = 10;
+type NoHeapAllocationsThreadLocalForHere=no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>;
+impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocationsThreadLocalForHere> {
 //impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
 
     //mustn't call this manually
@@ -436,8 +436,9 @@ macro_rules! been_here_without_allocating {
         //and have new threads wait if it's full, but with a timeout(5sec?) and if timeout then
         //return what? true that it's recursing or false that it's now? allow user to provide value
         //to be returned if timeout?
-        use no_heap_allocations_thread_local::NoHeapAllocThreadLocal;
-        static LOCATION_VAR: NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter> = NoHeapAllocThreadLocal::new();
+        //use no_heap_allocations_thread_local::NoHeapAllocThreadLocal;
+        //static LOCATION_VAR: NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter> = NoHeapAllocThreadLocal::new();
+        static LOCATION_VAR: NoHeapAllocationsThreadLocalForHere = NoHeapAllocationsThreadLocalForHere::new();
 
         //todo!();
         let loc_of_this_macro_call=
