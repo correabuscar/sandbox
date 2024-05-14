@@ -1,3 +1,5 @@
+#![feature(specialization)] //FIXME: do without this!
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::thread_local;
@@ -74,13 +76,8 @@ trait UnvisitTrait {
 // before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
 const MAX_NUM_THREADS_AT_ONCE: usize = 10;
 
-impl<T> UnvisitTrait for RecursionDetectionZoneGuard<no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,T>> {
-    fn unvisit(&self) {
-        self.location.unset();
-    }
-}
 
-impl<T> RecursionDetectionZoneGuard<T> {
+impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
 //impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
 
     //mustn't call this manually
@@ -105,7 +102,7 @@ impl<T> RecursionDetectionZoneGuard<T> {
                         //which points were hit at all. And maybe even add a max-times-hit.
                     } else {
                         //TODO: return Result<> ? but then rename to try_unvisit() ?
-                        panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!", *counter);
+                        panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(1)", *counter);
                     }
                 }
             }
@@ -119,6 +116,52 @@ impl<T> RecursionDetectionZoneGuard<T> {
         //}
     }
 }//impl
+use no_heap_allocations_thread_local::NoHeapAllocThreadLocal;
+//impl<T> UnvisitTrait for RecursionDetectionZoneGuard<no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,T>> {
+impl<T> UnvisitTrait for RecursionDetectionZoneGuard<T> {
+    //E0658: specialization is unstable see issue #31844 <https://github.com/rust-lang/rust/issues/31844> for more information add `#![feature(specialization)]` to the crate attributes to enable
+    default fn unvisit(&self) {
+        //FIXME: make this happen at compile time, and thus require user to impl UnvisitTrait for our struct of any specific T used, but not for the specific T itself, it's for RecursionDetectionZoneGuard<specific_T_here>
+        unimplemented!("not implemented for this type, you must do it manually");
+    }
+}
+//TODO: make this a type alias? NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>
+impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>> {
+//impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
+
+    //mustn't call this manually
+    fn unvisit(&self) {
+        let mut can_dispose:bool=false;
+        {
+            let loc=self.location.maybe_get_mut_ref_if_set();
+            //let i:i32=loc;//`Option<RefMut<'_, Option<LocationWithCounter>>>`
+            if let Some(mut refmut)=loc {
+                //let i:i32=refmut;//`RefMut<'_, Option<LocationWithCounter>>`
+                //so it's already being used
+                if let Some(lwc)=refmut.as_mut() {
+                    //let i:i32=lwc;//`&mut LocationWithCounter`
+                    if lwc.counter > 0 {
+                        lwc.counter-=1;
+                        if lwc.counter == 0 {
+                            can_dispose=true;
+                        }
+                    } else {
+                        panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(2)", lwc.counter);
+                    }
+                }
+                //drop(refmut);
+            } else {
+                //it's not used, can drop it:
+                can_dispose=true;
+            }
+        //drop(loc);//E0382: use of partially moved value: `loc` 
+        }//so, is 'loc' dropped here or what? FIXME
+        if can_dispose {
+            //TODO: test to see if this is ever called!
+            self.location.unset();
+        }
+    }
+}
 
 impl<T> RecursionDetectionZoneGuard<T> {
 //    fn unvisit(&self) {
@@ -143,6 +186,7 @@ impl<T> RecursionDetectionZoneGuard<T> {
 }
 
 impl<T> Drop for RecursionDetectionZoneGuard<T> {
+//impl Drop for RecursionDetectionZoneGuard<&NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>> {
     fn drop(&mut self) {
         self.unvisit();
     }
@@ -407,31 +451,37 @@ macro_rules! been_here_without_allocating {
                 counter: StuffAboutLocation::initial(),
             };
         let mut clone=loc_of_this_macro_call.clone();
-        let (was_already_set,lwc)=LOCATION_VAR.get_or_set(
+        let (was_already_set,lwc_refmut)=LOCATION_VAR.get_or_set(
             loc_of_this_macro_call,
-            $timeout
+            $timeout,
+            true,
             );
-        if let Some(lwc)=lwc {
+        if let Some(mut lwc)=lwc_refmut {
             //let mut lwc=lwc.unwrap();
-            if !was_already_set {
-                assert_eq!(lwc, &mut clone,"the type of the static is coded wrongly!");
-            }
+            //if !was_already_set {
+            //    assert_eq!(lwc, &mut clone,"the type of the static is coded wrongly!");
+            //}
 
+            let lwc=lwc.as_mut().unwrap();
+            assert_eq!(lwc, &mut clone,"the type of the static is coded wrongly!");
+            assert!(lwc.counter>=0);
+            let was_visited_before= lwc.counter>0;
             lwc.counter+=1;
-            let was_visited_before= lwc.counter>1;
             assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
             // Increment the counter and print the location information
             //unsafe {
             //    LOCATION_VAR.counter += 1;
             //}
 
+            //drop(lwc);//it's a ref
             let guard = RecursionDetectionZoneGuard {
                 is_recursing: was_visited_before,
                 location: &LOCATION_VAR,//lwc.location.clone(),//FIXME: clone because it's mutable and want immutable
             };
             Some(guard) // Return the guard instance
         } else {
-            assert!(lwc.is_none());
+            assert!(lwc_refmut.is_none());
+            drop(lwc_refmut);
             //ie. timeout
             None
         }
