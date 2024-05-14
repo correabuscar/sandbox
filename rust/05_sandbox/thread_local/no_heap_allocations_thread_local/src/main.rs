@@ -21,6 +21,7 @@ const HOW_MANY: usize = 10;
 
 fn main() {
     println!("Hello thread local without any allocations on heap");
+    #[allow(non_snake_case)]
     let FOO: Arc<NoHeapAllocThreadLocal<HOW_MANY, MyType>> = Arc::new(NoHeapAllocThreadLocal::new());
     println!("{:?}", FOO);
     {
@@ -47,6 +48,7 @@ fn main() {
 
     let mut handles = Vec::new();
     for i in 1..=HOW_MANY*2 {
+        #[allow(non_snake_case)]
         let FOO=FOO.clone();
         let handle=std::thread::spawn(move || {
             let current_thread_id = get_current_thread_id();//FOO::get  std::thread::current().id().as_u64();

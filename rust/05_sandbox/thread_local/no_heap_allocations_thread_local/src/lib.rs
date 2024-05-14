@@ -8,7 +8,8 @@ use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 //use std::mem::MaybeUninit;
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::{RefCell, RefMut};
+//use std::cell::{Ref, RefCell, RefMut};
 use core::mem::ManuallyDrop;
 
 #[derive(Debug)]
@@ -17,7 +18,7 @@ pub struct NoHeapAllocThreadLocal<const N: usize, T> {
     //we need the 2 atomic arrays because a 'values' element is attached to one specific thread which shouldn't outlive it, or may even get manually dropped by caller, to allow for other thread(s) to use that spot
     //if 'before' is set, this means the value setting is in progress.
     before: [AtomicU64; N],
-    //values: [MaybeUninit<RefCell<T>>; N],//FIXME: ensure that i properly r/w this below
+    //values: [MaybeUninit<RefCell<T>>; N],//nvmFIXME: ensure that i properly r/w this below
     values: [ManuallyDrop<RefCell<Option<T>>>; N],
     //if 'after' is set, it means the value has already been set and is thus safe to read
     after: [AtomicU64; N],
@@ -238,7 +239,7 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
         None
     }//fn
 
-    pub fn maybe_get_index<'a>(&'a self) -> Option<usize> {
+    fn maybe_get_index<'a>(&'a self) -> Option<usize> {
         let our_current_tid: u64 = get_current_thread_id();
         assert_ne!(our_current_tid, Self::NO_THREAD_ID);
         for (index, atomic_value) in self.after.iter().enumerate() {
@@ -260,13 +261,13 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
     /// returns true if it was already set(and thus we just found it again)
     /// returns false if it wasn't already set, and either we found a spot for it or we didn't.
     /// If no slots are available, retry until timeout in which case returns None,
-    /// if success returns a mutable ref to the  just set OR prev.  value
+    /// if success returns a mutable ref to the existing value whether or not it was  just set
     /// Since the value is supposed to be accessible only on current thread, it's not protected or
     /// wrapped into some kind of sync. primitive, so you've direct mutability to it.
     /// Last arg if true makes sure the 'val' is the one that alredy existed, else any existing one is left as it is.
     pub fn get_or_set<'a>(
         &'a self,
-        //FIXME: ensure this value is the one that already exists?
+        //doneFIXME: ensure this value is the one that already exists?
         to_val:T,
         //thread_id: std::num::NonZeroU64,
         timeout: Duration,
@@ -366,6 +367,7 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
 //                        let mut_ref_to_value=unsafe { &mut *value_ptr };
 
                         //step2of3
+                        //FIXME: especially don't panic on borrows here internally, but return a result?
                         let mut mut_ref_to_value=self.values[index].borrow_mut();
                         *mut_ref_to_value=Some(to_val);
                         //step3of3
