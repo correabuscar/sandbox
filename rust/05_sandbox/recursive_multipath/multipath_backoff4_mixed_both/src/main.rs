@@ -343,37 +343,37 @@ macro_rules! recursion_detection_zone {
     };
 // -----------
     (end, $guard:ident) => {
-        been_here_end!($guard)
+        been_here!(end, $guard)
     };
     (end_zone, $guard:ident) => {
-        been_here_end!($guard)
+        been_here!(end, $guard)
     };
     (end zone, $guard:ident) => {
-        been_here_end!($guard)
+        been_here!(end, $guard)
     };
     (end_zone_aka_drop, $guard:ident) => {
-        been_here_end!($guard)
+        been_here!(end, $guard)
     };
     (done, $guard:ident) => {
-        been_here_end!($guard)
+        been_here!(end, $guard)
     };
     (drop, $guard:ident) => {
-        been_here_end!($guard)
+        been_here!(end, $guard)
     };
     (finish, $guard:ident) => {
-        been_here_end!($guard)
+        been_here!(end, $guard)
     };
     (mark end, $guard:ident) => {
-        been_here_end!($guard)
+        been_here!(end, $guard)
     };
     (mark_end, $guard:ident) => {
-        been_here_end!($guard)
+        been_here!(end, $guard)
     };
     (mark_ending, $guard:ident) => {
-        been_here_end!($guard)
+        been_here!(end, $guard)
     };
     (mark ending, $guard:ident) => {
-        been_here_end!($guard)
+        been_here!(end, $guard)
     };
 }
 
@@ -423,12 +423,15 @@ macro_rules! recursion_detection_zone {
 //    };
 //}
 
-macro_rules! been_here_end {
-    ($guard:ident) => {
+//macro_rules! been_here_end {
+//    ($guard:ident) => {
+//        $guard.end_zone_aka_drop();
+//    };
+//}
+macro_rules! been_here {
+    (end, $guard:ident) => {
         $guard.end_zone_aka_drop();
     };
-}
-macro_rules! been_here {
     () => {{ //double curlies, all the way! else 'let' won't work; single {} expects expression,
              //double {{}} is like a normal {} that returns an expression even if it's () unit.
 
