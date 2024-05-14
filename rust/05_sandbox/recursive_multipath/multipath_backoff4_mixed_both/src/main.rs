@@ -377,61 +377,12 @@ macro_rules! recursion_detection_zone {
     };
 }
 
-//macro_rules! recursion_detection_zone_noalloc {
-//    (start, $timeout:expr, $default_value_on_timeout:expr) => {
-//        been_here_without_allocating!($timeout, $default_value_on_timeout)
-//    };
-//    (begin, $timeout:expr, $default_value_on_timeout:expr) => {
-//        been_here_without_allocating!($timeout, $default_value_on_timeout)
-//    };
-//    (new, $timeout:expr, $default_value_on_timeout:expr) => {
-//        been_here_without_allocating!($timeout, $default_value_on_timeout)
-//    };
-//    (mark_beginning, $timeout:expr, $default_value_on_timeout:expr) => {
-//        been_here_without_allocating!($timeout, $default_value_on_timeout)
-//    };
-//    (mark beginning, $timeout:expr, $default_value_on_timeout:expr) => {
-//        been_here_without_allocating!($timeout, $default_value_on_timeout)
-//    };
-//// -----------
-//    (end, $guard:ident) => {
-//        been_here_end!($guard)
-//    };
-//    (end_zone_aka_drop, $guard:ident) => {
-//        been_here_end!($guard)
-//    };
-//    (done, $guard:ident) => {
-//        been_here_end!($guard)
-//    };
-//    (drop, $guard:ident) => {
-//        been_here_end!($guard)
-//    };
-//    (finish, $guard:ident) => {
-//        been_here_end!($guard)
-//    };
-//    (mark end, $guard:ident) => {
-//        been_here_end!($guard)
-//    };
-//    (mark_end, $guard:ident) => {
-//        been_here_end!($guard)
-//    };
-//    (mark_ending, $guard:ident) => {
-//        been_here_end!($guard)
-//    };
-//    (mark ending, $guard:ident) => {
-//        been_here_end!($guard)
-//    };
-//}
-
-//macro_rules! been_here_end {
-//    ($guard:ident) => {
-//        $guard.end_zone_aka_drop();
-//    };
-//}
 macro_rules! been_here {
+//---------
     (end, $guard:ident) => {
         $guard.end_zone_aka_drop();
     };
+//---------
     () => {{ //double curlies, all the way! else 'let' won't work; single {} expects expression,
              //double {{}} is like a normal {} that returns an expression even if it's () unit.
 
@@ -463,6 +414,7 @@ macro_rules! been_here {
         };
         guard // Return the guard instance
     }};
+//---------
     //TODO: code is duplicated in the following 2 macro branches. This is very bad for keeping things in sync when modifying the code in one of them.
     ($timeout:expr, $default_value_on_timeout:expr) => {{
         static LOCATION_VAR: NoHeapAllocationsThreadLocalForHere = NoHeapAllocationsThreadLocalForHere::new();
@@ -506,6 +458,7 @@ macro_rules! been_here {
         };
         guard // Return the guard instance
     }};
+//---------
     ($timeout:expr) => {{
         //doneFIXME: well now need this to be thread_local but without allocating, soo... fixed sized
         //array which would represent only the currently visiting(counter>0) location paired with
@@ -563,6 +516,7 @@ macro_rules! been_here {
             None
         }
     }};
+//---------
 }//macro
 
 #[derive(Debug, Clone, PartialEq)]
