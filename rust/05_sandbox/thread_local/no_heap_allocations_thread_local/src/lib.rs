@@ -30,14 +30,15 @@ pub struct NoHeapAllocThreadLocal<const N: usize, T> {
 At runtime each borrow causes a modification/check of the refcount." -src: https://doc.rust-lang.org/1.30.0/book/first-edition/choosing-your-guarantees.html#cost-2
  */
 
+//this is needed to can be shared between threads, and we internally ensure that's true.
 unsafe impl<const N: usize, T> Sync for NoHeapAllocThreadLocal<N,T> {}
 
 impl<const N: usize, T> Drop for NoHeapAllocThreadLocal<N, T> {
     fn drop(&mut self) {
-        //TODO: can this be called concurrently? then we may have a problem.
-        //TODO: can this be called by one thread while another one tries to set a value?!
-        //i guess since our type aka Self is not Send, or it's a static(never dropped), then only one thread will be dropping it at most. But what if manual drop?
-        //FIXME: ensure this is properly implemented! like, if one thread calls drop() and the other makes a new element, this isn't doing it right!
+        //dontmatterTODO: can this be called concurrently? then we may have a problem. Apparently can't be.
+        //dontmatterTODO: can this be called by one thread while another one tries to set a value?! apparently not.
+        //i guess since our type aka Self is not Send, or it's a static(never dropped), then only one thread will be dropping it at most. But what if manual drop? So if it's inside an Arc then only one thread will be dropping it and only when for sure it's not used by others. Can't seem to can otherwise manually drop this which is great.
+        //dontmatterFIXME: ensure this is properly implemented! like, if one thread calls drop() and the other makes a new element, this isn't doing it right!
         let mut index=0;
         for elem in &mut self.values { //.iter().enumerate() {
         //for each in &mut self.values {
@@ -217,7 +218,8 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
 
         }//if
         //else, it was already unset.
-    }
+    }//fn
+
     pub fn maybe_get_mut_ref_if_set<'a>(&'a self) -> Option<(usize,RefMut<'a, Option<T>>)> {
         let our_current_tid: u64 = get_current_thread_id();
         assert_ne!(our_current_tid, Self::NO_THREAD_ID);
@@ -235,6 +237,7 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
         } //for
         None
     }//fn
+
     pub fn maybe_get_index<'a>(&'a self) -> Option<usize> {
         let our_current_tid: u64 = get_current_thread_id();
         assert_ne!(our_current_tid, Self::NO_THREAD_ID);
@@ -260,12 +263,14 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
     /// if success returns a mutable ref to the  just set OR prev.  value
     /// Since the value is supposed to be accessible only on current thread, it's not protected or
     /// wrapped into some kind of sync. primitive, so you've direct mutability to it.
+    /// Last arg if true makes sure the 'val' is the one that alredy existed, else any existing one is left as it is.
     pub fn get_or_set<'a>(
         &'a self,
         //FIXME: ensure this value is the one that already exists?
         to_val:T,
         //thread_id: std::num::NonZeroU64,
         timeout: Duration,
+        ensure_val:bool,
     ) -> (bool,Option<RefMut<'a,Option<T>>>) {
         let start_time = std::time::Instant::now();
         //let new_value: u64 = current_thread_id.into();
@@ -289,7 +294,12 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
                     //let current_val=unsafe { self.values[index].assume_init() };
 //                    let value_ptr = unsafe { self.values.as_ptr().offset(index as isize) as *mut T};
 //                    let mut_ref_to_value=unsafe { &mut *value_ptr };
-                    let mut_ref_to_value=self.values[index].borrow_mut();
+                    let mut mut_ref_to_value:RefMut<Option<T>>=self.values[index].borrow_mut();
+                    if ensure_val {
+                        if let Some(what_was)=mut_ref_to_value.as_mut() {
+                            *what_was=to_val;
+                        }
+                    }
                     //let current_val=&mut self.values[index];
                     //return (true, Some(current_val));
                     return (true, Some(mut_ref_to_value));
