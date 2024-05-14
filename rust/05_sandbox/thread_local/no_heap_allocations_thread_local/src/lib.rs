@@ -13,15 +13,15 @@ use std::cell::{RefCell, RefMut};
 use core::mem::ManuallyDrop;
 
 #[derive(Debug)]
-pub struct NoHeapAllocThreadLocal<const N: usize, T> {
-    //create 3 static arrays of size N, preallocated, presumably on stack, but depends on type T doesn't it!
+pub struct NoHeapAllocThreadLocal<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> {
+    //create 3 static arrays of size MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS, preallocated, presumably on stack, but depends on type T doesn't it!
     //we need the 2 atomic arrays because a 'values' element is attached to one specific thread which shouldn't outlive it, or may even get manually dropped by caller, to allow for other thread(s) to use that spot
     //if 'before' is set, this means the value setting is in progress.
-    before: [AtomicU64; N],
-    //values: [MaybeUninit<RefCell<T>>; N],//nvmFIXME: ensure that i properly r/w this below
-    values: [ManuallyDrop<RefCell<Option<T>>>; N],
+    before: [AtomicU64; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS],
+    //values: [MaybeUninit<RefCell<T>>; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS],//nvmFIXME: ensure that i properly r/w this below
+    values: [ManuallyDrop<RefCell<Option<T>>>; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS],
     //if 'after' is set, it means the value has already been set and is thus safe to read
-    after: [AtomicU64; N],
+    after: [AtomicU64; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS],
 }
 
 /* FALSE(chatgpt):" RefCell does use heap allocation internally to manage its borrow checking. It uses dynamic borrowing rules at runtime rather than static borrowing rules enforced by the Rust compiler. This dynamic borrowing is implemented through reference counting and interior mutability, which involves heap allocation for the reference count and the data being managed. This allows RefCell to provide runtime borrow checking and interior mutability without violating Rust's borrowing rules." - chatgpt 3.5
@@ -32,9 +32,9 @@ At runtime each borrow causes a modification/check of the refcount." -src: https
  */
 
 //this is needed to can be shared between threads, and we internally ensure that's true.
-unsafe impl<const N: usize, T> Sync for NoHeapAllocThreadLocal<N,T> {}
+unsafe impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> Sync for NoHeapAllocThreadLocal<MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS,T> {}
 
-impl<const N: usize, T> Drop for NoHeapAllocThreadLocal<N, T> {
+impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> Drop for NoHeapAllocThreadLocal<MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS, T> {
     fn drop(&mut self) {
         //dontmatterTODO: can this be called concurrently? then we may have a problem. Apparently can't be.
         //dontmatterTODO: can this be called by one thread while another one tries to set a value?! apparently not.
@@ -112,14 +112,14 @@ impl<const N: usize, T> Drop for NoHeapAllocThreadLocal<N, T> {
     }//drop
 }//impl Drop
 
-//impl<const N: usize, T> Drop for NoHeapAllocThreadLocal<N, T> {
+//impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> Drop for NoHeapAllocThreadLocal<MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS, T> {
 //    fn drop(&self) {
 //        self.unset();
 //    }
 //}
 
-//impl<const N: usize, T/*:std::fmt::Debug + PartialEq + Clone*/> NoHeapAllocThreadLocal<N, T> {
-impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
+//impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T/*:std::fmt::Debug + PartialEq + Clone*/> NoHeapAllocThreadLocal<MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS, T> {
+impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThreadLocal<MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS, T> {
     const NO_THREAD_ID: u64 = 0; //aka unused slot/element
     const ARRAY_INITIALIZER_REPEAT_VALUE: AtomicU64 = AtomicU64::new(Self::NO_THREAD_ID);
     const SLEEP_TIME_BEFORE_RETRYING: std::time::Duration=std::time::Duration::from_millis(10);
@@ -127,15 +127,15 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
     // this const fn gets computed at compile time.
     pub const fn new() -> Self {
         /* "This line initializes each element of the values array with uninitialized memory and then assumes that the uninitialized memory represents valid instances of RefCell<T>. This is done by calling assume_init()." */
-        //let mut values: [MaybeUninit<RefCell<T>>; N] = unsafe { MaybeUninit::uninit().assume_init() };
+        //let mut values: [MaybeUninit<RefCell<T>>; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS] = unsafe { MaybeUninit::uninit().assume_init() };
         /* "After this initialization, the values array contains elements that are zeroed out, but they are not valid instances of RefCell<T>. They are simply zeroed memory." */
-        //let mut values: [MaybeUninit<RefCell<T>>; N] = unsafe { std::mem::zeroed() };
-        let mut values:[ManuallyDrop<RefCell<Option<T>>>; N]=unsafe { std::mem::zeroed() };
-        //let mut before= [Self::ARRAY_INITIALIZER_REPEAT_VALUE; N];
+        //let mut values: [MaybeUninit<RefCell<T>>; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS] = unsafe { std::mem::zeroed() };
+        let mut values:[ManuallyDrop<RefCell<Option<T>>>; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS]=unsafe { std::mem::zeroed() };
+        //let mut before= [Self::ARRAY_INITIALIZER_REPEAT_VALUE; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS];
 
         // Use while loop for initialization
         let mut index = 0;
-        while index < N {
+        while index < MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS {
             //before[index].store(1,Ordering::Relaxed);
             // Initialize each element with MaybeUninit::zeroed()
             //values[index] = MaybeUninit::uninit();
@@ -148,11 +148,11 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
         }
 
         Self {
-            before: [Self::ARRAY_INITIALIZER_REPEAT_VALUE; N],
+            before: [Self::ARRAY_INITIALIZER_REPEAT_VALUE; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS],
             //In uninitialized state initially, these will never be read before overwriting with valid T instance first! on a per element basis!
-            //values: unsafe { std::mem::zeroed() },//good! //[None; N], // that fails needed T:Copy
+            //values: unsafe { std::mem::zeroed() },//good! //[None; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS], // that fails needed T:Copy
             values,
-            after: [Self::ARRAY_INITIALIZER_REPEAT_VALUE; N],
+            after: [Self::ARRAY_INITIALIZER_REPEAT_VALUE; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS],
         }
     }
 
@@ -174,6 +174,9 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
 //    }
 
     //doneTODO: a fn that drops our value from all 3 fields!
+    /// removes current thread's allocation of the thread local, thus allowing any future thread wanting a spot to take this one.
+    /// spots are limited and only MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS number of threads can have occupied spots concurrently
+    /// MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS is user setable when you declare your type.
     pub fn unset(&self) {
         //if let Some((index,mut mut_ref_option_t))=self.maybe_get_mut_ref_if_set() {
         if let Some(index)=self.maybe_get_index() {
@@ -277,7 +280,7 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
     ) -> (bool,Option<RefMut<'a,Option<T>>>) {
         let start_time = std::time::Instant::now();
         //let new_value: u64 = current_thread_id.into();
-        //let new_value: u64 = NoHeapAllocThreadLocal::<N, T>::get_current_thread_id();
+        //let new_value: u64 = NoHeapAllocThreadLocal::<MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS, T>::get_current_thread_id();
         let new_value: u64 = get_current_thread_id();
         //if we have already allocated it, return early
         let mut index_of_first_empty: Option<usize> = None;//if any
@@ -325,12 +328,12 @@ impl<const N: usize, T> NoHeapAllocThreadLocal<N, T> {
             //we haven't found any empty, so we try from beginning always
             0
         };
-        assert!(index_of_first_empty < N, "we coded it badly");
+        assert!(index_of_first_empty < MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS, "we coded it badly");
         //const expected:u64 = Self::NO_THREAD_ID; //XXX: this compile errors! can't use generic parameters from outer item: use of generic parameter from outer item
         let expected: u64 = Self::NO_THREAD_ID;//but this works, odd.
         loop {
             //for (index, atomic_value) in self.data.iter().enumerate() {
-            for index in index_of_first_empty..N {
+            for index in index_of_first_empty..MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS {
                 //attempts to acquire the first one that was found empty,
                 //unless another thread got it already, then we keep trying
                 //TODO: don't get starved

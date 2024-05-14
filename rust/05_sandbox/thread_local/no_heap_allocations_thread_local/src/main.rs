@@ -82,7 +82,7 @@ fn main() {
                 //std::thread::sleep(std::time::Duration::from_millis(300*i as u64));
                 //FOO.unset();
             } else {
-                println!("No available slots found for thread {}", current_thread_id);
+                println!("No available slots found for thread {}, you're likely already having {} threads still using the noalloc-thread-local concurrently, consider using .unset() if you don't need the thread local anymore.", current_thread_id, HOW_MANY);
             }
         }); //spawn
         handles.push(handle);

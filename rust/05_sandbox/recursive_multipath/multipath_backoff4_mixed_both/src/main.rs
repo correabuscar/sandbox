@@ -131,6 +131,7 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocationsThreadLocalF
 
     //mustn't call this manually
     fn unvisit(&self) {
+        //println!("unvisiting self={:?}",self);
         let mut can_dispose:bool=false;
         {
             let loc=self.location.maybe_get_mut_ref_if_set();
@@ -157,8 +158,10 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocationsThreadLocalF
         //drop(loc);//E0382: use of partially moved value: `loc` 
         }//so, is 'loc' dropped here or what? FIXME
         if can_dispose {
-            //TODO: test to see if this is ever called!
+            //yesTODO: test to see if this is ever called!
+            //println!("disposing current tid from noallocthreadlocal {:?}",self.location);
             self.location.unset();
+            //println!("disposed current tid from noallocthreadlocal {:?}",self.location);
         }
     }
 }
