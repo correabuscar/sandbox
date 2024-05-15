@@ -1,7 +1,4 @@
-//#![feature(specialization)] //doneFIXME: do without this!
-
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::thread_local;
 use std::fmt;
 include!(concat!(env!("OUT_DIR"), "/project_dir.rs")); //gets me 'PROJECT_DIR'
@@ -17,7 +14,7 @@ struct LocationInSourceCode {
 
 impl fmt::Debug for LocationInSourceCode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Remove the prefix of PROJECT_DIR from the file field
+        // Remove the prefix of PROJECT_DIR from the file field, so output is less cluttered!
         let file_without_prefix = match self.file.strip_prefix(PROJECT_DIR) {
             Some(suffix) => suffix,
             None => self.file,
@@ -46,23 +43,22 @@ impl fmt::Display for LocationInSourceCode {
 
 // Helper struct to decrement location's in-use counter on Drop
 #[derive(Debug)]
-struct RecursionDetectionZoneGuard<T> 
+struct RecursionDetectionZoneGuard<T>
 where
     RecursionDetectionZoneGuard<T>: UnvisitTrait,
 {
-    //this bool is only used to hold the return bool
+    //this bool is only used to hold the return bool from the macro call.
     //so doesn't have to be part of this struct actually.
+    //and is thus only updated due to the call, not afterwards.
     is_recursing: bool,
-    //can_heap_alloc:bool,
 
     //this location is used to know which location to unvisit when going out of scope!
-    //it still accesses the global static to make the modifications
-    location: T,//LocationInSourceCode,
+    location: T,
 }
 
-impl fmt::Display for RecursionDetectionZoneGuard<LocationInSourceCode> {
+impl fmt::Display for RecursionDetectionZoneGuard<&'static AllocThreadLocalForThisZone> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {})", self.is_recursing, self.location)
+        write!(f, "{} {:?})", self.is_recursing, self.location)
     }
 }
 
@@ -72,8 +68,7 @@ trait UnvisitTrait {
 
 
 
-impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
-//impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
+impl UnvisitTrait for RecursionDetectionZoneGuard<&'static AllocThreadLocalForThisZone> {
 
     //mustn't call this manually
     fn unvisit(&self) {
@@ -81,23 +76,20 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
         //if self.can_heap_alloc {
         //TODO: try_with() "This function will still panic!() if the key is uninitialized and the key’s initializer panics."
         //TODO: handle error cases, ie. what if can't borrow, or stuff.
-        let res=PER_THREAD_VISITED_LOCATIONS.try_with(|locations| {
-            //let i:i32=locations;//&RefCell<HashMap<LocationInSourceCode, StuffAboutLocation>>
-            //TODO: can this drop() be called again if this panics here? or in some other cases?
-            //I think it's more likely drop() won't be called at all in some cases like exit()
-            if let Ok(mut locations) = locations.try_borrow_mut() {
-                //let i:i32=locations;//RefMut<'_, HashMap<LocationInSourceCode, StuffAboutLocation>>
+        let res=self.location.try_with(|refcell| {
+            //let i:i32=refcell;//found `&RefCell<Option<...>>`
+            if let Ok(mut ref_mut_location) = refcell.try_borrow_mut() {
+                //let i:i32=ref_mut_location;//found `RefMut<'_, Option<...>>`
                 //println!("!{}",self.location);
-                //display_visited_locations();//this does cause borrow error
-                if let Some(counter) = locations.get_mut(&self.location) {
+                if let Some(lwc) = ref_mut_location.as_mut() {
                     //let i:i32=counter;//&mut StuffAboutLocation
-                    if *counter > 0 {
-                        *counter -= 1;
+                    if lwc.counter > 0 {
+                        lwc.counter -= 1;
                         //XXX: on purpose not removing from the static list! we might wanna know
                         //which points were hit at all. And maybe even add a max-times-hit.
                     } else {
                         //TODO: return Result<> ? but then rename to try_unvisit() ?
-                        panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(1)", *counter);
+                        panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(1)", lwc);
                     }
                 }
             }
@@ -105,21 +97,9 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
         if let Err(err)=res {
             eprintln!("unvisiting errored, error={}",err);
         }
-        //} else {
-        //    //no heap allocs
-        //    todo!("oh snap, do i wanna do them inside one type both?");
-        //}
     }
 }//impl
-////impl<T> UnvisitTrait for RecursionDetectionZoneGuard<no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,T>> {
-//impl<T> UnvisitTrait for RecursionDetectionZoneGuard<T> {
-//    //E0658: specialization is unstable see issue #31844 <https://github.com/rust-lang/rust/issues/31844> for more information add `#![feature(specialization)]` to the crate attributes to enable
-//    default fn unvisit(&self) {
-//        //doneFIXME: make this happen at compile time, and thus require user to impl UnvisitTrait for our struct of any specific T used, but not for the specific T itself, it's for RecursionDetectionZoneGuard<specific_T_here>
-//        unimplemented!("not implemented for this type, you must do it manually");
-//    }
-//}
-//doneTODO: make this a type alias? NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>
+
 /// Define the maximum number of threads that are concurrently supported in the same zone,
 /// before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
 const MAX_NUM_THREADS_AT_ONCE: usize = 10;
@@ -261,13 +241,13 @@ impl StuffAboutLocation {
     }
 }
 
-// Thread-local storage for the is_recursing locations
-thread_local! {
-    static PER_THREAD_VISITED_LOCATIONS: RefCell<HashMap<LocationInSourceCode, StuffAboutLocation>> = RefCell::new(HashMap::new());
-    //TODO: unclear why using RefCell instead of Cell
-    //doneTODO: keep a max times visited?
-    //XXX: HashMap and thread local itself does heap alloc!
-}
+//// Thread-local storage for the is_recursing locations
+//thread_local! {
+//    static PER_THREAD_VISITED_LOCATIONS: RefCell<HashMap<LocationInSourceCode, StuffAboutLocation>> = RefCell::new(HashMap::new());
+//    //TODO: unclear why using RefCell instead of Cell
+//    //doneTODO: keep a max times visited?
+//    //XXX: HashMap and thread local itself does heap alloc!
+//}
 
 // Macro to mark a location as is_recursing
 /// aka "am i recursing due to this"
@@ -364,6 +344,12 @@ macro_rules! recursion_detection_zone {
     };
 }
 
+//TL=for the thread_local declaration
+type TLAllocThreadLocalForThisZone = RefCell<Option<LocationWithCounter>>;
+//This is for the reference to what we've declared with thread_local
+type AllocThreadLocalForThisZone = std::thread::LocalKey<RefCell<Option<LocationWithCounter>>>;
+//TODO: get rid of thread_local!() macro call, and thus use only one type alias here!
+
 macro_rules! been_here {
 //---------
     (end, $guard:ident) => {
@@ -373,19 +359,35 @@ macro_rules! been_here {
     () => {{ //double curlies, all the way! else 'let' won't work; single {} expects expression,
              //double {{}} is like a normal {} that returns an expression even if it's () unit.
 
-        //XXX: saves the call location and the number of times it was encountered, into a static hashmap,
-        //but the zone in which, if recursing, the number of times encountered is increased can be ended
-        //via dropping the returned guard, which decreases the num.times encountered.
-        let location = LocationInSourceCode {
-            file: file!(),
-            line: line!(),
-            column: column!(),
-        };
-        let was_visited_before=PER_THREAD_VISITED_LOCATIONS.try_with(|locations| {
-            let mut visited_locations = locations.borrow_mut();
-            let counter = visited_locations.entry(location.clone()).or_insert(StuffAboutLocation::initial());
-            *counter += 1;
-            *counter > 1 // Return true if location was previously is_recursing (counter > 1)
+
+        // Thread-local storage for the current zone/call-location of this macro
+        thread_local! {
+            //XXX: thread_local itself does heap alloc internally(because pthread_key_create does alloc)!
+            //it's gonna be a different static for each location where this macro is called; seems it has same name but internally it's mangled and global, however only visible here.
+            static A_STATIC_FOR_THIS_CALL_LOCATION: TLAllocThreadLocalForThisZone = TLAllocThreadLocalForThisZone::new(None);
+            //doneTODO: keep a max times visited?
+        }
+        let was_visited_before=A_STATIC_FOR_THIS_CALL_LOCATION.try_with(|refcell| {
+            let mut ref_mut=refcell.borrow_mut();
+            if ref_mut.is_none() {
+                let loc_of_this_macro_call=
+                    //This is the location(in source code) of our macro call.
+                    LocationWithCounter {
+                        location: LocationInSourceCode {
+                            file: file!(),
+                            line: line!(),
+                            column: column!(),
+                        },
+                        counter: StuffAboutLocation::initial(),
+                    };
+                *ref_mut=Some(loc_of_this_macro_call);
+            }
+            assert!(ref_mut.is_some(),"code logic is wrong");
+            let lwc=ref_mut.as_mut().unwrap();
+            //let i:i32=lwc;//found `&mut LocationWithCounter`
+            lwc.counter+=1;
+            lwc.counter > 1 // Return true if is_recursing (counter > 1)
+            //assert_eq!(ref_mut.as_mut().unwrap().counter,1,"developer coded it wrongly");
         }).unwrap_or(true);
         //XXX: so we say is_recursing=true if failed to acquire lock which means it's likely due to recursion
         //while inside the try_with() closure, ie. recursion_detection_zone!(start) is called again while inside the
@@ -394,9 +396,9 @@ macro_rules! been_here {
         //doneTODO: return the bool and the Option<LocationInSourceCode> so that it can be *counter-=1 later when
         //done; i don't think we can do this on Drop because catch_unwind() would trigger it, hmm,
         //maybe this is a good thing? didn't think this thru.
-        let guard:RecursionDetectionZoneGuard<LocationInSourceCode> = RecursionDetectionZoneGuard {
+        let guard:RecursionDetectionZoneGuard<&'static AllocThreadLocalForThisZone> = RecursionDetectionZoneGuard {
             is_recursing: was_visited_before,
-            location: location,
+            location: &A_STATIC_FOR_THIS_CALL_LOCATION,
 
         };
         guard // Return the guard instance
@@ -519,14 +521,14 @@ struct LocationWithCounter {
 
 
 // Function to display the contents of the VisitedLocations hashmap
-fn display_visited_locations() {
-    PER_THREAD_VISITED_LOCATIONS.with(|locations| {
-        println!("Visited Locations in thread id='{:?}':", std::thread::current().id());
-        for (location, count) in locations.borrow().iter() {
-            println!("{} {:?}", location, count);
-        }
-    });
-}
+//fn display_visited_locations() {
+//    PER_THREAD_VISITED_LOCATIONS.with(|locations| {
+//        println!("Visited Locations in thread id='{:?}':", std::thread::current().id());
+//        for (location, count) in locations.borrow().iter() {
+//            println!("{} {:?}", location, count);
+//        }
+//    });
+//}
 
 // Example usage
 fn recursive_function(level:usize) {
@@ -574,7 +576,7 @@ fn recursive_function(level:usize) {
 fn main() {
     let handle = std::thread::spawn(|| {
         recursive_function(1); // Call recursive_function in a separate thread
-        display_visited_locations();
+        //display_visited_locations();
     });
     // Wait for the spawned thread to finish
     handle.join().unwrap();
@@ -603,5 +605,5 @@ fn main() {
     rd_zone_guard.end_zone_aka_drop();
 
     // Display the contents of the VisitedLocations hashmap
-    display_visited_locations();
+    //display_visited_locations();
 }

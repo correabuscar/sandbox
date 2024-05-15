@@ -1,0 +1,5 @@
+this attempts to do the alloc thread_local inside the macro so it only affects
+the current thread(just like it's for noalloc version),
+
+instead of a global static thread_local for all locations (as it was in prev.
+iteration of this project name)
