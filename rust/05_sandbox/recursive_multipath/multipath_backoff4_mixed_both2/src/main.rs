@@ -341,7 +341,7 @@ type TLAllocThreadLocalForThisZone = RefCell<Option<LocationWithCounter>>;
 //This is for the reference to what we've declared with thread_local
 type AllocThreadLocalForThisZone = std::thread::LocalKey<TLAllocThreadLocalForThisZone>;
 //TODO: get rid of thread_local!() macro call, and thus use only one type alias here!
-//TODO: actually don't need it to be a RefCell, since we're giving the whole static to the guard! but for the noalloc version we do.
+//cantTODO: actually don't need it to be a RefCell, since we're giving the whole static to the guard! but for the noalloc version we do. Still need RefCell wrapper with thread_local!() else I can't mutate the inner value because .try_with() gives me an immutable ref.
 
 macro_rules! been_here {
 //---------
