@@ -1,4 +1,4 @@
-//use std::cell::RefCell;
+use std::cell::RefCell;
 use std::thread_local;
 use std::fmt;
 include!(concat!(env!("OUT_DIR"), "/project_dir.rs")); //gets me 'PROJECT_DIR'
@@ -76,14 +76,12 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static AllocThreadLocalForTh
         //if self.can_heap_alloc {
         //TODO: try_with() "This function will still panic!() if the key is uninitialized and the key’s initializer panics."
         //TODO: handle error cases, ie. what if can't borrow, or stuff.
-        let res=self.location.try_with(|opt| {
+        let res=self.location.try_with(|refcell| {
             //let i:i32=refcell;//found `&RefCell<Option<...>>`
-            //let i:i32=opt;//found `&Option<LocationWithCounter>`
-            if let Some(mut lwc) = opt { //refcell.try_borrow_mut() {
+            if let Ok(mut ref_mut_location) = refcell.try_borrow_mut() {
                 //let i:i32=ref_mut_location;//found `RefMut<'_, Option<...>>`
-                //let i:i32=lwc;//found `LocationWithCounter`
                 //println!("!{}",self.location);
-                //if let Some(lwc) = ref_mut_location.as_mut() {
+                if let Some(lwc) = ref_mut_location.as_mut() {
                     //let i:i32=counter;//&mut StuffAboutLocation
                     if lwc.counter > 0 {
                         lwc.counter -= 1;
@@ -91,7 +89,7 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static AllocThreadLocalForTh
                         //TODO: return Result<> ? but then rename to try_unvisit() ?
                         panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(1)", lwc);
                     }
-                //}
+                }
             }
         });
         if let Err(err)=res {
@@ -339,11 +337,11 @@ macro_rules! recursion_detection_zone {
 }
 
 //TL=for the thread_local declaration
-type TLAllocThreadLocalForThisZone = Option<LocationWithCounter>;
+type TLAllocThreadLocalForThisZone = RefCell<Option<LocationWithCounter>>;
 //This is for the reference to what we've declared with thread_local
 type AllocThreadLocalForThisZone = std::thread::LocalKey<TLAllocThreadLocalForThisZone>;
 //TODO: get rid of thread_local!() macro call, and thus use only one type alias here!
-//failTODO: actually don't need it to be a RefCell, since we're giving the whole static to the guard! but for the noalloc version we do.
+//TODO: actually don't need it to be a RefCell, since we're giving the whole static to the guard! but for the noalloc version we do.
 
 macro_rules! been_here {
 //---------
@@ -359,13 +357,12 @@ macro_rules! been_here {
         thread_local! {
             //XXX: thread_local itself does heap alloc internally(because pthread_key_create does alloc)!
             //it's gonna be a different static for each location where this macro is called; seems it has same name but internally it's mangled and global, however only visible here.
-            static A_STATIC_FOR_THIS_CALL_LOCATION: TLAllocThreadLocalForThisZone = None;//TLAllocThreadLocalForThisZone::new(None);
+            static A_STATIC_FOR_THIS_CALL_LOCATION: TLAllocThreadLocalForThisZone = TLAllocThreadLocalForThisZone::new(None);
             //doneTODO: keep a max times visited?
         }
-        let was_visited_before=A_STATIC_FOR_THIS_CALL_LOCATION.try_with(|mut opt| {
-            //let mut ref_mut=refcell.borrow_mut();
-            //let mut ref_mut=opt;
-            if opt.is_none() {
+        let was_visited_before=A_STATIC_FOR_THIS_CALL_LOCATION.try_with(|refcell| {
+            let mut ref_mut=refcell.borrow_mut();
+            if ref_mut.is_none() {
                 let loc_of_this_macro_call=
                     //This is the location(in source code) of our macro call.
                     LocationWithCounter {
@@ -376,10 +373,10 @@ macro_rules! been_here {
                         },
                         counter: StuffAboutLocation::initial(),
                     };
-                *opt=Some(loc_of_this_macro_call);
+                *ref_mut=Some(loc_of_this_macro_call);
             }
-            assert!(opt.is_some(),"code logic is wrong");
-            let lwc=opt.as_mut().unwrap();
+            assert!(ref_mut.is_some(),"code logic is wrong");
+            let lwc=ref_mut.as_mut().unwrap();
             //let i:i32=lwc;//found `&mut LocationWithCounter`
             lwc.counter+=1;
             lwc.counter > 1 // Return true if is_recursing (counter > 1)
