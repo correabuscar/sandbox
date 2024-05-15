@@ -31,6 +31,8 @@ pub struct NoHeapAllocThreadLocal<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS
 At runtime each borrow causes a modification/check of the refcount." -src: https://doc.rust-lang.org/1.30.0/book/first-edition/choosing-your-guarantees.html#cost-2
  */
 
+//FIXME: how to dealloc dead threads, like those that exit()/abort()-ed, since the panic-ed ones would run drop() i guess?! Maybe need a way to find alive threads but there's none, unless directly checking pthreads' tids which are different and who knows if they would be reused unlike the rust tids. Maybe accept an arg with lifetime of the threadlocal in seconds, so if expired can be replaced, maybe if has no outstanding borrows? and so the acquire timeout must be at least that much plus a bit more. Actually the timeout shouldn't be higher, there might be other older threads about to expire so any timeout in acquiring should be valid, not limited to any minimum, besides other lifetimes could've been different anyway. Maybe lifetime should be instead time elapsed since last access but then we'd have to have a custom RefCell that would track access times then, or we consider access only those thru calls to our type, so asking for a mut borrow from the RefCell, but not using that RefCell afterwards. And only if no outstanding borrows would the lifetime expire, hmm but then what happens if RefCell remains in borrowed mode but thread's exited hmmmmm... could replace the RefCell with a new one aka new()? i wonder if dropping it would work in that case, since it's used with active borrow?! and actually I'm not sure I could replace it since it would require &mut self then! Now you may be thinking threads that exit/abort would affect the whole process, but in tests with WIP patch, i catch exit/abort and transform into panic, but point is, process won't exit, but the thread will, however in this particular case i guess since i exit the thread via panic anyway, it will execute drop?! which might just work and thus not need this whole thing hmm
+
 //this is needed to can be shared between threads, and we internally ensure that's true.
 unsafe impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> Sync for NoHeapAllocThreadLocal<MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS,T> {}
 
@@ -42,6 +44,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> Drop for NoHeapAl
         //dontmatterFIXME: ensure this is properly implemented! like, if one thread calls drop() and the other makes a new element, this isn't doing it right!
         let mut index=0;
         for elem in &mut self.values { //.iter().enumerate() {
+            //let i:i32=elem;//found mutable reference `&mut ManuallyDrop<RefCell<Option<T>>>`
         //for each in &mut self.values {
             //match self.after[index].compare_exchange(what_was,
 
