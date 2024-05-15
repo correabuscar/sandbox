@@ -85,8 +85,6 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static AllocThreadLocalForTh
                     //let i:i32=counter;//&mut StuffAboutLocation
                     if lwc.counter > 0 {
                         lwc.counter -= 1;
-                        //XXX: on purpose not removing from the static list! we might wanna know
-                        //which points were hit at all. And maybe even add a max-times-hit.
                     } else {
                         //TODO: return Result<> ? but then rename to try_unvisit() ?
                         panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(1)", lwc);
@@ -103,6 +101,7 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static AllocThreadLocalForTh
 /// Define the maximum number of threads that are concurrently supported in the same zone,
 /// before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
 const MAX_NUM_THREADS_AT_ONCE: usize = 10;
+//TODO: need to rename this type:
 type NoHeapAllocationsThreadLocalForHere=no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>;
 impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocationsThreadLocalForHere> {
 
@@ -241,13 +240,6 @@ impl StuffAboutLocation {
     }
 }
 
-//// Thread-local storage for the is_recursing locations
-//thread_local! {
-//    static PER_THREAD_VISITED_LOCATIONS: RefCell<HashMap<LocationInSourceCode, StuffAboutLocation>> = RefCell::new(HashMap::new());
-//    //TODO: unclear why using RefCell instead of Cell
-//    //doneTODO: keep a max times visited?
-//    //XXX: HashMap and thread local itself does heap alloc!
-//}
 
 // Macro to mark a location as is_recursing
 /// aka "am i recursing due to this"
@@ -349,6 +341,7 @@ type TLAllocThreadLocalForThisZone = RefCell<Option<LocationWithCounter>>;
 //This is for the reference to what we've declared with thread_local
 type AllocThreadLocalForThisZone = std::thread::LocalKey<RefCell<Option<LocationWithCounter>>>;
 //TODO: get rid of thread_local!() macro call, and thus use only one type alias here!
+//TODO: actually don't need it to be a RefCell, since we're giving the whole static to the guard!
 
 macro_rules! been_here {
 //---------
