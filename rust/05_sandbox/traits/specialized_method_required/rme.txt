@@ -1,0 +1,5 @@
+how to require my struct to impl a certain trait, at compile time, for each T specialization.
+instead of at runtime via blanket impl that panics if you forgot to impl,
+which also requires #![feature(specialization)]
+
+
