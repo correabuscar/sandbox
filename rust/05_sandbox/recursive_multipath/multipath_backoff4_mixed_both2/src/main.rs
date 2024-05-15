@@ -339,9 +339,9 @@ macro_rules! recursion_detection_zone {
 //TL=for the thread_local declaration
 type TLAllocThreadLocalForThisZone = RefCell<Option<LocationWithCounter>>;
 //This is for the reference to what we've declared with thread_local
-type AllocThreadLocalForThisZone = std::thread::LocalKey<RefCell<Option<LocationWithCounter>>>;
+type AllocThreadLocalForThisZone = std::thread::LocalKey<TLAllocThreadLocalForThisZone>;
 //TODO: get rid of thread_local!() macro call, and thus use only one type alias here!
-//TODO: actually don't need it to be a RefCell, since we're giving the whole static to the guard!
+//TODO: actually don't need it to be a RefCell, since we're giving the whole static to the guard! but for the noalloc version we do.
 
 macro_rules! been_here {
 //---------
@@ -392,6 +392,7 @@ macro_rules! been_here {
         let guard:RecursionDetectionZoneGuard<&'static AllocThreadLocalForThisZone> = RecursionDetectionZoneGuard {
             is_recursing: was_visited_before,
             location: &A_STATIC_FOR_THIS_CALL_LOCATION,
+            //nogoodTODO: maybe don't give ref to the static, but a ref to the inner instead? which means, we'd need the RefCell::borrow_mut() here. Well actually giving a refcell mut ref here would prevent recursive call from modifying the inner because it's already mut borrowed!
 
         };
         guard // Return the guard instance
@@ -470,22 +471,12 @@ macro_rules! been_here {
             true,
             );
         if let Some(mut lwc)=lwc_refmut {
-            //let mut lwc=lwc.unwrap();
-            //if !was_already_set {
-            //    assert_eq!(lwc, &mut clone,"the type of the static is coded wrongly!");
-            //}
-
             let lwc=lwc.as_mut().unwrap();
             assert_eq!(lwc, &mut clone,"the type of the static is coded wrongly!");
             assert!(lwc.counter>=0);
             let was_visited_before= lwc.counter>0;
             lwc.counter+=1;
             assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
-            // Increment the counter and print the location information
-            //unsafe {
-            //    LOCATION_VAR.counter += 1;
-            //}
-
             //drop(lwc);//it's a ref
             let guard = RecursionDetectionZoneGuard {
                 is_recursing: was_visited_before,
