@@ -1,4 +1,4 @@
-#![feature(specialization)] //FIXME: do without this!
+//#![feature(specialization)] //doneFIXME: do without this!
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -46,7 +46,10 @@ impl fmt::Display for LocationInSourceCode {
 
 // Helper struct to decrement location's in-use counter on Drop
 #[derive(Debug)]
-struct RecursionDetectionZoneGuard<T> {
+struct RecursionDetectionZoneGuard<T> 
+where
+    RecursionDetectionZoneGuard<T>: UnvisitTrait,
+{
     //this bool is only used to hold the return bool
     //so doesn't have to be part of this struct actually.
     is_recursing: bool,
@@ -66,11 +69,6 @@ impl fmt::Display for RecursionDetectionZoneGuard<LocationInSourceCode> {
 trait UnvisitTrait {
     fn unvisit(&self);
 }
-//impl<T> UnvisitTrait for RecursionDetectionZoneGuard<T> {
-//    fn unvisit(&self) {
-//        todo!("oh snep");
-//    }
-//}
 
 
 
@@ -113,21 +111,20 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
         //}
     }
 }//impl
-//impl<T> UnvisitTrait for RecursionDetectionZoneGuard<no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,T>> {
-impl<T> UnvisitTrait for RecursionDetectionZoneGuard<T> {
-    //E0658: specialization is unstable see issue #31844 <https://github.com/rust-lang/rust/issues/31844> for more information add `#![feature(specialization)]` to the crate attributes to enable
-    default fn unvisit(&self) {
-        //FIXME: make this happen at compile time, and thus require user to impl UnvisitTrait for our struct of any specific T used, but not for the specific T itself, it's for RecursionDetectionZoneGuard<specific_T_here>
-        unimplemented!("not implemented for this type, you must do it manually");
-    }
-}
+////impl<T> UnvisitTrait for RecursionDetectionZoneGuard<no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,T>> {
+//impl<T> UnvisitTrait for RecursionDetectionZoneGuard<T> {
+//    //E0658: specialization is unstable see issue #31844 <https://github.com/rust-lang/rust/issues/31844> for more information add `#![feature(specialization)]` to the crate attributes to enable
+//    default fn unvisit(&self) {
+//        //doneFIXME: make this happen at compile time, and thus require user to impl UnvisitTrait for our struct of any specific T used, but not for the specific T itself, it's for RecursionDetectionZoneGuard<specific_T_here>
+//        unimplemented!("not implemented for this type, you must do it manually");
+//    }
+//}
 //doneTODO: make this a type alias? NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>
 /// Define the maximum number of threads that are concurrently supported in the same zone,
 /// before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
 const MAX_NUM_THREADS_AT_ONCE: usize = 10;
 type NoHeapAllocationsThreadLocalForHere=no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>;
 impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocationsThreadLocalForHere> {
-//impl UnvisitTrait for RecursionDetectionZoneGuard<LocationInSourceCode> {
 
     //mustn't call this manually
     fn unvisit(&self) {
@@ -166,11 +163,10 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocationsThreadLocalF
     }
 }
 
-impl<T> RecursionDetectionZoneGuard<T> {
-//    fn unvisit(&self) {
-//        todo!("oh snep");
-//    }
-
+impl<T> RecursionDetectionZoneGuard<T>
+where
+    RecursionDetectionZoneGuard<T>: UnvisitTrait,
+{
     #[allow(dead_code)]
     #[inline(always)]
     pub fn done(self) {
@@ -188,8 +184,10 @@ impl<T> RecursionDetectionZoneGuard<T> {
     }
 }
 
-impl<T> Drop for RecursionDetectionZoneGuard<T> {
-//impl Drop for RecursionDetectionZoneGuard<&NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>> {
+impl<T> Drop for RecursionDetectionZoneGuard<T>
+where
+    RecursionDetectionZoneGuard<T>: UnvisitTrait,
+{
     fn drop(&mut self) {
         self.unvisit();
     }
@@ -206,18 +204,6 @@ struct StuffAboutLocation {
     //a 2+ means recursed this many times minus 1
     max_times_visited_ever: u64,
 }
-
-//impl PartialEq for StuffAboutLocation {
-//    fn eq(&self, other: &Self) -> bool {
-//        self.times_visited_currently == other.times_visited_currently
-//    }
-//}
-//
-//impl PartialOrd for StuffAboutLocation {
-//    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-//        self.times_visited_currently.partial_cmp(&other.times_visited_currently)
-//    }
-//}
 
 impl PartialEq<u64> for StuffAboutLocation {
     fn eq(&self, other: &u64) -> bool {
@@ -437,6 +423,7 @@ macro_rules! been_here {
             );
         let was_visited_before=if let Some(mut lwc)=lwc_refmut {
             let lwc=lwc.as_mut().unwrap();
+            //let i:i32=lwc;//`&mut LocationWithCounter`
             assert_eq!(lwc, &mut clone,"the type of the static is coded wrongly!");
             assert!(lwc.counter>=0);
             let was_visited_before= lwc.counter>0;
