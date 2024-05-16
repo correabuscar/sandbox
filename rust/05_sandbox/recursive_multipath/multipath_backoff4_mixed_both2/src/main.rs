@@ -138,7 +138,7 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThi
                 //it's not used, can drop it:
                 can_dispose=true;
             }
-        drop(loc);//E0382: use of partially moved value: `loc` 
+            drop(loc);//E0382: use of partially moved value: `loc`
         }//so, is 'loc' dropped here or what? yeFIXME
         if can_dispose {
             //yesTODO: test to see if this is ever called!
@@ -279,6 +279,12 @@ macro_rules! recursion_detection_zone {
     (noalloc start, $timeout:expr, $default_value_on_timeout:expr) => {
         been_here!($timeout, $default_value_on_timeout)
     };
+    (noheapalloc start, $timeout:expr, $default_value_on_timeout:expr) => {
+        been_here!($timeout, $default_value_on_timeout)
+    };
+    (no_heap_alloc start, $timeout:expr, $default_value_on_timeout:expr) => {
+        been_here!($timeout, $default_value_on_timeout)
+    };
     (noalloc begin, $timeout:expr, $default_value_on_timeout:expr) => {
         been_here!($timeout, $default_value_on_timeout)
     };
@@ -293,6 +299,12 @@ macro_rules! recursion_detection_zone {
     };
 // -----------
     (noalloc start, $timeout:expr) => {
+        been_here!($timeout)
+    };
+    (noheapalloc start, $timeout:expr) => {
+        been_here!($timeout)
+    };
+    (no_heap_alloc start, $timeout:expr) => {
         been_here!($timeout)
     };
     (noalloc begin, $timeout:expr) => {
