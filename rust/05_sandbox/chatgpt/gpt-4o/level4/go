@@ -1,0 +1,2 @@
+cargo run > level4.dot
+dot -Tpng level4.dot -o level4_rustgenerated.png
