@@ -77,7 +77,8 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocal
         //TODO: handle error cases, ie. what if can't borrow, or stuff.
         let res=self.location_tracker.try_with(|refcell| {
             //let i:i32=refcell;//found `&RefCell<Option<...>>`
-            if let Ok(mut ref_mut_location) = refcell.try_borrow_mut() {
+            let mut res_borrow=refcell.try_borrow_mut();
+            if let Ok(ref mut ref_mut_location) = res_borrow {
                 //let i:i32=ref_mut_location;//found `RefMut<'_, Option<...>>`
                 //println!("!{}",self.location);
                 if let Some(lwc) = ref_mut_location.as_mut() {
@@ -88,11 +89,17 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocal
                         //TODO: return Result<> ? but then rename to try_unvisit() ?
                         panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(1)", lwc);
                     }
+                } else {
+                    eprintln!("!!! unvisiting found None as the L.W.C., this is pretty bad as it means inconsistency in coding the logic");
                 }
+            } else {
+                eprintln!("!!! unvisiting errored, couldn't borrow, this is pretty bad as it means inconsistency in tracking, error='{:?}'",res_borrow);
             }
+            drop(res_borrow);//now can be dropped
         });
         if let Err(err)=res {
-            eprintln!("unvisiting errored, error={}",err);
+            //TODO: this is pretty bad, maybe somehow set the is_recursing bool to some default ?
+            eprintln!("!!! unvisiting errored, this is pretty bad as it means inconsistency in tracking, error='{}'",err);
         }
     }
 }//impl
@@ -100,7 +107,7 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocal
 /// Define the maximum number of threads that are concurrently supported in the same zone,
 /// before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
 const MAX_NUM_THREADS_AT_ONCE: usize = 10;
-//TODO: need to rename this type:
+//doneTODO: need to rename this type:
 type NoHeapAllocsThreadLocalForThisZone=no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>;
 impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> {
 
@@ -109,9 +116,9 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThi
         //println!("unvisiting self={:?}",self);
         let mut can_dispose:bool=false;
         {
-            let loc=self.location_tracker.maybe_get_mut_ref_if_set();
+            let mut loc=self.location_tracker.maybe_get_mut_ref_if_set();
             //let i:i32=loc;//`Option<RefMut<'_, Option<LocationWithCounter>>>`
-            if let Some(mut refmut)=loc {
+            if let Some(ref mut refmut)=loc {
                 //let i:i32=refmut;//`RefMut<'_, Option<LocationWithCounter>>`
                 //so it's already being used
                 if let Some(lwc)=refmut.as_mut() {
@@ -131,8 +138,8 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThi
                 //it's not used, can drop it:
                 can_dispose=true;
             }
-        //drop(loc);//E0382: use of partially moved value: `loc` 
-        }//so, is 'loc' dropped here or what? FIXME
+        drop(loc);//E0382: use of partially moved value: `loc` 
+        }//so, is 'loc' dropped here or what? yeFIXME
         if can_dispose {
             //yesTODO: test to see if this is ever called!
             //println!("disposing current tid from noallocthreadlocal {:?}",self.location);
