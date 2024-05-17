@@ -2,7 +2,7 @@
 
 wget='wget'
 #wget='sudo -u portage -- /var/tmp/portage/net-misc/wget-1.21.3-r1/work/wget-1.21.3/src/wget'
-wget='/var/tmp/portage/net-misc/wget-1.21.3-r1/work/wget-1.21.3/src/wget'
+#wget='/var/tmp/portage/net-misc/wget-1.21.3-r1/work/wget-1.21.3/src/wget'
 
 trap onexit EXIT SIGINT
 onexit() {
