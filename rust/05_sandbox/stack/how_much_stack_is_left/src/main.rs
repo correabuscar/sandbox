@@ -34,7 +34,11 @@ fn recurse(depth: usize) {
     };
 
     // Recursively call itself
-    if depth >=58 {
+    #[cfg(not(debug_assertions))]
+    const DEPTH:usize=121;
+    #[cfg(debug_assertions)]
+    const DEPTH:usize=58;
+    if depth >=DEPTH {
         println!("End={}",depth);
         //panic!("wtw");
         cloj();
@@ -49,12 +53,14 @@ fn main() {
     // Set the desired stack size
     let stack_size = 150*128+5696;//via `cargo run` to 150 depth, 149 is min.
 
+
     // Create a new thread with the specified stack size
     let result = std::thread::Builder::new()
         .stack_size(stack_size)
         .spawn(|| {
             // Your main program logic goes here
-            println!("Hello, thread world! {:?}", stacker::remaining_stack());
+            let foo=stacker::remaining_stack();
+            println!("Hello, thread world! {:?}", foo);
             recurse(1);
         });
 
