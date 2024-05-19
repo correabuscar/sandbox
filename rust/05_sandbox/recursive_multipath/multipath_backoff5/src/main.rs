@@ -25,8 +25,8 @@ fn recursive_function(level:usize) {
     println!("{}┌zone1, recursing from it? {} level={}", leading_spaces, zone1_guard, level);
     if !zone1_guard.is_recursing {
         recursion_detection_zone!(end, zone1_guard);//end zone manually
-        //let zone2_guard=recursion_detection_zone!(start);
-        let zone2_guard=recursion_detection_zone!(no_heap_alloc start, ONE_SECOND).unwrap();
+        let zone2_guard=recursion_detection_zone!(start);
+        //let zone2_guard=recursion_detection_zone!(no_heap_alloc start, ONE_SECOND).unwrap();
         println!("{}├zone2, recursing from it? {} level={}", leading_spaces, zone2_guard, level);
         if !zone2_guard.is_recursing {
             println!("{}{}zone2, recursion starting from level={}",leading_spaces,PIPE,level);

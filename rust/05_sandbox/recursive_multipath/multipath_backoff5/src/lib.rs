@@ -455,7 +455,6 @@ pub use my_mod::get_current_thread_id;
 
 mod my_mod2 {
 use std::cell::RefCell;
-//use std::thread_local;
 use std::fmt;
 
 // Helper struct to decrement location's in-use counter on Drop
@@ -471,20 +470,19 @@ where
 
     //this location is used to know which location to unvisit when going out of scope!
     //this is the tracker that we use to update every time we enter/exit the zone
-    //doneFIXME: this should be private, but macro usage requires it to be pub somehow!!
     location_tracker: T,
 }
 
-impl fmt::Display for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocalForThisZone> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {:?}", self.is_recursing, self.location_tracker)
-    }
-}
-
-impl fmt::Display for RecursionDetectionZoneGuard<&'static NoHeapAllocsThreadLocalForThisZone> {
+impl<T> fmt::Display for RecursionDetectionZoneGuard<T>
+where
+    RecursionDetectionZoneGuard<T>: UnvisitTrait,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         //write!(f, "{} {:?}", self.is_recursing, self.location_tracker)
-        write!(f, "{}", self.is_recursing)
+        let type_name = std::any::type_name::<T>();
+        //FIXME: is the _or() even needed?!
+        let root_type = type_name.split("<").next().unwrap_or(type_name).split("::").last().unwrap_or(type_name);
+        write!(f, "{} {}", self.is_recursing, root_type)
     }
 }
 
