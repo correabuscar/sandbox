@@ -357,7 +357,7 @@ macro_rules! recursion_detection_zone {
 
 //TL=for the thread_local declaration
 type TLHeapAllocsThreadLocalForThisZone = RefCell<Option<LocationWithCounter>>;
-//This is for the reference to what we've declared with thread_local
+//This is for the reference(&) to what we've declared with thread_local
 type HeapAllocsThreadLocalForThisZone = std::thread::LocalKey<TLHeapAllocsThreadLocalForThisZone>;
 //ohwellTODO: get rid of thread_local!() macro call, and thus use only one type alias here! It won't work, still needs 2 types! so no use.
 //cantTODO: actually don't need it to be a RefCell, since we're giving the whole static to the guard! but for the noalloc version we do. Still need RefCell wrapper with thread_local!() else I can't mutate the inner value because .try_with() gives me an immutable ref.
@@ -462,6 +462,7 @@ macro_rules! been_here {
         guard // Return the guard instance
     }};
 //---------
+    //TODO: code is duplicated in the 2 macro branches (the one above and the one below). This is very bad for keeping things in sync when modifying the code in one of them.
     ($timeout:expr) => {{
         //doneFIXME: well now need this to be thread_local but without allocating, soo... fixed sized
         //array which would represent only the currently visiting(counter>0) location paired with
@@ -511,6 +512,9 @@ macro_rules! been_here {
     }};
 //---------
 }//macro
+
+//macro_rules! been_here_no_alloc_helper {
+//}
 
 #[derive(Debug)]
 struct LocationWithCounter {
@@ -591,7 +595,7 @@ fn main() {
     recursive_function(1);
     println!("Recursion test done.");
     for i in 1..=5 {
-        //XXX: Allow this following statement to exist to we're reminded to update the second part of the code that's duplicated in the macro! for keeping the two code copies in sync.
+        //XXX: Allow this following statement to exist so we're reminded to update the second part of the code that's duplicated in the macro! for keeping the two code copies in sync.
         let _rd_zone_guard=recursion_detection_zone!(noalloc start,std::time::Duration::from_secs(3)).unwrap();
         //let rd_zone_guard=recursion_detection_zone!(noalloc start,3, true);
         let rd_zone_guard=recursion_detection_zone!(noalloc start,std::time::Duration::from_secs(3), true);
