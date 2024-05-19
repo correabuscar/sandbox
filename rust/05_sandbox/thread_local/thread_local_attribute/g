@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+export RUST_BACKTRACE=1
+cargo clean
+#last one overrides:
+tlsmodel="global-dynamic"
+tlsmodel="local-dynamic"
+tlsmodel="emulated"
+tlsmodel="local-exec"
+tlsmodel="initial-exec"
+RUSTFLAGS="-Z tls-model=${tlsmodel}" cargo run
+echo "exit code: $?"
