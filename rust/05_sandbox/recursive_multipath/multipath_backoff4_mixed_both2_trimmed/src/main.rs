@@ -3,43 +3,6 @@
 use std::cell::RefCell;
 use std::thread_local;
 use std::fmt;
-include!(concat!(env!("OUT_DIR"), "/project_dir.rs")); //gets me 'PROJECT_DIR'
-
-
-struct LocationInSourceCode {
-    file: &'static str,
-    line: u32,
-    column: u32,
-}
-
-impl fmt::Debug for LocationInSourceCode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Remove the prefix of PROJECT_DIR from the file field, so output is less cluttered!
-        let file_without_prefix = match self.file.strip_prefix(PROJECT_DIR) {
-            Some(suffix) => suffix,
-            None => self.file,
-        };
-
-        f.debug_struct("LocationInSourceCode")
-            .field("file", &file_without_prefix)
-            .field("line", &self.line)
-            .field("column", &self.column)
-            .finish()
-    }
-}
-
-
-impl fmt::Display for LocationInSourceCode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Remove the prefix of PROJECT_DIR from the file field
-        let file_without_prefix = match self.file.strip_prefix(PROJECT_DIR) {
-            Some(suffix) => suffix,
-            None => self.file,
-        };
-
-        write!(f, "{}:{}:{}", file_without_prefix, self.line, self.column)
-    }
-}
 
 // Helper struct to decrement location's in-use counter on Drop
 #[derive(Debug)]
