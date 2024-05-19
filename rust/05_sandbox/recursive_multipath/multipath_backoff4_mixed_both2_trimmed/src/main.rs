@@ -425,7 +425,6 @@ macro_rules! been_here {
         let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
             StuffAboutLocation::initial(),
             $timeout,
-            false,
             );
         let was_visited_before=if let Some(mut sal)=sal_refmut {
             let sal=sal.as_mut().unwrap();
@@ -467,7 +466,6 @@ macro_rules! been_here {
         let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
             StuffAboutLocation::initial(),
             $timeout,
-            false,
             );
         if let Some(mut sal)=sal_refmut {
             let sal=sal.as_mut().unwrap();

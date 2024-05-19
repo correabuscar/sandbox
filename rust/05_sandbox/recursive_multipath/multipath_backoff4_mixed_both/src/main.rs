@@ -420,7 +420,6 @@ macro_rules! been_here {
         let (was_already_set,lwc_refmut)=LOCATION_VAR.get_or_set(
             loc_of_this_macro_call,
             $timeout,
-            true,
             );
         let was_visited_before=if let Some(mut lwc)=lwc_refmut {
             let lwc=lwc.as_mut().unwrap();

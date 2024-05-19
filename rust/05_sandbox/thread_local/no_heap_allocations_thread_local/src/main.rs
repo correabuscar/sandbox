@@ -26,22 +26,22 @@ fn main() {
     println!("{:?}", FOO);
     {
         let first_val=MyType(10101);
-        if let (already_existed,Some(val)) = FOO.get_or_set(first_val.clone(),std::time::Duration::from_secs(1), true) {
+        if let (already_existed,Some(val)) = FOO.get_or_set(first_val.clone(),std::time::Duration::from_secs(1)) {
             assert_eq!(false, already_existed);
             assert_eq!(*val, Some(first_val.clone()));
         }
         let diff_val=MyType(20202);
-        if let (already_existed,Some(val)) = FOO.get_or_set(diff_val.clone(),std::time::Duration::from_secs(1), false) {
+        if let (already_existed,Some(val)) = FOO.get_or_set(diff_val.clone(),std::time::Duration::from_secs(1)) {
             assert_eq!(true, already_existed);
             assert_eq!(*val, Some(first_val.clone()));
         }
-        if let (already_existed,Some(val)) = FOO.get_or_set(first_val.clone(),std::time::Duration::from_secs(1), true) {
+        if let (already_existed,Some(val)) = FOO.get_or_set(first_val.clone(),std::time::Duration::from_secs(1)) {
             assert_eq!(true, already_existed);
             assert_eq!(*val, Some(first_val));
         }
-        if let (already_existed,Some(val)) = FOO.get_or_set(diff_val.clone(),std::time::Duration::from_secs(1), true) {
+        if let (already_existed,Some(val)) = FOO.get_or_set(diff_val.clone(),std::time::Duration::from_secs(1)) {
             assert_eq!(true, already_existed);
-            assert_eq!(*val, Some(diff_val));
+            assert_ne!(*val, Some(diff_val));
         }
     }//block
     println!("{:?}", FOO);
@@ -54,7 +54,7 @@ fn main() {
             let current_thread_id = get_current_thread_id();//FOO::get  std::thread::current().id().as_u64();
             //let set_to=MyType(current_thread_id.get() as usize * 10);
             let set_to=MyType(current_thread_id as usize * 10);
-            if let (already_existed,Some(mut val)) = FOO.get_or_set(set_to.clone(),std::time::Duration::from_secs((i/2) as u64), false) {
+            if let (already_existed,Some(mut val)) = FOO.get_or_set(set_to.clone(),std::time::Duration::from_secs((i/2) as u64)) {
                 println!(
                     "Slot allocated for thread {}, already existed? {}, val={:?} wanted to set to {:?}",
                     current_thread_id, already_existed, val, set_to

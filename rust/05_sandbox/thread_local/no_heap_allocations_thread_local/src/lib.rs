@@ -272,15 +272,13 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
     /// if success returns a mutable ref to the existing value whether or not it was  just set
     /// Since the value is supposed to be accessible only on current thread, it's not protected or
     /// wrapped into some kind of sync. primitive, so you've direct mutability to it.
-    /// Last arg if true makes sure the 'val' is the one that alredy existed, else any existing one is left as it is.
-    /// (if you used 'true' here and the return.0 is 'true' it means it overwrote your previous value which is unlikely what you ever wanted)
     pub fn get_or_set<'a>(
         &'a self,
         //doneFIXME: ensure this value is the one that already exists?
         to_val:T,
         //thread_id: std::num::NonZeroU64,
         timeout: Duration,
-        ensure_val:bool,
+        //ensure_val:bool,
     ) -> (bool,Option<RefMut<'a,Option<T>>>) {
         let start_time = std::time::Instant::now();
         //let new_value: u64 = current_thread_id.into();
@@ -305,15 +303,15 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
 //                    let value_ptr = unsafe { self.values.as_ptr().offset(index as isize) as *mut T};
 //                    let mut_ref_to_value=unsafe { &mut *value_ptr };
                     //TODO: use try_borrow_mut() here:
-                    let mut mut_ref_to_value:RefMut<Option<T>>=self.values[index].borrow_mut();
-                    if ensure_val {
-                        if let Some(what_was)=mut_ref_to_value.as_mut() {
-                            //well, we don't have to check at all, thus we won't have to require T traits!
-                            //if *what_was != to_val { //binary operation `!=` cannot be applied to type `T`: T
-                            *what_was=to_val;
-                            //}
-                        }
-                    }
+                    let mut_ref_to_value:RefMut<Option<T>>=self.values[index].borrow_mut();
+                    //if ensure_val {
+                    //    if let Some(what_was)=mut_ref_to_value.as_mut() {
+                    //        //well, we don't have to check at all, thus we won't have to require T traits!
+                    //        //if *what_was != to_val { //binary operation `!=` cannot be applied to type `T`: T
+                    //        *what_was=to_val;
+                    //        //}
+                    //    }
+                    //}
                     //let current_val=&mut self.values[index];
                     //return (true, Some(current_val));
                     return (true, Some(mut_ref_to_value));
