@@ -1,3 +1,5 @@
+#![feature(internal_output_capture)]
+
 use std::cell::RefCell;
 use std::thread_local;
 use std::fmt;
@@ -57,7 +59,14 @@ where
 
 impl fmt::Display for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocalForThisZone> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {:?})", self.is_recursing, self.location_tracker)
+        write!(f, "{} {:?}", self.is_recursing, self.location_tracker)
+    }
+}
+
+impl fmt::Display for RecursionDetectionZoneGuard<&'static NoHeapAllocsThreadLocalForThisZone> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        //write!(f, "{} {:?}", self.is_recursing, self.location_tracker)
+        write!(f, "{}", self.is_recursing)
     }
 }
 
@@ -81,13 +90,13 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocal
             if let Ok(ref mut ref_mut_location) = res_borrow {
                 //let i:i32=ref_mut_location;//found `RefMut<'_, Option<...>>`
                 //println!("!{}",self.location);
-                if let Some(lwc) = ref_mut_location.as_mut() {
+                if let Some(sal) = ref_mut_location.as_mut() {
                     //let i:i32=counter;//&mut StuffAboutLocation
-                    if lwc.counter > 0 {
-                        lwc.counter -= 1;
+                    if *sal> 0 {
+                        *sal -= 1;
                     } else {
                         //TODO: return Result<> ? but then rename to try_unvisit() ?
-                        panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(1)", lwc);
+                        panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(1)", sal);
                     }
                 } else {
                     eprintln!("!!! unvisiting found None as the L.W.C., this is pretty bad as it means inconsistency in coding the logic");
@@ -108,7 +117,7 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocal
 /// before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
 const MAX_NUM_THREADS_AT_ONCE: usize = 10;
 //doneTODO: need to rename this type:
-type NoHeapAllocsThreadLocalForThisZone=no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter>;
+type NoHeapAllocsThreadLocalForThisZone=no_heap_allocations_thread_local::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,StuffAboutLocation>;
 impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> {
 
     //mustn't call this manually
@@ -121,16 +130,16 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThi
             if let Some(ref mut refmut)=loc {
                 //let i:i32=refmut;//`RefMut<'_, Option<LocationWithCounter>>`
                 //so it's already being used
-                if let Some(lwc)=refmut.as_mut() {
-                    //let i:i32=lwc;//`&mut LocationWithCounter`
-                    //let i:i32=lwc.counter;//found `StuffAboutLocation`
-                    if lwc.counter > 0 {
-                        lwc.counter-=1;
-                        if lwc.counter == 0 {
+                if let Some(sal)=refmut.as_mut() {
+                    //let i:i32=sal;//`&mut LocationWithCounter`
+                    //let i:i32=sal.counter;//found `StuffAboutLocation`
+                    if *sal > 0 {
+                        *sal -=1;
+                        if *sal == 0 {
                             can_dispose=true;
                         }
                     } else {
-                        panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(2)", lwc.counter);
+                        panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(2)", sal);
                     }
                 }
                 //drop(refmut);
@@ -356,7 +365,7 @@ macro_rules! recursion_detection_zone {
 }
 
 //TL=for the thread_local declaration
-type TLHeapAllocsThreadLocalForThisZone = RefCell<Option<LocationWithCounter>>;
+type TLHeapAllocsThreadLocalForThisZone = RefCell<Option<StuffAboutLocation>>;
 //This is for the reference(&) to what we've declared with thread_local
 type HeapAllocsThreadLocalForThisZone = std::thread::LocalKey<TLHeapAllocsThreadLocalForThisZone>;
 //ohwellTODO: get rid of thread_local!() macro call, and thus use only one type alias here! It won't work, still needs 2 types! so no use.
@@ -381,24 +390,16 @@ macro_rules! been_here {
         }
         let was_visited_before=A_STATIC_FOR_THIS_CALL_LOCATION.try_with(|refcell| {
             let mut ref_mut=refcell.borrow_mut();
+            //let i:i32=ref_mut;//found `RefMut<'_, Option<...>>`
             if ref_mut.is_none() {
-                let loc_of_this_macro_call=
-                    //This is the location(in source code) of our macro call.
-                    LocationWithCounter {
-                        location: LocationInSourceCode {
-                            file: file!(),
-                            line: line!(),
-                            column: column!(),
-                        },
-                        counter: StuffAboutLocation::initial(),
-                    };
-                *ref_mut=Some(loc_of_this_macro_call);
+                //first time init:
+                *ref_mut=Some(StuffAboutLocation::initial());
             }
             assert!(ref_mut.is_some(),"code logic is wrong");
-            let lwc=ref_mut.as_mut().unwrap();
-            //let i:i32=lwc;//found `&mut LocationWithCounter`
-            lwc.counter+=1;
-            lwc.counter > 1 // Return true if is_recursing (counter > 1)
+            let sal=ref_mut.as_mut().unwrap();
+            //let i:i32=sal;//found `&mut StuffAboutLocation`
+            *sal += 1;
+            *sal > 1 // Return true if is_recursing (counter > 1)
             //assert_eq!(ref_mut.as_mut().unwrap().counter,1,"developer coded it wrongly");
         }).unwrap_or(true);
         //XXX: so we say is_recursing=true if failed to acquire lock which means it's likely due to recursion
@@ -421,35 +422,24 @@ macro_rules! been_here {
     ($timeout:expr, $default_value_on_timeout:expr) => {{
         static LOCATION_VAR: NoHeapAllocsThreadLocalForThisZone = NoHeapAllocsThreadLocalForThisZone::new();
 
-        let loc_of_this_macro_call=
-            //This is the location(in source code) of our macro call.
-            LocationWithCounter {
-                location: LocationInSourceCode {
-                    file: file!(),
-                    line: line!(),
-                    column: column!(),
-                },
-                counter: StuffAboutLocation::initial(),
-            };
-        //let mut clone=loc_of_this_macro_call.clone();
-        let (was_already_set,lwc_refmut)=LOCATION_VAR.get_or_set(
-            loc_of_this_macro_call,
+        let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
+            StuffAboutLocation::initial(),
             $timeout,
             true,
             );
-        let was_visited_before=if let Some(mut lwc)=lwc_refmut {
-            let lwc=lwc.as_mut().unwrap();
-            //let i:i32=lwc;//`&mut LocationWithCounter`
-            //assert_eq!(lwc, &mut clone,"the type of the static is coded wrongly!");
-            assert!(lwc.counter>=0);
-            let was_visited_before= lwc.counter>0;
-            lwc.counter+=1;
+        let was_visited_before=if let Some(mut sal)=sal_refmut {
+            let sal=sal.as_mut().unwrap();
+            //let i:i32=sal;//`&mut LocationWithCounter`
+            //assert_eq!(sal, &mut clone,"the type of the static is coded wrongly!");
+            assert!(*sal>=0);
+            let was_visited_before= *sal>0;
+            *sal+=1;
             assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
-            //drop(lwc);//it's a ref
+            //drop(sal);//it's a ref
             was_visited_before
         } else {
-            assert!(lwc_refmut.is_none());
-            drop(lwc_refmut);
+            assert!(sal_refmut.is_none());
+            drop(sal_refmut);
             //ie. timeout
             fn assert_bool(_: bool) {}
             assert_bool($default_value_on_timeout);
@@ -474,39 +464,27 @@ macro_rules! been_here {
         //static LOCATION_VAR: NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter> = NoHeapAllocThreadLocal::new();
         static LOCATION_VAR: NoHeapAllocsThreadLocalForThisZone = NoHeapAllocsThreadLocalForThisZone::new();
 
-        let loc_of_this_macro_call=
-            //This is the location(in source code) of our macro call.
-            LocationWithCounter {
-                //so technically this location is merely informational, since we're not using a hashmap anymore but rather a static that's unique for each location where this macro is called, this isn't needed for tracking! But the counter is needed to keep track of how many times we're recursed until the end of zone was encountered(which would decrease it).
-                location: LocationInSourceCode {
-                    file: file!(),
-                    line: line!(),
-                    column: column!(),
-                },
-                counter: StuffAboutLocation::initial(),
-            };
-        //let mut clone=loc_of_this_macro_call.clone();
-        let (was_already_set,lwc_refmut)=LOCATION_VAR.get_or_set(
-            loc_of_this_macro_call,
+        let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
+            StuffAboutLocation::initial(),
             $timeout,
             true,
             );
-        if let Some(mut lwc)=lwc_refmut {
-            let lwc=lwc.as_mut().unwrap();
-            //assert_eq!(lwc, &mut clone,"the type of the static is coded wrongly!");
-            assert!(lwc.counter>=0);
-            let was_visited_before= lwc.counter>0;
-            lwc.counter+=1;
+        if let Some(mut sal)=sal_refmut {
+            let sal=sal.as_mut().unwrap();
+            //assert_eq!(sal, &mut clone,"the type of the static is coded wrongly!");
+            assert!(*sal>=0);
+            let was_visited_before= *sal>0;
+            *sal+=1;
             assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
-            //drop(lwc);//it's a ref
+            //drop(sal);//it's a ref
             let guard = RecursionDetectionZoneGuard {
                 is_recursing: was_visited_before,
                 location_tracker: &LOCATION_VAR,
             };
             Some(guard) // Return the guard instance
         } else {
-            assert!(lwc_refmut.is_none());
-            drop(lwc_refmut);
+            assert!(sal_refmut.is_none());
+            drop(sal_refmut);
             //ie. timeout
             None
         }
@@ -516,15 +494,6 @@ macro_rules! been_here {
 
 //macro_rules! been_here_no_alloc_helper {
 //}
-
-#[derive(Debug)]
-struct LocationWithCounter {
-    //this is mostly informational, because the static within the macro is enough to keep track of the location of the macro call!
-    #[allow(dead_code)]
-    location: LocationInSourceCode,
-    counter: StuffAboutLocation,
-}
-
 
 //macro_rules! been_here_without_allocating {
 //}//macro
@@ -540,6 +509,8 @@ struct LocationWithCounter {
 //    });
 //}
 
+const FOO:std::time::Duration = std::time::Duration::from_secs(1);
+
 // Example usage
 fn recursive_function(level:usize) {
     const PIPE:char='│';
@@ -549,8 +520,11 @@ fn recursive_function(level:usize) {
     } else { "".to_string() };
 
     //begins an action block that's protected from infinite recursion:
-    let zone1_guard = recursion_detection_zone!(start); // Mark this location as start of zone that needs protection from recursion and the zone ends when manually dropped or until caller' scope ends!
-                                // or manually drop()
+    // Mark this location as start of zone that needs protection from recursion and the zone ends when manually dropped or until caller' scope ends!
+    // or manually drop()
+    //let zone1_guard = recursion_detection_zone!(start);
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    let zone1_guard = recursion_detection_zone!(noalloc start, FOO).unwrap();
     println!("{}┌zone1, recursing from it? {} level={}", leading_spaces, zone1_guard, level);
     if !zone1_guard.is_recursing {
         recursion_detection_zone!(end, zone1_guard);//end zone manually
@@ -585,14 +559,30 @@ fn recursive_function(level:usize) {
 
 fn main() {
     let handle = std::thread::spawn(|| {
+        std::io::set_output_capture(Some(Default::default()));
         recursive_function(1); // Call recursive_function in a separate thread
         //display_visited_locations();
+        let captured = std::io::set_output_capture(None).unwrap();
+        let captured_string = {
+          let captured_mutex = captured.lock().unwrap();
+          String::from_utf8_lossy(&captured_mutex[..]).into_owned()
+        };
+        print!("Captured from thread:\n{}", captured_string);
+        captured_string
     });
-    // Wait for the spawned thread to finish
-    handle.join().unwrap();
+    // Wait for the spawned thread to finish, else intermixed output. FIXME: use temp buffer?
     println!("Recursion test starting.........");
+    std::io::set_output_capture(Some(Default::default()));
     recursive_function(1);
-    println!("Starting again.........");
+    let res=handle.join().unwrap();
+    let captured = std::io::set_output_capture(None).unwrap();
+    let captured_string = {
+        let captured_mutex = captured.lock().unwrap();
+        String::from_utf8_lossy(&captured_mutex[..]).into_owned()
+    };
+    print!("Captured from main:\n{}", captured_string);
+    assert_eq!(res,captured_string);//same output from thread as from main, even tho they ran concurrently
+    println!("Starting again.........in main only:");
     recursive_function(1);
     println!("Recursion test done.");
     for i in 1..=5 {
