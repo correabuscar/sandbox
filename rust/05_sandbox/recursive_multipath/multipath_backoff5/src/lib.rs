@@ -275,7 +275,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
     pub fn get_or_set<'a>(
         &'a self,
         //doneFIXME: ensure this value is the one that already exists?
-        to_val:T,
+        to_val:T,//TODO: this should probably be a closure so it's not evaluated on each call!
         //thread_id: std::num::NonZeroU64,
         timeout: Duration,
         //ensure_val:bool,
@@ -471,8 +471,8 @@ where
 
     //this location is used to know which location to unvisit when going out of scope!
     //this is the tracker that we use to update every time we enter/exit the zone
-    //FIXME: this should be private, but macro usage requires it to be pub somehow!!
-    pub location_tracker: T,
+    //doneFIXME: this should be private, but macro usage requires it to be pub somehow!!
+    location_tracker: T,
 }
 
 impl fmt::Display for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocalForThisZone> {
@@ -594,6 +594,13 @@ where
     #[inline(always)]
     pub fn end_zone_aka_drop(self) {
         self.drop();
+    }
+
+    pub fn new(is_recursing: bool, location_tracker:T) -> Self {
+        Self {
+            is_recursing,
+            location_tracker,
+        }
     }
 }
 
@@ -739,12 +746,13 @@ macro_rules! recursion_detection_zone {
         //doneTODO: return the bool and the Option<LocationInSourceCode> so that it can be *counter-=1 later when
         //done; i don't think we can do this on Drop because catch_unwind() would trigger it, hmm,
         //maybe this is a good thing? didn't think this thru.
-        let guard:RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard {
-            is_recursing: was_visited_before,
-            location_tracker: &A_STATIC_FOR_THIS_CALL_LOCATION,
-            //nogoodTODO: maybe don't give ref to the static, but a ref to the inner instead? which means, we'd need the RefCell::borrow_mut() here. Well actually giving a refcell mut ref here would prevent recursive call from modifying the inner because it's already mut borrowed!
+        let guard:RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard::new(was_visited_before, &A_STATIC_FOR_THIS_CALL_LOCATION);
+        //{
+        //    is_recursing: was_visited_before,
+        //    location_tracker: &A_STATIC_FOR_THIS_CALL_LOCATION,
+        //    //nogoodTODO: maybe don't give ref to the static, but a ref to the inner instead? which means, we'd need the RefCell::borrow_mut() here. Well actually giving a refcell mut ref here would prevent recursive call from modifying the inner because it's already mut borrowed!
 
-        };
+        //};
         guard // Return the guard instance
     }};
 // -----------
@@ -795,10 +803,11 @@ macro_rules! recursion_detection_zone {
             assert_bool($default_value_on_timeout);
             $default_value_on_timeout
         };
-        let guard = RecursionDetectionZoneGuard {
-            is_recursing: was_visited_before,
-            location_tracker: &LOCATION_VAR,
-        };
+        let guard = RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
+        //{
+        //    is_recursing: was_visited_before,
+        //    location_tracker: &LOCATION_VAR,
+        //};
         guard // Return the guard instance
     }};
     //};
@@ -839,6 +848,7 @@ macro_rules! recursion_detection_zone {
         //use no_heap_allocations_thread_local::NoHeapAllocThreadLocal;
         //static LOCATION_VAR: NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter> = NoHeapAllocThreadLocal::new();
         static LOCATION_VAR: NoHeapAllocsThreadLocalForThisZone = NoHeapAllocsThreadLocalForThisZone::new();
+        //TODO: the static must remain in the macro, but the rest could be inside a function
 
         let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
             StuffAboutLocation::initial(),
@@ -852,10 +862,11 @@ macro_rules! recursion_detection_zone {
             *sal+=1;
             assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
             //drop(sal);//it's a ref
-            let guard = RecursionDetectionZoneGuard {
-                is_recursing: was_visited_before,
-                location_tracker: &LOCATION_VAR,
-            };
+            let guard = RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
+            //{
+            //    is_recursing: was_visited_before,
+            //    location_tracker: &LOCATION_VAR,
+            //};
             Some(guard) // Return the guard instance
         } else {
             assert!(sal_refmut.is_none());
@@ -912,6 +923,7 @@ pub use my_mod2::HeapAllocsThreadLocalForThisZone;
 pub use my_mod2::NoHeapAllocsThreadLocalForThisZone;
 pub use my_mod2::StuffAboutLocation;
 pub use my_mod2::RecursionDetectionZoneGuard;
+//TODO: must find a better way here perhaps?
 //pub use self::recursion_detection_zone;
 //    = note: this could be because a macro annotated with `#[macro_export]` will be exported at the root of the crate instead of the module where it is defined
 //help: a macro with this name exists at the root of the crate
