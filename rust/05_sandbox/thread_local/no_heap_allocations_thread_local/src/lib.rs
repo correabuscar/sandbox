@@ -303,6 +303,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                     //let current_val=unsafe { self.values[index].assume_init() };
 //                    let value_ptr = unsafe { self.values.as_ptr().offset(index as isize) as *mut T};
 //                    let mut_ref_to_value=unsafe { &mut *value_ptr };
+                    //TODO: use try_borrow_mut() here:
                     let mut mut_ref_to_value:RefMut<Option<T>>=self.values[index].borrow_mut();
                     if ensure_val {
                         if let Some(what_was)=mut_ref_to_value.as_mut() {
