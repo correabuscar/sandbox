@@ -1,2 +1,8 @@
 this is ../multipath_backoff4_mixed_both2_trimmed/
 but every dep is embedded into it and possibly modified/trimmed too
+
+
+this here in ./ should be the updated version of these two:
+/home/user/sandbox/rust/05_sandbox/thread_local/no_heap_allocations_thread_local
+/home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff4_mixed_both2_trimmed
+

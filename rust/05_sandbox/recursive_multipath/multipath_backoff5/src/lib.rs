@@ -744,7 +744,7 @@ macro_rules! recursion_detection_zone {
         //doneTODO: return the bool and the Option<LocationInSourceCode> so that it can be *counter-=1 later when
         //done; i don't think we can do this on Drop because catch_unwind() would trigger it, hmm,
         //maybe this is a good thing? didn't think this thru.
-        let guard:RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard::new(was_visited_before, &A_STATIC_FOR_THIS_CALL_LOCATION);
+        let guard:$crate::RecursionDetectionZoneGuard<&'static $crate::HeapAllocsThreadLocalForThisZone> = $crate::RecursionDetectionZoneGuard::new(was_visited_before, &A_STATIC_FOR_THIS_CALL_LOCATION);
         //{
         //    is_recursing: was_visited_before,
         //    location_tracker: &A_STATIC_FOR_THIS_CALL_LOCATION,
@@ -780,7 +780,7 @@ macro_rules! recursion_detection_zone {
         static LOCATION_VAR: $crate::NoHeapAllocsThreadLocalForThisZone = $crate::NoHeapAllocsThreadLocalForThisZone::new();
 
         let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
-            StuffAboutLocation::initial(),
+            $crate::StuffAboutLocation::initial(),
             $timeout,
             );
         let was_visited_before=if let Some(mut sal)=sal_refmut {
@@ -801,7 +801,7 @@ macro_rules! recursion_detection_zone {
             assert_bool($default_value_on_timeout);
             $default_value_on_timeout
         };
-        let guard = RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
+        let guard = $crate::RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
         //{
         //    is_recursing: was_visited_before,
         //    location_tracker: &LOCATION_VAR,
@@ -845,11 +845,11 @@ macro_rules! recursion_detection_zone {
         //to be returned if timeout?
         //use no_heap_allocations_thread_local::NoHeapAllocThreadLocal;
         //static LOCATION_VAR: NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter> = NoHeapAllocThreadLocal::new();
-        static LOCATION_VAR: NoHeapAllocsThreadLocalForThisZone = NoHeapAllocsThreadLocalForThisZone::new();
+        static LOCATION_VAR: $crate::NoHeapAllocsThreadLocalForThisZone = $crate::NoHeapAllocsThreadLocalForThisZone::new();
         //TODO: the static must remain in the macro, but the rest could be inside a function
 
         let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
-            StuffAboutLocation::initial(),
+            $crate::StuffAboutLocation::initial(),
             $timeout,
             );
         if let Some(mut sal)=sal_refmut {
@@ -860,7 +860,7 @@ macro_rules! recursion_detection_zone {
             *sal+=1;
             assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
             //drop(sal);//it's a ref
-            let guard = RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
+            let guard = $crate::RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
             //{
             //    is_recursing: was_visited_before,
             //    location_tracker: &LOCATION_VAR,
@@ -919,7 +919,7 @@ macro_rules! recursion_detection_zone {
 pub use my_mod2::TLHeapAllocsThreadLocalForThisZone;
 pub use my_mod2::HeapAllocsThreadLocalForThisZone;
 pub use my_mod2::NoHeapAllocsThreadLocalForThisZone;
-pub use my_mod2::StuffAboutLocation;
+pub use my_mod2::StuffAboutLocation;//FIXME: shouldn't be pub; well it must be because the type alias is pub and it includes it innerly.
 pub use my_mod2::RecursionDetectionZoneGuard;
 //TODO: must find a better way here perhaps?
 //pub use self::recursion_detection_zone;
