@@ -453,7 +453,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
 pub use my_mod::NoHeapAllocThreadLocal;
 pub use my_mod::get_current_thread_id;
 
-mod my_mod2 {
+pub mod my_mod2 {
 use std::cell::RefCell;
 use std::fmt;
 
@@ -611,7 +611,7 @@ where
     }
 }
 
-/// not meant to be accessible by caller
+/// not meant to be accessible by caller, but can't be helped due to the macro using it as a nested type in the static!
 #[derive(Debug)]
 pub struct StuffAboutLocation {
     //this is 1 or more while in the zone
@@ -720,7 +720,7 @@ macro_rules! recursion_detection_zone {
         thread_local! {
             //XXX: thread_local itself does heap alloc internally(because pthread_key_create does alloc)!
             //it's gonna be a different static for each location where this macro is called; seems it has same name but internally it's mangled and global, however only visible here.
-            static A_STATIC_FOR_THIS_CALL_LOCATION: $crate::TLHeapAllocsThreadLocalForThisZone = $crate::TLHeapAllocsThreadLocalForThisZone::new(None);
+            static A_STATIC_FOR_THIS_CALL_LOCATION: $crate::my_mod2::TLHeapAllocsThreadLocalForThisZone = $crate::my_mod2::TLHeapAllocsThreadLocalForThisZone::new(None);
             //doneTODO: keep a max times visited?
         }
         let was_visited_before=A_STATIC_FOR_THIS_CALL_LOCATION.try_with(|refcell| {
@@ -728,7 +728,7 @@ macro_rules! recursion_detection_zone {
             //let i:i32=ref_mut;//found `RefMut<'_, Option<...>>`
             if ref_mut.is_none() {
                 //first time init:
-                *ref_mut=Some($crate::StuffAboutLocation::initial());
+                *ref_mut=Some($crate::my_mod2::StuffAboutLocation::initial());
             }
             assert!(ref_mut.is_some(),"code logic is wrong");
             let sal=ref_mut.as_mut().unwrap();
@@ -744,7 +744,7 @@ macro_rules! recursion_detection_zone {
         //doneTODO: return the bool and the Option<LocationInSourceCode> so that it can be *counter-=1 later when
         //done; i don't think we can do this on Drop because catch_unwind() would trigger it, hmm,
         //maybe this is a good thing? didn't think this thru.
-        let guard:$crate::RecursionDetectionZoneGuard<&'static $crate::HeapAllocsThreadLocalForThisZone> = $crate::RecursionDetectionZoneGuard::new(was_visited_before, &A_STATIC_FOR_THIS_CALL_LOCATION);
+        let guard:$crate::my_mod2::RecursionDetectionZoneGuard<&'static $crate::my_mod2::HeapAllocsThreadLocalForThisZone> = $crate::my_mod2::RecursionDetectionZoneGuard::new(was_visited_before, &A_STATIC_FOR_THIS_CALL_LOCATION);
         //{
         //    is_recursing: was_visited_before,
         //    location_tracker: &A_STATIC_FOR_THIS_CALL_LOCATION,
@@ -777,10 +777,10 @@ macro_rules! recursion_detection_zone {
     //TODO: code is duplicated in the following 2 macro branches. This is very bad for keeping things in sync when modifying the code in one of them.
     //($timeout:expr, $default_value_on_timeout:expr) =>
     {{
-        static LOCATION_VAR: $crate::NoHeapAllocsThreadLocalForThisZone = $crate::NoHeapAllocsThreadLocalForThisZone::new();
+        static LOCATION_VAR: $crate::my_mod2::NoHeapAllocsThreadLocalForThisZone = $crate::my_mod2::NoHeapAllocsThreadLocalForThisZone::new();
 
         let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
-            $crate::StuffAboutLocation::initial(),
+            $crate::my_mod2::StuffAboutLocation::initial(),
             $timeout,
             );
         let was_visited_before=if let Some(mut sal)=sal_refmut {
@@ -801,7 +801,7 @@ macro_rules! recursion_detection_zone {
             assert_bool($default_value_on_timeout);
             $default_value_on_timeout
         };
-        let guard = $crate::RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
+        let guard = $crate::my_mod2::RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
         //{
         //    is_recursing: was_visited_before,
         //    location_tracker: &LOCATION_VAR,
@@ -845,11 +845,11 @@ macro_rules! recursion_detection_zone {
         //to be returned if timeout?
         //use no_heap_allocations_thread_local::NoHeapAllocThreadLocal;
         //static LOCATION_VAR: NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter> = NoHeapAllocThreadLocal::new();
-        static LOCATION_VAR: $crate::NoHeapAllocsThreadLocalForThisZone = $crate::NoHeapAllocsThreadLocalForThisZone::new();
+        static LOCATION_VAR: $crate::my_mod2::NoHeapAllocsThreadLocalForThisZone = $crate::my_mod2::NoHeapAllocsThreadLocalForThisZone::new();
         //TODO: the static must remain in the macro, but the rest could be inside a function
 
         let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
-            $crate::StuffAboutLocation::initial(),
+            $crate::my_mod2::StuffAboutLocation::initial(),
             $timeout,
             );
         if let Some(mut sal)=sal_refmut {
@@ -860,7 +860,7 @@ macro_rules! recursion_detection_zone {
             *sal+=1;
             assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
             //drop(sal);//it's a ref
-            let guard = $crate::RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
+            let guard = $crate::my_mod2::RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
             //{
             //    is_recursing: was_visited_before,
             //    location_tracker: &LOCATION_VAR,
@@ -916,11 +916,11 @@ macro_rules! recursion_detection_zone {
 
 
 }//mod
-pub use my_mod2::TLHeapAllocsThreadLocalForThisZone;
-pub use my_mod2::HeapAllocsThreadLocalForThisZone;
-pub use my_mod2::NoHeapAllocsThreadLocalForThisZone;
-pub use my_mod2::StuffAboutLocation;//FIXME: shouldn't be pub; well it must be because the type alias is pub and it includes it innerly.
-pub use my_mod2::RecursionDetectionZoneGuard;
+//pub use my_mod2::TLHeapAllocsThreadLocalForThisZone;
+//pub use my_mod2::HeapAllocsThreadLocalForThisZone;
+//pub use my_mod2::NoHeapAllocsThreadLocalForThisZone;
+//pub use my_mod2::StuffAboutLocation;//semidoneFIXME: shouldn't be pub; well it must be because the type alias is pub and it includes it innerly. So it's pub but inside the my_mod2 module, rather than in the crate root!
+pub use my_mod2::RecursionDetectionZoneGuard;//this might wanna be used for explicit typing. This makes it pub in crate root.
 //TODO: must find a better way here perhaps?
 //pub use self::recursion_detection_zone;
 //    = note: this could be because a macro annotated with `#[macro_export]` will be exported at the root of the crate instead of the module where it is defined
