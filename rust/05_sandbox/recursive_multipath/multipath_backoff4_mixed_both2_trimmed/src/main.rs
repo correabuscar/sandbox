@@ -425,7 +425,7 @@ macro_rules! been_here {
         let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
             StuffAboutLocation::initial(),
             $timeout,
-            true,
+            false,
             );
         let was_visited_before=if let Some(mut sal)=sal_refmut {
             let sal=sal.as_mut().unwrap();
@@ -467,7 +467,7 @@ macro_rules! been_here {
         let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
             StuffAboutLocation::initial(),
             $timeout,
-            true,
+            false,
             );
         if let Some(mut sal)=sal_refmut {
             let sal=sal.as_mut().unwrap();
@@ -495,21 +495,8 @@ macro_rules! been_here {
 //macro_rules! been_here_no_alloc_helper {
 //}
 
-//macro_rules! been_here_without_allocating {
-//}//macro
 
-
-// Function to display the contents of the VisitedLocations hashmap
-//fn display_visited_locations() {
-//    PER_THREAD_VISITED_LOCATIONS.with(|locations| {
-//        println!("Visited Locations in thread id='{:?}':", std::thread::current().id());
-//        for (location, count) in locations.borrow().iter() {
-//            println!("{} {:?}", location, count);
-//        }
-//    });
-//}
-
-const FOO:std::time::Duration = std::time::Duration::from_secs(1);
+const ONE_SECOND:std::time::Duration = std::time::Duration::from_secs(1);
 
 // Example usage
 fn recursive_function(level:usize) {
@@ -524,11 +511,12 @@ fn recursive_function(level:usize) {
     // or manually drop()
     //let zone1_guard = recursion_detection_zone!(start);
     std::thread::sleep(std::time::Duration::from_millis(100));
-    let zone1_guard = recursion_detection_zone!(noalloc start, FOO).unwrap();
+    let zone1_guard = recursion_detection_zone!(noalloc start, ONE_SECOND).unwrap();
     println!("{}┌zone1, recursing from it? {} level={}", leading_spaces, zone1_guard, level);
     if !zone1_guard.is_recursing {
         recursion_detection_zone!(end, zone1_guard);//end zone manually
-        let zone2_guard=recursion_detection_zone!(start);
+        //let zone2_guard=recursion_detection_zone!(start);
+        let zone2_guard=recursion_detection_zone!(noalloc start, ONE_SECOND).unwrap();
         println!("{}├zone2, recursing from it? {} level={}", leading_spaces, zone2_guard, level);
         if !zone2_guard.is_recursing {
             println!("{}{}zone2, recursion starting from level={}",leading_spaces,PIPE,level);
@@ -547,7 +535,8 @@ fn recursive_function(level:usize) {
     }
 
     //begin another action block but protects against inf.rec. until the scope ends.
-    let zone3_guard = recursion_detection_zone!(start);
+    //let zone3_guard = recursion_detection_zone!(start);
+    let zone3_guard = recursion_detection_zone!(noalloc start, ONE_SECOND).unwrap();
     println!("{}├zone3, recursing from it? {} level={}", leading_spaces,zone3_guard, level);
     if !zone3_guard.is_recursing {
         println!("{}{}zone3, recursion starting from level={}",leading_spaces, PIPE,level);
@@ -560,6 +549,7 @@ fn recursive_function(level:usize) {
 fn main() {
     let handle = std::thread::spawn(|| {
         std::io::set_output_capture(Some(Default::default()));
+        //std::io::set_output_capture(None);
         recursive_function(1); // Call recursive_function in a separate thread
         //display_visited_locations();
         let captured = std::io::set_output_capture(None).unwrap();
@@ -573,6 +563,7 @@ fn main() {
     // Wait for the spawned thread to finish, else intermixed output. FIXME: use temp buffer?
     println!("Recursion test starting.........");
     std::io::set_output_capture(Some(Default::default()));
+    //std::io::set_output_capture(None);
     recursive_function(1);
     let res=handle.join().unwrap();
     let captured = std::io::set_output_capture(None).unwrap();

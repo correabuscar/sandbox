@@ -273,6 +273,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
     /// Since the value is supposed to be accessible only on current thread, it's not protected or
     /// wrapped into some kind of sync. primitive, so you've direct mutability to it.
     /// Last arg if true makes sure the 'val' is the one that alredy existed, else any existing one is left as it is.
+    /// (if you used 'true' here and the return.0 is 'true' it means it overwrote your previous value which is unlikely what you ever wanted)
     pub fn get_or_set<'a>(
         &'a self,
         //doneFIXME: ensure this value is the one that already exists?
