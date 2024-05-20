@@ -687,8 +687,7 @@ pub type HeapAllocsThreadLocalForThisZone = std::thread::LocalKey<TLHeapAllocsTh
 //cantTODO: actually don't need it to be a RefCell, since we're giving the whole static to the guard! but for the noalloc version we do. Still need RefCell wrapper with thread_local!() else I can't mutate the inner value because .try_with() gives me an immutable ref.
 
 #[inline(always)]
-/// timeout, was_visited_before
-fn did_it_timeout(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration) -> (bool,bool) {
+fn got_value(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration) -> std::option::Option<bool> {
     let (was_already_set,sal_refmut)=ref_to_static.get_or_set(
         StuffAboutLocation::initial(),
         timeout,
@@ -701,18 +700,20 @@ fn did_it_timeout(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: s
         *sal+=1;
         std::assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
         //drop(sal);//it's a ref
-        (false, was_visited_before)
+        Some(was_visited_before)
     } else {
         std::assert!(sal_refmut.is_none());
         std::mem::drop(sal_refmut);
         //ie. timeout
-        (true, false)
+        None
     }
 }
 
 pub fn macro_helper1(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration) -> std::option::Option<RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone>> {
-    let (did_timeout, was_visited_before)=did_it_timeout(ref_to_static, timeout);
-    if !did_timeout {
+    //let (did_timeout, was_visited_before)=did_it_timeout(ref_to_static, timeout);
+    if let Some(was_visited_before)=got_value(ref_to_static, timeout) {
+    //let (did_timeout, was_visited_before)=did_it_timeout(ref_to_static, timeout);
+    //if !did_timeout {
         let guard: RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard::new(was_visited_before, &ref_to_static);
         std::option::Option::Some(guard) // Return the guard instance
     } else {
@@ -742,12 +743,12 @@ pub fn macro_helper1(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout
 }
 //TODO: find out why this doesn't need the 'static lifetime but the normal thread_local!() does.
 pub fn macro_helper2(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration, default_value_on_timeout:bool) -> RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> {
-    let (did_timeout, was_visited_before)=did_it_timeout(ref_to_static, timeout);
-    //shadowing:
-    let was_visited_before=if did_timeout {
-        default_value_on_timeout
-    } else {
+    //let (did_timeout, was_visited_before)=did_it_timeout(ref_to_static, timeout);
+    ////shadowing:
+    let was_visited_before=if let Some(was_visited_before)=got_value(ref_to_static, timeout) {
         was_visited_before
+    } else {
+        default_value_on_timeout
     };
 //    let (was_already_set,sal_refmut)=ref_to_static.get_or_set(
 //        StuffAboutLocation::initial(),
