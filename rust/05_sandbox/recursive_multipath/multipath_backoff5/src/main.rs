@@ -104,7 +104,7 @@ fn main() {
     std::println!("Hello initial println allocation.");//manually call this before anything else to cause allocation to happen.
     let handle = std::thread::spawn(|| {
         std::io::set_output_capture(std::option::Option::Some(std::default::Default::default()));
-        //std::io::set_output_capture(None);
+        //std::io::set_output_capture(std::option::Option::None);
         recursive_function(1); // Call recursive_function in a separate thread
         //display_visited_locations();
         let captured = std::io::set_output_capture(std::option::Option::None).unwrap();
@@ -118,7 +118,7 @@ fn main() {
     // Wait for the spawned thread to finish, else intermixed output. FIXME: use temp buffer?
     std::println!("Recursion test starting.........");
     std::io::set_output_capture(std::option::Option::Some(std::default::Default::default()));
-    //std::io::set_output_capture(None);
+    //std::io::set_output_capture(std::option::Option::None);
     recursive_function(1);
     let res=handle.join().unwrap();
     let captured = std::io::set_output_capture(std::option::Option::None).unwrap();
