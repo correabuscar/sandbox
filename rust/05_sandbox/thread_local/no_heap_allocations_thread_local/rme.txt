@@ -1,0 +1,4 @@
+warning some old code uses std::thread::current() which is wrong because it's
+allocating and it's not supposed to for the thread local noalloc version
+
+        //XXX: FAIL std::thread::current() is allocating because uses Arc at some point! here: https://github.com/rust-lang/rust/blob/e8ada6ab253b510ac88edda131021d9878f2984f/library/std/src/thread/mod.rs#L1321-L1349
