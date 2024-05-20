@@ -13,6 +13,7 @@ use std::alloc::{GlobalAlloc, Layout};
 struct MyGlobalAllocator;
 unsafe impl GlobalAlloc for MyGlobalAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        //okFIXME: infinite recursion below due to std::thread::current() allocating due to using Arc
         let zone1_guard = multipath_backoff5::recursion_detection_zone!(noheapalloc start, ONE_SECOND).unwrap();
         if !zone1_guard.is_recursing {
             std::eprintln!("Allocating {} bytes", layout.size());
@@ -101,33 +102,47 @@ fn recursive_function(level:usize) {
 }//zone3_guard unvisits here.
 
 fn main() {
+    const CAPTURE:bool=true;
+    const CAPTURE_ASSERT_EQUAL:bool=false;//won't work if u show each allocation
     std::println!("Hello initial println allocation.");//manually call this before anything else to cause allocation to happen.
     let handle = std::thread::spawn(|| {
-        std::io::set_output_capture(std::option::Option::Some(std::default::Default::default()));
-        //std::io::set_output_capture(std::option::Option::None);
+        if CAPTURE {
+            std::io::set_output_capture(std::option::Option::Some(std::default::Default::default()));
+        } else {
+            std::io::set_output_capture(std::option::Option::None);
+        }
         recursive_function(1); // Call recursive_function in a separate thread
         //display_visited_locations();
-        let captured = std::io::set_output_capture(std::option::Option::None).unwrap();
+        if let std::option::Option::Some(captured) = std::io::set_output_capture(std::option::Option::None) {
         let captured_string = {
           let captured_mutex = captured.lock().unwrap();
           std::string::String::from_utf8_lossy(&captured_mutex[..]).into_owned()
         };
         std::print!("Captured from thread:\n{}", captured_string);
         captured_string
+        } else {
+            std::string::ToString::to_string("nothing captured")
+        }
     });
     // Wait for the spawned thread to finish, else intermixed output. FIXME: use temp buffer?
     std::println!("Recursion test starting.........");
-    std::io::set_output_capture(std::option::Option::Some(std::default::Default::default()));
-    //std::io::set_output_capture(std::option::Option::None);
+    if CAPTURE {
+        std::io::set_output_capture(std::option::Option::Some(std::default::Default::default()));
+    } else {
+        std::io::set_output_capture(std::option::Option::None);
+    }
     recursive_function(1);
     let res=handle.join().unwrap();
-    let captured = std::io::set_output_capture(std::option::Option::None).unwrap();
-    let captured_string = {
-        let captured_mutex = captured.lock().unwrap();
-        std::string::String::from_utf8_lossy(&captured_mutex[..]).into_owned()
-    };
-    std::print!("Captured from main:\n{}", captured_string);
-    std::assert_eq!(res,captured_string);//same output from thread as from main, even tho they ran concurrently
+    if let std::option::Option::Some(captured) = std::io::set_output_capture(std::option::Option::None) {
+        let captured_string = {
+            let captured_mutex = captured.lock().unwrap();
+            std::string::String::from_utf8_lossy(&captured_mutex[..]).into_owned()
+        };
+        std::print!("Captured from main:\n{}", captured_string);
+        if CAPTURE_ASSERT_EQUAL {
+            std::assert_eq!(res,captured_string);//same output from thread as from main, even tho they ran concurrently
+        }
+    }
     std::println!("Starting again.........in main only:");
     recursive_function(1);
     std::println!("Recursion test done.");

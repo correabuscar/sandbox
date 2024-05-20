@@ -441,10 +441,15 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
 }//impl
 
     pub fn get_current_thread_id() -> u64 {
-        //TODO: here's a question, does this alloc on heap anything, internally?! because that'd be bad.
-        //FIXME: FAIL std::thread::current() is allocating because uses Arc at some point! here: https://github.com/rust-lang/rust/blob/e8ada6ab253b510ac88edda131021d9878f2984f/library/std/src/thread/mod.rs#L1321-L1349
-        let current_thread_id:NonZeroU64 = std::thread::current().id().as_u64();
-        let current_thread_id:u64=current_thread_id.get();
+        //itusedtoTODO: here's a question, does this alloc on heap anything, internally?! because that'd be bad.
+        //XXX: FAIL std::thread::current() is allocating because uses Arc at some point! here: https://github.com/rust-lang/rust/blob/e8ada6ab253b510ac88edda131021d9878f2984f/library/std/src/thread/mod.rs#L1321-L1349
+        //let current_thread_id:NonZeroU64 = std::thread::current().id().as_u64();
+        //let current_thread_id:u64=current_thread_id.get();
+        extern "C" {
+            fn pthread_self() -> u64;
+        }
+        //FIXME: pthread_self(or well pthread_create really) doesn't guarantee thread id is unique during the process' lifetime, only during the thread's lifetime.
+        let current_thread_id:u64= unsafe { pthread_self() };
         assert!(current_thread_id > 0,"impossible");
         return current_thread_id;
     }
