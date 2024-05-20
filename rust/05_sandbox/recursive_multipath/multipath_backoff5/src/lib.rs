@@ -1,9 +1,22 @@
-#![feature(thread_id_value)]
+//#![feature(thread_id_value)]
 
 
+//pub mod std {
+//    pub use crate as std;
+//}
+//#[cfg(not(feature = "use_std"))]
+//mod time {
+//    pub use crate::time::*;
+//}
+//mod std2 {
+//    //pub use crate as std2;
+//    pub use crate::*;
+//    //pub use std::*;
+//}
 
 mod my_mod {
 //use std::num::NonZeroU64;
+//use crate::std2::sync::atomic::AtomicU64;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
