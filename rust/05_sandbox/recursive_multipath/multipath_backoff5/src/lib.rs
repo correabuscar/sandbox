@@ -686,6 +686,126 @@ pub type HeapAllocsThreadLocalForThisZone = std::thread::LocalKey<TLHeapAllocsTh
 //ohwellTODO: get rid of thread_local!() macro call, and thus use only one type alias here! It won't work, still needs 2 types! so no use.
 //cantTODO: actually don't need it to be a RefCell, since we're giving the whole static to the guard! but for the noalloc version we do. Still need RefCell wrapper with thread_local!() else I can't mutate the inner value because .try_with() gives me an immutable ref.
 
+#[inline(always)]
+/// timeout, was_visited_before
+fn did_it_timeout(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration) -> (bool,bool) {
+    let (was_already_set,sal_refmut)=ref_to_static.get_or_set(
+        StuffAboutLocation::initial(),
+        timeout,
+    );
+    if let std::option::Option::Some(mut sal)=sal_refmut {
+        let sal=sal.as_mut().unwrap();
+        //assert_eq!(sal, &mut clone,"the type of the static is coded wrongly!");
+        std::assert!(*sal>=0);
+        let was_visited_before= *sal>0;
+        *sal+=1;
+        std::assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
+        //drop(sal);//it's a ref
+        (false, was_visited_before)
+    } else {
+        std::assert!(sal_refmut.is_none());
+        std::mem::drop(sal_refmut);
+        //ie. timeout
+        (true, false)
+    }
+}
+
+pub fn macro_helper1(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration) -> std::option::Option<RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone>> {
+    let (did_timeout, was_visited_before)=did_it_timeout(ref_to_static, timeout);
+    if !did_timeout {
+        let guard: RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard::new(was_visited_before, &ref_to_static);
+        std::option::Option::Some(guard) // Return the guard instance
+    } else {
+        //timed out
+        std::option::Option::None
+    }
+//    let (was_already_set,sal_refmut)=ref_to_static.get_or_set(
+//        StuffAboutLocation::initial(),
+//        timeout,
+//    );
+//    if let std::option::Option::Some(mut sal)=sal_refmut {
+//        let sal=sal.as_mut().unwrap();
+//        //assert_eq!(sal, &mut clone,"the type of the static is coded wrongly!");
+//        std::assert!(*sal>=0);
+//        let was_visited_before= *sal>0;
+//        *sal+=1;
+//        std::assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
+//        //drop(sal);//it's a ref
+//        let guard: RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard::new(was_visited_before, &ref_to_static);
+//        std::option::Option::Some(guard) // Return the guard instance
+//    } else {
+//        std::assert!(sal_refmut.is_none());
+//        std::mem::drop(sal_refmut);
+//        //ie. timeout
+//        std::option::Option::None
+//    }
+}
+//TODO: find out why this doesn't need the 'static lifetime but the normal thread_local!() does.
+pub fn macro_helper2(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration, default_value_on_timeout:bool) -> RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> {
+    let (did_timeout, was_visited_before)=did_it_timeout(ref_to_static, timeout);
+    //shadowing:
+    let was_visited_before=if did_timeout {
+        default_value_on_timeout
+    } else {
+        was_visited_before
+    };
+//    let (was_already_set,sal_refmut)=ref_to_static.get_or_set(
+//        StuffAboutLocation::initial(),
+//        timeout,
+//    );
+//    let was_visited_before=if let std::option::Option::Some(mut sal)=sal_refmut {
+//        let sal=sal.as_mut().unwrap();
+//        //let i:i32=sal;//`&mut LocationWithCounter`
+//        //assert_eq!(sal, &mut clone,"the type of the static is coded wrongly!");
+//        std::assert!(*sal>=0);
+//        let was_visited_before= *sal>0;
+//        *sal+=1;
+//        std::assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
+//        //drop(sal);//it's a ref
+//        was_visited_before
+//    } else {
+//        std::assert!(sal_refmut.is_none());
+//        std::mem::drop(sal_refmut);
+//        //ie. timeout
+//        default_value_on_timeout
+//    };
+//    let guard:RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard::new(was_visited_before, &ref_to_static);
+//    guard // Return the guard instance
+    return RecursionDetectionZoneGuard::<&NoHeapAllocsThreadLocalForThisZone>::new(was_visited_before, &ref_to_static);
+}
+
+pub fn macro_helper3(ref_to_static:&'static HeapAllocsThreadLocalForThisZone) -> RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocalForThisZone> {
+        let was_visited_before=ref_to_static.try_with(|refcell| {
+            let mut ref_mut=refcell.borrow_mut();
+            //let i:i32=ref_mut;//found `RefMut<'_, Option<...>>`
+            if ref_mut.is_none() {
+                //first time init:
+                *ref_mut=std::option::Option::Some(StuffAboutLocation::initial());
+            }
+            assert!(ref_mut.is_some(),"code logic is wrong");
+            let sal=ref_mut.as_mut().unwrap();
+            //let i:i32=sal;//found `&mut StuffAboutLocation`
+            *sal += 1;
+            *sal > 1 // Return true if is_recursing (counter > 1)
+            //assert_eq!(ref_mut.as_mut().unwrap().counter,1,"developer coded it wrongly");
+        }).unwrap_or(true);
+        //XXX: so we say is_recursing=true if failed to acquire lock which means it's likely due to recursion
+        //while inside the try_with() closure, ie. recursion_detection_zone!(start) is called again while inside the
+        //above try_with(), how? maybe this is used inside the rust std panic handling code and it
+        //panicked inside the try_with() somehow!
+        //doneTODO: return the bool and the Option<LocationInSourceCode> so that it can be *counter-=1 later when
+        //done; i don't think we can do this on Drop because catch_unwind() would trigger it, hmm,
+        //maybe this is a good thing? didn't think this thru.
+        let guard:RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard::new(was_visited_before, &ref_to_static);
+        //{
+        //    is_recursing: was_visited_before,
+        //    location_tracker: &A_STATIC_FOR_THIS_CALL_LOCATION,
+        //    //nogoodTODO: maybe don't give ref to the static, but a ref to the inner instead? which means, we'd need the RefCell::borrow_mut() here. Well actually giving a refcell mut ref here would prevent recursive call from modifying the inner because it's already mut borrowed!
+
+        //};
+        guard // Return the guard instance
+}
+
 
 // Macro to mark a location as is_recursing
 /// aka "am i recursing due to this"
@@ -723,35 +843,7 @@ macro_rules! recursion_detection_zone {
             static A_STATIC_FOR_THIS_CALL_LOCATION: $crate::my_mod2::TLHeapAllocsThreadLocalForThisZone = $crate::my_mod2::TLHeapAllocsThreadLocalForThisZone::new(std::option::Option::None);
             //doneTODO: keep a max times visited?
         }
-        let was_visited_before=A_STATIC_FOR_THIS_CALL_LOCATION.try_with(|refcell| {
-            let mut ref_mut=refcell.borrow_mut();
-            //let i:i32=ref_mut;//found `RefMut<'_, Option<...>>`
-            if ref_mut.is_none() {
-                //first time init:
-                *ref_mut=std::option::Option::Some($crate::my_mod2::StuffAboutLocation::initial());
-            }
-            assert!(ref_mut.is_some(),"code logic is wrong");
-            let sal=ref_mut.as_mut().unwrap();
-            //let i:i32=sal;//found `&mut StuffAboutLocation`
-            *sal += 1;
-            *sal > 1 // Return true if is_recursing (counter > 1)
-            //assert_eq!(ref_mut.as_mut().unwrap().counter,1,"developer coded it wrongly");
-        }).unwrap_or(true);
-        //XXX: so we say is_recursing=true if failed to acquire lock which means it's likely due to recursion
-        //while inside the try_with() closure, ie. recursion_detection_zone!(start) is called again while inside the
-        //above try_with(), how? maybe this is used inside the rust std panic handling code and it
-        //panicked inside the try_with() somehow!
-        //doneTODO: return the bool and the Option<LocationInSourceCode> so that it can be *counter-=1 later when
-        //done; i don't think we can do this on Drop because catch_unwind() would trigger it, hmm,
-        //maybe this is a good thing? didn't think this thru.
-        let guard:$crate::my_mod2::RecursionDetectionZoneGuard<&'static $crate::my_mod2::HeapAllocsThreadLocalForThisZone> = $crate::my_mod2::RecursionDetectionZoneGuard::new(was_visited_before, &A_STATIC_FOR_THIS_CALL_LOCATION);
-        //{
-        //    is_recursing: was_visited_before,
-        //    location_tracker: &A_STATIC_FOR_THIS_CALL_LOCATION,
-        //    //nogoodTODO: maybe don't give ref to the static, but a ref to the inner instead? which means, we'd need the RefCell::borrow_mut() here. Well actually giving a refcell mut ref here would prevent recursive call from modifying the inner because it's already mut borrowed!
-
-        //};
-        guard // Return the guard instance
+        $crate::my_mod2::macro_helper3(&A_STATIC_FOR_THIS_CALL_LOCATION) //returns a guard instance!
     }};
 // -----------
     (noheapalloc start, $timeout:expr, $default_value_on_timeout:expr) => {
@@ -772,43 +864,13 @@ macro_rules! recursion_detection_zone {
     (noalloc mark beginning, $timeout:expr, $default_value_on_timeout:expr) => {
         $crate::recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
     };
-    (noalloc start, $timeout:expr, $default_value_on_timeout:expr) => //{
-        //been_here!($timeout, $default_value_on_timeout)
-    //TODO: code is duplicated in the following 2 macro branches. This is very bad for keeping things in sync when modifying the code in one of them.
-    //($timeout:expr, $default_value_on_timeout:expr) =>
-    {{
+    //doneTODO: code is duplicated in the following 2 macro branches. This is very bad for keeping things in sync when modifying the code in one of them.
+    (noalloc start, $timeout:expr, $default_value_on_timeout:expr) => {{
         static LOCATION_VAR: $crate::my_mod2::NoHeapAllocsThreadLocalForThisZone = $crate::my_mod2::NoHeapAllocsThreadLocalForThisZone::new();
-
-        let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
-            $crate::my_mod2::StuffAboutLocation::initial(),
-            $timeout,
-            );
-        let was_visited_before=if let std::option::Option::Some(mut sal)=sal_refmut {
-            let sal=sal.as_mut().unwrap();
-            //let i:i32=sal;//`&mut LocationWithCounter`
-            //assert_eq!(sal, &mut clone,"the type of the static is coded wrongly!");
-            std::assert!(*sal>=0);
-            let was_visited_before= *sal>0;
-            *sal+=1;
-            std::assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
-            //drop(sal);//it's a ref
-            was_visited_before
-        } else {
-            std::assert!(sal_refmut.is_none());
-            std::mem::drop(sal_refmut);
-            //ie. timeout
-            fn assert_bool(_: bool) {}
-            assert_bool($default_value_on_timeout);
-            $default_value_on_timeout
-        };
-        let guard = $crate::my_mod2::RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
-        //{
-        //    is_recursing: was_visited_before,
-        //    location_tracker: &LOCATION_VAR,
-        //};
-        guard // Return the guard instance
+        //fn assert_bool(_: bool) {}
+        //assert_bool($default_value_on_timeout);
+        $crate::my_mod2::macro_helper2(&LOCATION_VAR, $timeout, $default_value_on_timeout)
     }};
-    //};
 // -----------
     (noheapalloc start, $timeout:expr) => {
         $crate::recursion_detection_zone!(noalloc start, $timeout)
@@ -828,15 +890,8 @@ macro_rules! recursion_detection_zone {
     (noalloc mark beginning, $timeout:expr) => {
         $crate::recursion_detection_zone!(noalloc start, $timeout)
     };
-    (noalloc start, $timeout:expr) => //{
-        //self::been_here!($timeout)
-        //::been_here!($timeout)
-        //crate::been_here!($timeout)
-        //crate::my_mod2::been_here!($timeout)
-        //been_here!($timeout)
-    //TODO: code is duplicated in the 2 macro branches (the one above and the one below). This is very bad for keeping things in sync when modifying the code in one of them.
-    //($timeout:expr) => 
-    {{
+    (noalloc start, $timeout:expr) => {{
+        //okTODO: code is duplicated in the 2 macro branches (the one above and the one below). This is very bad for keeping things in sync when modifying the code in one of them.
         //doneFIXME: well now need this to be thread_local but without allocating, soo... fixed sized
         //array which would represent only the currently visiting(counter>0) location paired with
         //thread id number, as one of the elements of the array.
@@ -846,33 +901,10 @@ macro_rules! recursion_detection_zone {
         //use no_heap_allocations_thread_local::NoHeapAllocThreadLocal;
         //static LOCATION_VAR: NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,LocationWithCounter> = NoHeapAllocThreadLocal::new();
         static LOCATION_VAR: $crate::my_mod2::NoHeapAllocsThreadLocalForThisZone = $crate::my_mod2::NoHeapAllocsThreadLocalForThisZone::new();
-        //TODO: the static must remain in the macro, but the rest could be inside a function
+        //okTODO: the static must remain in the macro, but the rest could be inside a function
 
-        let (was_already_set,sal_refmut)=LOCATION_VAR.get_or_set(
-            $crate::my_mod2::StuffAboutLocation::initial(),
-            $timeout,
-            );
-        if let std::option::Option::Some(mut sal)=sal_refmut {
-            let sal=sal.as_mut().unwrap();
-            //assert_eq!(sal, &mut clone,"the type of the static is coded wrongly!");
-            std::assert!(*sal>=0);
-            let was_visited_before= *sal>0;
-            *sal+=1;
-            std::assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
-            //drop(sal);//it's a ref
-            // "Note that, because $crate refers to the current crate, it must be used with a fully qualified module path when referring to non-macro items:" src: https://doc.rust-lang.org/reference/macros-by-example.html#hygiene
-            let guard = $crate::my_mod2::RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
-            //{
-            //    is_recursing: was_visited_before,
-            //    location_tracker: &LOCATION_VAR,
-            //};
-            std::option::Option::Some(guard) // Return the guard instance
-        } else {
-            std::assert!(sal_refmut.is_none());
-            std::mem::drop(sal_refmut);
-            //ie. timeout
-            std::option::Option::None
-        }
+        // "Note that, because $crate refers to the current crate, it must be used with a fully qualified module path when referring to non-macro items:" src: https://doc.rust-lang.org/reference/macros-by-example.html#hygiene
+        $crate::my_mod2::macro_helper1(&LOCATION_VAR, $timeout)
     }};
     //};
 // -----------
