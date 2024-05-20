@@ -533,7 +533,7 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocal
 /// before putting new ones on wait(with a timeout) until the prev. ones exit the zone.
 const MAX_NUM_THREADS_AT_ONCE: usize = 10;
 //doneTODO: need to rename this type:
-pub type NoHeapAllocsThreadLocalForThisZone=super::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE,StuffAboutLocation>;
+pub type NoHeapAllocsThreadLocalForThisZone=super::my_mod::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE, StuffAboutLocation>;
 impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> {
 
     //mustn't call this manually
@@ -694,7 +694,6 @@ fn got_value(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::t
     );
     if let std::option::Option::Some(mut sal)=sal_refmut {
         let sal=sal.as_mut().unwrap();
-        //assert_eq!(sal, &mut clone,"the type of the static is coded wrongly!");
         std::assert!(*sal>=0);
         let was_visited_before= *sal>0;
         *sal+=1;
@@ -710,68 +709,22 @@ fn got_value(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::t
 }
 
 pub fn macro_helper1(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration) -> std::option::Option<RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone>> {
-    //let (did_timeout, was_visited_before)=did_it_timeout(ref_to_static, timeout);
     if let Some(was_visited_before)=got_value(ref_to_static, timeout) {
-    //let (did_timeout, was_visited_before)=did_it_timeout(ref_to_static, timeout);
-    //if !did_timeout {
         let guard: RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard::new(was_visited_before, &ref_to_static);
         std::option::Option::Some(guard) // Return the guard instance
     } else {
         //timed out
         std::option::Option::None
     }
-//    let (was_already_set,sal_refmut)=ref_to_static.get_or_set(
-//        StuffAboutLocation::initial(),
-//        timeout,
-//    );
-//    if let std::option::Option::Some(mut sal)=sal_refmut {
-//        let sal=sal.as_mut().unwrap();
-//        //assert_eq!(sal, &mut clone,"the type of the static is coded wrongly!");
-//        std::assert!(*sal>=0);
-//        let was_visited_before= *sal>0;
-//        *sal+=1;
-//        std::assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
-//        //drop(sal);//it's a ref
-//        let guard: RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard::new(was_visited_before, &ref_to_static);
-//        std::option::Option::Some(guard) // Return the guard instance
-//    } else {
-//        std::assert!(sal_refmut.is_none());
-//        std::mem::drop(sal_refmut);
-//        //ie. timeout
-//        std::option::Option::None
-//    }
 }
+
 //TODO: find out why this doesn't need the 'static lifetime but the normal thread_local!() does.
 pub fn macro_helper2(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration, default_value_on_timeout:bool) -> RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> {
-    //let (did_timeout, was_visited_before)=did_it_timeout(ref_to_static, timeout);
-    ////shadowing:
     let was_visited_before=if let Some(was_visited_before)=got_value(ref_to_static, timeout) {
         was_visited_before
     } else {
         default_value_on_timeout
     };
-//    let (was_already_set,sal_refmut)=ref_to_static.get_or_set(
-//        StuffAboutLocation::initial(),
-//        timeout,
-//    );
-//    let was_visited_before=if let std::option::Option::Some(mut sal)=sal_refmut {
-//        let sal=sal.as_mut().unwrap();
-//        //let i:i32=sal;//`&mut LocationWithCounter`
-//        //assert_eq!(sal, &mut clone,"the type of the static is coded wrongly!");
-//        std::assert!(*sal>=0);
-//        let was_visited_before= *sal>0;
-//        *sal+=1;
-//        std::assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
-//        //drop(sal);//it's a ref
-//        was_visited_before
-//    } else {
-//        std::assert!(sal_refmut.is_none());
-//        std::mem::drop(sal_refmut);
-//        //ie. timeout
-//        default_value_on_timeout
-//    };
-//    let guard:RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard::new(was_visited_before, &ref_to_static);
-//    guard // Return the guard instance
     return RecursionDetectionZoneGuard::<&NoHeapAllocsThreadLocalForThisZone>::new(was_visited_before, &ref_to_static);
 }
 
