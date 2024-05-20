@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -e
+cargo clean
+RUSTC="$(realpath ./myrust)"
+export RUSTC
+set +e
+#export RUST_BACKTRACE=1
+cargo run ; ec="$?"
+if test "$ec" != 0; then
+  cp target/debug/multipath_backoff5 /tmp
+fi
+echo "exit code: $ec"

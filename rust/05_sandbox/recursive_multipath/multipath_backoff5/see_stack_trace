@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+#rust-gdb /tmp/multipath_backoff5 "/coredumps/$(ls -rat /coredumps/|tail -n1)"
+rust-gdb /tmp/multipath_backoff5 "$(find /coredumps/ | tail -n1)"

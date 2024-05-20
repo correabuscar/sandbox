@@ -4,6 +4,9 @@ export RUST_BACKTRACE=1
 cargo clean
 #cargo run --target=x86_64-pc-linux-gnu #bad, doesn't exist in rustc --print target-list
 #cargo run --target=x86_64-unknown-linux-gnu
-cargo run
-echo "exit code: $?"
+cargo run ; ec="$?"
+if test "$ec" != 0; then
+  cp target/debug/multipath_backoff5 /tmp
+fi
+echo "exit code: $ec"
 #sleep 2

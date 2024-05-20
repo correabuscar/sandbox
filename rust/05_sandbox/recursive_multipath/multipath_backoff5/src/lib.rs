@@ -195,7 +195,22 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                     //self.values[index]=MaybeUninit::uninit();
                     //self.values[index]=unsafe{std::mem::zeroed()};
                     //ok so we don't remove the RefCell, doh! we only remove the inner value, which will call drop() as needed, even tho the RefCell itself is wrapped into ManuallyDrop, it won't affect its inner held value.
-                    let mut mut_ref_option_t=self.values[index].borrow_mut();
+                    let maybe:Result<RefMut<Option<T>>, std::cell::BorrowMutError>=self.values[index].try_borrow_mut();
+                    if maybe.is_err() {
+                        //XXX: it's recursing, so we undo, don't drop here in the nested call, it will drop in the original call, when it goes back to it.
+                        match self.after[index].compare_exchange(new_value, expected,Ordering::Release, Ordering::Acquire) {
+                            Ok(prev_val) => {
+                                assert_eq!(prev_val, new_value,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(1_1)");
+                            },
+                            Err(prev_val) => {
+                                assert_ne!(prev_val, new_value,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(4_1)");
+                            },
+                        }//match
+                        return;//cuz we're recursing!
+                    }
+                    //if let Ok(mut_ref_option_t)=maybe {
+                    //let mut mut_ref_option_t=self.values[index].borrow_mut();
+                    let mut mut_ref_option_t=maybe.unwrap();//SAFETY: err variant was just handled above and it exited early
                     if mut_ref_option_t.is_some() {
                         //nvmTODO: does that .borrow_mut() end after the statement? well it's already borrowed from the 'if let'
                         //assert!(self.values[index].borrow_mut().is_some());
@@ -239,9 +254,24 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                 //let value_ptr = unsafe { self.values.as_ptr().offset(index as isize) as *mut T};
                 //let mut_ref_to_value=unsafe { &mut *value_ptr };
                 //let current_val=unsafe { self.values[index].assume_init_ref() };
-                let current_val=self.values[index].borrow_mut();
-                //return Some((index,current_val));
-                return Some(current_val);
+                //let current_val=self.values[index].borrow_mut();
+                ////return Some((index,current_val));
+                //return Some(current_val);
+                let maybe:Result<RefMut<Option<T>>, std::cell::BorrowMutError>=self.values[index].try_borrow_mut();
+                if let Ok(mut_ref_to_value)=maybe {
+                    //let mut_ref_to_value:RefMut<Option<T>>=self.values[index].borrow_mut();
+                    //if ensure_val {
+                    //    if let Some(what_was)=mut_ref_to_value.as_mut() {
+                    //        //well, we don't have to check at all, thus we won't have to require T traits!
+                    //        //if *what_was != to_val { //binary operation `!=` cannot be applied to type `T`: T
+                    //        *what_was=to_val;
+                    //        //}
+                    //    }
+                    //}
+                    //let current_val=&mut self.values[index];
+                    //return (true, Some(current_val));
+                    return Some(mut_ref_to_value);
+                }//else XXX: fallthru to return None
             }
         } //for
         None
@@ -264,6 +294,21 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
             }
         } //for
         None
+    }//fn
+
+    pub fn is_recursing(&self) -> bool {
+        let our_tid_actual: u64 = get_current_thread_id();
+        //if we have already allocated it, return early
+        for (index, atomic_value) in self.after.iter().enumerate() {
+            let thread_id_at_index = atomic_value.load(Ordering::Acquire);
+            if thread_id_at_index == our_tid_actual {
+                    //found one of ours, should be only one anyway!
+                    let maybe:Result<RefMut<Option<T>>, std::cell::BorrowMutError>=self.values[index].try_borrow_mut();
+                    //if can't borrow, then it's recursing, since no other thread could've borrowed (well, if our logic is respected!)
+                    return maybe.is_err();
+            }
+        }
+        return false;
     }//fn
 
     /// returns true if it was already set(and thus we just found it again)
@@ -303,18 +348,23 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
 //                    let value_ptr = unsafe { self.values.as_ptr().offset(index as isize) as *mut T};
 //                    let mut_ref_to_value=unsafe { &mut *value_ptr };
                     //TODO: use try_borrow_mut() here:
-                    let mut_ref_to_value:RefMut<Option<T>>=self.values[index].borrow_mut();
-                    //if ensure_val {
-                    //    if let Some(what_was)=mut_ref_to_value.as_mut() {
-                    //        //well, we don't have to check at all, thus we won't have to require T traits!
-                    //        //if *what_was != to_val { //binary operation `!=` cannot be applied to type `T`: T
-                    //        *what_was=to_val;
-                    //        //}
-                    //    }
-                    //}
-                    //let current_val=&mut self.values[index];
-                    //return (true, Some(current_val));
-                    return (true, Some(mut_ref_to_value));
+                    let maybe:Result<RefMut<Option<T>>, std::cell::BorrowMutError>=self.values[index].try_borrow_mut();
+                    if let Ok(mut_ref_to_value)=maybe {
+                        //let mut_ref_to_value:RefMut<Option<T>>=self.values[index].borrow_mut();
+                        //if ensure_val {
+                        //    if let Some(what_was)=mut_ref_to_value.as_mut() {
+                        //        //well, we don't have to check at all, thus we won't have to require T traits!
+                        //        //if *what_was != to_val { //binary operation `!=` cannot be applied to type `T`: T
+                        //        *what_was=to_val;
+                        //        //}
+                        //    }
+                        //}
+                        //let current_val=&mut self.values[index];
+                        //return (true, Some(current_val));
+                        return (true, Some(mut_ref_to_value));
+                    } else {
+                        return (false,None); //FIXME: maybe Result?
+                    }
                 },
                 _any_else => {
                     //owned by another thread
@@ -486,6 +536,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
         //eprintln!("!!! tid={:064b}",current_tid);//seems to be counter of threads started, starting from 0 since uptime
         //eprintln!("!!! mix={:064b}",mixed);//overwrites some of the pthread_self bits which are very likely used!
         //hmm, first 16-17 msb bits of pthread_self seem 0
+        //FIXME: probably need something better than this, to ensure the id isn't reused, altho i'm confident it won't on my current linux gentoo x64.
         return mixed;
     }
 
@@ -521,7 +572,7 @@ where
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         //write!(f, "{} {:?}", self.is_recursing, self.location_tracker)
         let type_name = std::any::type_name::<T>();
-        //FIXME: is the _or() even needed?!
+        //leaveitFIXME: is the _or() even needed?! yes, else it can be None if the separator doesn't exist
         let root_type = type_name.split("<").next().unwrap_or(type_name).split("::").last().unwrap_or(type_name);
         write!(f, "{} {}", self.is_recursing, root_type)
     }
@@ -553,13 +604,13 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocal
                         *sal -= 1;
                     } else {
                         //TODO: return Result<> ? but then rename to try_unvisit() ?
-                        panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(1)", sal);
+                        eprintln!("!!! counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(1)", sal);
                     }
                 } else {
-                    eprintln!("!!! unvisiting found None as the L.W.C., this is pretty bad as it means inconsistency in coding the logic");
+                    eprintln!("!!! unvisiting found None as the S.A.L., this is pretty bad as it means inconsistency in coding the logic(1)");
                 }
             } else {
-                eprintln!("!!! unvisiting errored, couldn't borrow, this is pretty bad as it means inconsistency in tracking, error='{:?}'",res_borrow);
+                eprintln!("!!! unvisiting errored, couldn't borrow(recursion?), this is pretty bad as it means inconsistency in tracking, error='{:?}'(1)",res_borrow);
             }
             drop(res_borrow);//now can be dropped
         });
@@ -620,10 +671,11 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThi
                             can_dispose=true;
                         }
                     } else {
-                        panic!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(2)", sal);
+                        eprintln!("counter was already 0 or less = '{:?}', coded wrongly?! or manually invoked!(2)", sal);
                     }
+                } else {
+                    eprintln!("!!! unvisiting found None as the S.A.L., this is pretty bad as it means inconsistency in coding the logic(2)");
                 }
-                //drop(refmut);
             } else {
                 //it's not used, can drop it:
                 can_dispose=true;
@@ -632,9 +684,9 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThi
         }//so, is 'loc' dropped here or what? yeFIXME
         if can_dispose {
             //yesTODO: test to see if this is ever called!
-            //println!("disposing current tid from noallocthreadlocal {:?}",self.location);
+            //eprintln!("disposing current tid from noallocthreadlocal {:?}",self.location);
             self.location_tracker.unset();
-            //println!("disposed current tid from noallocthreadlocal {:?}",self.location);
+            //eprintln!("disposed current tid from noallocthreadlocal {:?}",self.location);
         }
     }
 }
@@ -723,7 +775,7 @@ impl std::ops::AddAssign<u64> for StuffAboutLocation {
 }
 
 impl StuffAboutLocation {
-    //FIXME: user can still init the struct with struct initializer syntax and set max to be less
+    //surebutnotinourTLimplFIXME: user can still init the struct with struct initializer syntax and set max to be less
     //than current(if current is >0), then u'd have to call update_max() from below!
     pub fn initial() -> StuffAboutLocation {
         return StuffAboutLocation { times_visited_currently:0, max_times_visited_ever:0 };
@@ -753,22 +805,29 @@ pub type HeapAllocsThreadLocalForThisZone = std::thread::LocalKey<TLHeapAllocsTh
 
 #[inline(always)]
 fn got_value(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration) -> std::option::Option<bool> {
-    let (was_already_set,sal_refmut)=ref_to_static.get_or_set(
-        StuffAboutLocation::initial(),
-        timeout,
-    );
-    if let std::option::Option::Some(mut sal)=sal_refmut {
-        let sal=sal.as_mut().unwrap();
-        std::assert!(*sal>=0);
-        let was_visited_before= *sal>0;
-        *sal+=1;
-        std::assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
-        //drop(sal);//it's a ref
-        Some(was_visited_before)
+    if !ref_to_static.is_recursing() {
+        let (was_already_set,mut sal_refmut)=ref_to_static.get_or_set(
+            StuffAboutLocation::initial(),
+            timeout,
+        );
+        if let std::option::Option::Some(ref mut sal)=sal_refmut {
+            let sal=sal.as_mut().unwrap();
+            std::assert!(*sal>=0);
+            std::assert!(*sal>1);//FIXME: remove this temp., so this causes a 3-depth nested panic in alloc/dealloc/realloc of global allocator in main()
+            let was_visited_before= *sal>0;
+            *sal+=1;
+            std::assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
+            //drop(sal);//it's a ref
+            std::mem::drop(sal_refmut);
+            Some(was_visited_before)
+        } else {
+            std::assert!(sal_refmut.is_none());
+            std::mem::drop(sal_refmut);
+            //ie. timeout
+            None
+        }
     } else {
-        std::assert!(sal_refmut.is_none());
-        std::mem::drop(sal_refmut);
-        //ie. timeout
+        //if recursing well...
         None
     }
 }
@@ -778,21 +837,22 @@ pub fn macro_helper1(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout
         let guard: RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard::new(was_visited_before, &ref_to_static);
         std::option::Option::Some(guard) // Return the guard instance
     } else {
-        //timed out
+        //timed out or is recursing
         std::option::Option::None
     }
 }
 
-//TODO: find out why this doesn't need the 'static lifetime but the normal thread_local!() does.
 pub fn macro_helper2(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration, default_value_on_timeout:bool) -> RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> {
     let was_visited_before=if let Some(was_visited_before)=got_value(ref_to_static, timeout) {
         was_visited_before
     } else {
+        //timeout or recursing! TODO: rename var to include recursion possibility
         default_value_on_timeout
     };
     return RecursionDetectionZoneGuard::<&NoHeapAllocsThreadLocalForThisZone>::new(was_visited_before, &ref_to_static);
 }
 
+//TODO: find out why this needs the 'static lifetime but our noheap type doesn't hmm..
 pub fn macro_helper3(ref_to_static:&'static HeapAllocsThreadLocalForThisZone) -> RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocalForThisZone> {
         let was_visited_before=ref_to_static.try_with(|refcell| {
             let mut ref_mut=refcell.borrow_mut();
@@ -838,6 +898,7 @@ pub fn macro_helper3(ref_to_static:&'static HeapAllocsThreadLocalForThisZone) ->
 /// or has this zone been used as launchpad for this recursion(if guard.is_recursing is true)
 //okTODO: should I rename this to something more obvious of what's happening?
 #[macro_export]
+//#[track_caller] //unused_attributes: `#[track_caller]` is ignored on struct fields, match arms and macro defs
 macro_rules! recursion_detection_zone {
     (begin) => {
         $crate::recursion_detection_zone!(start)
