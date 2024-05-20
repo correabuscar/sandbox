@@ -6,6 +6,45 @@ extern crate multipath_backoff5;
 
 //use multipath_backoff5::recursion_detection_zone;
 //use std::string::ToString; // for .to_string() to work.
+use std::alloc::{GlobalAlloc, Layout};
+//use std::ptr::NonNull;
+//use std::sync::atomic::{AtomicUsize, Ordering};
+
+struct MyGlobalAllocator;
+unsafe impl GlobalAlloc for MyGlobalAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        let zone1_guard = multipath_backoff5::recursion_detection_zone!(noheapalloc start, ONE_SECOND).unwrap();
+        if !zone1_guard.is_recursing {
+            std::eprintln!("Allocating {} bytes", layout.size());
+        }
+        zone1_guard.drop();
+
+        let ptr = std::alloc::System.alloc(layout);
+        ptr
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        let zone1_guard = multipath_backoff5::recursion_detection_zone!(noheapalloc start, ONE_SECOND).unwrap();
+        if !zone1_guard.is_recursing {
+            std::eprintln!("Deallocating {} bytes", layout.size());
+        }
+        zone1_guard.drop();
+        std::alloc::System.dealloc(ptr, layout);
+    }
+
+    unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+        let zone1_guard = multipath_backoff5::recursion_detection_zone!(noheapalloc start, ONE_SECOND).unwrap();
+        if !zone1_guard.is_recursing {
+            std::eprintln!("Reallocating {} bytes", layout.size());
+        }
+        zone1_guard.drop();
+        let new_ptr = std::alloc::System.realloc(ptr, layout, new_size);
+        new_ptr
+    }
+}
+
+#[global_allocator]
+static GLOBAL_ALLOCATOR: MyGlobalAllocator = MyGlobalAllocator;
 
 const ONE_SECOND:std::time::Duration = std::time::Duration::from_secs(1);
 
@@ -62,6 +101,7 @@ fn recursive_function(level:usize) {
 }//zone3_guard unvisits here.
 
 fn main() {
+    std::println!("Hello initial println allocation.");//manually call this before anything else to cause allocation to happen.
     let handle = std::thread::spawn(|| {
         std::io::set_output_capture(std::option::Option::Some(std::default::Default::default()));
         //std::io::set_output_capture(None);
