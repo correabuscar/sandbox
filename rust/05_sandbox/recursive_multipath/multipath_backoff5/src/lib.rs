@@ -701,26 +701,26 @@ pub type HeapAllocsThreadLocalForThisZone = std::thread::LocalKey<TLHeapAllocsTh
 #[macro_export]
 macro_rules! recursion_detection_zone {
     (begin) => {
-        recursion_detection_zone!(start)
+        $crate::recursion_detection_zone!(start)
     };
     (new) => {
-        recursion_detection_zone!(start)
+        $crate::recursion_detection_zone!(start)
     };
     (mark_beginning) => {
-        recursion_detection_zone!(start)
+        $crate::recursion_detection_zone!(start)
     };
     (mark beginning) => {
-        recursion_detection_zone!(start)
+        $crate::recursion_detection_zone!(start)
     };
     (start) => {{ //double curlies, all the way! else 'let' won't work; single {} expects expression,
              //double {{}} is like a normal {} that returns an expression even if it's () unit.
 
 
         // Thread-local storage for the current zone/call-location of this macro
-        thread_local! {
+        std::thread_local! {
             //XXX: thread_local itself does heap alloc internally(because pthread_key_create does alloc)!
             //it's gonna be a different static for each location where this macro is called; seems it has same name but internally it's mangled and global, however only visible here.
-            static A_STATIC_FOR_THIS_CALL_LOCATION: $crate::my_mod2::TLHeapAllocsThreadLocalForThisZone = $crate::my_mod2::TLHeapAllocsThreadLocalForThisZone::new(None);
+            static A_STATIC_FOR_THIS_CALL_LOCATION: $crate::my_mod2::TLHeapAllocsThreadLocalForThisZone = $crate::my_mod2::TLHeapAllocsThreadLocalForThisZone::new(std::option::Option::None);
             //doneTODO: keep a max times visited?
         }
         let was_visited_before=A_STATIC_FOR_THIS_CALL_LOCATION.try_with(|refcell| {
@@ -728,7 +728,7 @@ macro_rules! recursion_detection_zone {
             //let i:i32=ref_mut;//found `RefMut<'_, Option<...>>`
             if ref_mut.is_none() {
                 //first time init:
-                *ref_mut=Some($crate::my_mod2::StuffAboutLocation::initial());
+                *ref_mut=std::option::Option::Some($crate::my_mod2::StuffAboutLocation::initial());
             }
             assert!(ref_mut.is_some(),"code logic is wrong");
             let sal=ref_mut.as_mut().unwrap();
@@ -755,22 +755,22 @@ macro_rules! recursion_detection_zone {
     }};
 // -----------
     (noheapalloc start, $timeout:expr, $default_value_on_timeout:expr) => {
-        recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
+        $crate::recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
     };
     (no_heap_alloc start, $timeout:expr, $default_value_on_timeout:expr) => {
-        recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
+        $crate::recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
     };
     (noalloc begin, $timeout:expr, $default_value_on_timeout:expr) => {
-        recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
+        $crate::recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
     };
     (noalloc new, $timeout:expr, $default_value_on_timeout:expr) => {
-        recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
+        $crate::recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
     };
     (noalloc mark_beginning, $timeout:expr, $default_value_on_timeout:expr) => {
-        recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
+        $crate::recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
     };
     (noalloc mark beginning, $timeout:expr, $default_value_on_timeout:expr) => {
-        recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
+        $crate::recursion_detection_zone!(noalloc start, $timeout, $default_value_on_timeout)
     };
     (noalloc start, $timeout:expr, $default_value_on_timeout:expr) => //{
         //been_here!($timeout, $default_value_on_timeout)
@@ -783,19 +783,19 @@ macro_rules! recursion_detection_zone {
             $crate::my_mod2::StuffAboutLocation::initial(),
             $timeout,
             );
-        let was_visited_before=if let Some(mut sal)=sal_refmut {
+        let was_visited_before=if let std::option::Option::Some(mut sal)=sal_refmut {
             let sal=sal.as_mut().unwrap();
             //let i:i32=sal;//`&mut LocationWithCounter`
             //assert_eq!(sal, &mut clone,"the type of the static is coded wrongly!");
-            assert!(*sal>=0);
+            std::assert!(*sal>=0);
             let was_visited_before= *sal>0;
             *sal+=1;
-            assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
+            std::assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
             //drop(sal);//it's a ref
             was_visited_before
         } else {
-            assert!(sal_refmut.is_none());
-            drop(sal_refmut);
+            std::assert!(sal_refmut.is_none());
+            std::mem::drop(sal_refmut);
             //ie. timeout
             fn assert_bool(_: bool) {}
             assert_bool($default_value_on_timeout);
@@ -811,22 +811,22 @@ macro_rules! recursion_detection_zone {
     //};
 // -----------
     (noheapalloc start, $timeout:expr) => {
-        recursion_detection_zone!(noalloc start, $timeout)
+        $crate::recursion_detection_zone!(noalloc start, $timeout)
     };
     (no_heap_alloc start, $timeout:expr) => {
-        recursion_detection_zone!(noalloc start, $timeout)
+        $crate::recursion_detection_zone!(noalloc start, $timeout)
     };
     (noalloc begin, $timeout:expr) => {
-        recursion_detection_zone!(noalloc start, $timeout)
+        $crate::recursion_detection_zone!(noalloc start, $timeout)
     };
     (noalloc new, $timeout:expr) => {
-        recursion_detection_zone!(noalloc start, $timeout)
+        $crate::recursion_detection_zone!(noalloc start, $timeout)
     };
     (noalloc mark_beginning, $timeout:expr) => {
-        recursion_detection_zone!(noalloc start, $timeout)
+        $crate::recursion_detection_zone!(noalloc start, $timeout)
     };
     (noalloc mark beginning, $timeout:expr) => {
-        recursion_detection_zone!(noalloc start, $timeout)
+        $crate::recursion_detection_zone!(noalloc start, $timeout)
     };
     (noalloc start, $timeout:expr) => //{
         //self::been_here!($timeout)
@@ -852,58 +852,59 @@ macro_rules! recursion_detection_zone {
             $crate::my_mod2::StuffAboutLocation::initial(),
             $timeout,
             );
-        if let Some(mut sal)=sal_refmut {
+        if let std::option::Option::Some(mut sal)=sal_refmut {
             let sal=sal.as_mut().unwrap();
             //assert_eq!(sal, &mut clone,"the type of the static is coded wrongly!");
-            assert!(*sal>=0);
+            std::assert!(*sal>=0);
             let was_visited_before= *sal>0;
             *sal+=1;
-            assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
+            std::assert_eq!(was_visited_before, was_already_set, "these two should be in sync");
             //drop(sal);//it's a ref
+            // "Note that, because $crate refers to the current crate, it must be used with a fully qualified module path when referring to non-macro items:" src: https://doc.rust-lang.org/reference/macros-by-example.html#hygiene
             let guard = $crate::my_mod2::RecursionDetectionZoneGuard::new(was_visited_before, &LOCATION_VAR);
             //{
             //    is_recursing: was_visited_before,
             //    location_tracker: &LOCATION_VAR,
             //};
-            Some(guard) // Return the guard instance
+            std::option::Option::Some(guard) // Return the guard instance
         } else {
-            assert!(sal_refmut.is_none());
-            drop(sal_refmut);
+            std::assert!(sal_refmut.is_none());
+            std::mem::drop(sal_refmut);
             //ie. timeout
-            None
+            std::option::Option::None
         }
     }};
     //};
 // -----------
     (end_zone, $guard:ident) => {
-        recursion_detection_zone!(end, $guard)
+        $crate::recursion_detection_zone!(end, $guard)
     };
     (end zone, $guard:ident) => {
-        recursion_detection_zone!(end, $guard)
+        $crate::recursion_detection_zone!(end, $guard)
     };
     (end_zone_aka_drop, $guard:ident) => {
-        recursion_detection_zone!(end, $guard)
+        $crate::recursion_detection_zone!(end, $guard)
     };
     (done, $guard:ident) => {
-        recursion_detection_zone!(end, $guard)
+        $crate::recursion_detection_zone!(end, $guard)
     };
     (drop, $guard:ident) => {
-        recursion_detection_zone!(end, $guard)
+        $crate::recursion_detection_zone!(end, $guard)
     };
     (finish, $guard:ident) => {
-        recursion_detection_zone!(end, $guard)
+        $crate::recursion_detection_zone!(end, $guard)
     };
     (mark end, $guard:ident) => {
-        recursion_detection_zone!(end, $guard)
+        $crate::recursion_detection_zone!(end, $guard)
     };
     (mark_end, $guard:ident) => {
-        recursion_detection_zone!(end, $guard)
+        $crate::recursion_detection_zone!(end, $guard)
     };
     (mark_ending, $guard:ident) => {
-        recursion_detection_zone!(end, $guard)
+        $crate::recursion_detection_zone!(end, $guard)
     };
     (mark ending, $guard:ident) => {
-        recursion_detection_zone!(end, $guard)
+        $crate::recursion_detection_zone!(end, $guard)
     };
     (end, $guard:ident) => {
         $guard.end_zone_aka_drop();
@@ -921,7 +922,9 @@ macro_rules! recursion_detection_zone {
 //pub use my_mod2::NoHeapAllocsThreadLocalForThisZone;
 //pub use my_mod2::StuffAboutLocation;//semidoneFIXME: shouldn't be pub; well it must be because the type alias is pub and it includes it innerly. So it's pub but inside the my_mod2 module, rather than in the crate root!
 pub use my_mod2::RecursionDetectionZoneGuard;//this might wanna be used for explicit typing. This makes it pub in crate root.
-//TODO: must find a better way here perhaps?
+//doneTODO: must find a better way here perhaps?
+//pub use my_mod2::recursion_detection_zone;//unresolved import `my_mod2::recursion_detection_zone`: no `recursion_detection_zone` in `my_mod2`
+
 //pub use self::recursion_detection_zone;
 //    = note: this could be because a macro annotated with `#[macro_export]` will be exported at the root of the crate instead of the module where it is defined
 //help: a macro with this name exists at the root of the crate
