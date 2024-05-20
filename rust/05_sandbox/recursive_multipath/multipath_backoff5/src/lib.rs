@@ -3,7 +3,7 @@
 
 
 mod my_mod {
-use std::num::NonZeroU64;
+//use std::num::NonZeroU64;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
@@ -440,18 +440,53 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
 //        }
 }//impl
 
+//    fn overwrite_msb_u64_with_i32(u64_value: u64, i32_value: i32) -> u64 {
+//        // Shift the i32 value to the left by 32 bits to align it with the MSBs of the u64
+//        let u64_value_to_insert:u64 = i32_value as u64;
+//        let shifted_u64_value_to_insert:u64 = u64_value_to_insert << 32;
+//
+//        // Clear the 32 MSBs of the u64 value
+//        let cleared_u64_value:u64 = u64_value & ((1u64 << 32) - 1);
+//
+//        // Combine the cleared u64 value with the shifted u64 value to insert using bitwise OR
+//        cleared_u64_value | shifted_u64_value_to_insert
+//    }
+
+    fn xor_msb_u64_with_reversed_i32(u64_value: u64, i32_value: i32) -> u64 {
+        let reversed_i32: u64= i32_value.reverse_bits() as u64;
+        let shifted: u64 = reversed_i32 << 32;
+        u64_value ^ shifted
+    }
+
     pub fn get_current_thread_id() -> u64 {
         //itusedtoTODO: here's a question, does this alloc on heap anything, internally?! because that'd be bad.
         //XXX: FAIL std::thread::current() is allocating because uses Arc at some point! here: https://github.com/rust-lang/rust/blob/e8ada6ab253b510ac88edda131021d9878f2984f/library/std/src/thread/mod.rs#L1321-L1349
         //let current_thread_id:NonZeroU64 = std::thread::current().id().as_u64();
         //let current_thread_id:u64=current_thread_id.get();
+        #[allow(non_camel_case_types)]
+        pub type pid_t = i32;
+        #[allow(non_camel_case_types)]
+        pub type c_ulong = u64;
+        #[allow(non_camel_case_types)]
+        pub type pthread_t = c_ulong;
         extern "C" {
-            fn pthread_self() -> u64;
+            fn pthread_self() -> pthread_t;
+            pub fn gettid() -> pid_t;
         }
         //FIXME: pthread_self(or well pthread_create really) doesn't guarantee thread id is unique during the process' lifetime, only during the thread's lifetime.
-        let current_thread_id:u64= unsafe { pthread_self() };
-        assert!(current_thread_id > 0,"impossible");
-        return current_thread_id;
+        let current_thread_id: pthread_t= unsafe { pthread_self() };
+        assert!(current_thread_id > 0,"impossible");//XXX: is it still impossible tho?
+        let current_tid:pid_t = unsafe { gettid() };
+        assert!(current_tid > 0,"impossible");//XXX: is it impossible tho?
+        //let mixed:u64 = overwrite_msb_u64_with_i32(current_thread_id, current_tid);
+        let mixed:u64 = xor_msb_u64_with_reversed_i32(current_thread_id, current_tid);
+        //TODO: keep track of all seen 'mixed', and warn if reuse, but how do we know?! this isn't called only once!
+        //TODO: maybe don't mix but make an AtomicU128 type, might require some thinking, but prolly with 2 atomics as guards for before/after.
+        //eprintln!("!!! thr={:064b}",current_thread_id);//seems to use lots of bits
+        //eprintln!("!!! tid={:064b}",current_tid);//seems to be counter of threads started, starting from 0 since uptime
+        //eprintln!("!!! mix={:064b}",mixed);//overwrites some of the pthread_self bits which are very likely used!
+        //hmm, first 16-17 msb bits of pthread_self seem 0
+        return mixed;
     }
 
 }//mod
