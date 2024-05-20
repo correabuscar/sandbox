@@ -534,6 +534,30 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocal
 const MAX_NUM_THREADS_AT_ONCE: usize = 10;
 //doneTODO: need to rename this type:
 pub type NoHeapAllocsThreadLocalForThisZone=super::my_mod::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE, StuffAboutLocation>;
+//type PrivateStuffAboutLocation = super::my_mod2::StuffAboutLocation;
+//pub type NoHeapAllocsThreadLocalForThisZone=super::my_mod::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE, PrivateStuffAboutLocation>;
+////failed to wrap it and then delegate:
+//pub struct NoHeapAllocsThreadLocalForThisZone(super::my_mod::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE, StuffAboutLocation>);
+//// "If you want to automatically delegate methods of the inner type, you can implement the Deref trait for your wrapper struct. This allows you to access methods of the inner type directly on an instance of your wrapper struct. Here's how you can do it:" - chatgpt 3.5
+//impl std::ops::Deref for NoHeapAllocsThreadLocalForThisZone {
+//    type Target = super::my_mod::NoHeapAllocThreadLocal<MAX_NUM_THREADS_AT_ONCE, StuffAboutLocation>;
+////| ^^^^^^^^^^^ can't leak private type
+////...
+////635 | struct StuffAboutLocation {
+////    | ------------------------- `StuffAboutLocation` declared as private
+////
+//    fn deref(&self) -> &Self::Target {
+//        &self.0
+//    }
+//}
+//// Implement methods for the public struct, if needed
+//impl NoHeapAllocsThreadLocalForThisZone {
+//    pub const fn new() -> Self {
+//        // You can construct the inner type here
+//        let inner = super::my_mod::NoHeapAllocThreadLocal::<MAX_NUM_THREADS_AT_ONCE, StuffAboutLocation>::new();
+//        NoHeapAllocsThreadLocalForThisZone(inner)
+//    }
+//}
 impl UnvisitTrait for RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> {
 
     //mustn't call this manually
