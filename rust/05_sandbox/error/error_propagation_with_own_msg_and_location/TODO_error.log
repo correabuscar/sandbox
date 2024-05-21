@@ -1,0 +1,24 @@
+TODO: make it say that you might be missing build.rs
+
+without a build.rs file, you get this error:
+
+error: environment variable `OUT_DIR` not defined at compile time
+    --> /home/user/sandbox/rust/05_sandbox/error/error_propagation_with_own_msg_and_location/src/main.rs:7:18
+     |
+7    | include!(concat!(env!("OUT_DIR"), "/project_dir.rs")); //gets me 'PROJECT_DIR'
+     |                  ^^^^^^^^^^^^^^^ in this macro invocation
+     |
+    ::: /usr/lib/rust/1.76.0/lib/rustlib/src/rust/library/core/src/macros/mod.rs:1048:5
+     |
+1048 |     macro_rules! env {
+     |     ---------------- in this expansion of `env!`
+     |
+     = help: Cargo sets build script variables at run time. Use `std::env::var("OUT_DIR")` instead
+
+error[E0425]: cannot find value `PROJECT_DIR` in this scope
+  --> /home/user/sandbox/rust/05_sandbox/error/error_propagation_with_own_msg_and_location/src/main.rs:36:29
+   |
+36 |     match file.strip_prefix(PROJECT_DIR) {
+   |                             ^^^^^^^^^^^ not found in this scope
+
+For more information about this error, try `rustc --explain E0425`.
