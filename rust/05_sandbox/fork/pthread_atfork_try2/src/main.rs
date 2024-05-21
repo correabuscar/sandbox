@@ -449,17 +449,22 @@ impl HookTracker {
     {
         // TODO: figure out what happens when panic happens during held lock, ie. poisoning
         // Lock the list to ensure exclusive access
-        if let Ok(mut guard) = self.list.lock() {
-            //use if let to keep lock for minimal block
-            //.expect("Unexpected concurrent execution attempted") {
+        {
+            let res=self.list.lock();
+            if let Ok(mut guard) = res {
+                //use if let to keep lock for minimal block
+                //.expect("Unexpected concurrent execution attempted") {
 
-            // Add the name of the function to the list
-            guard.push(func_name);//TODO: what if this panics? lock poisoning?
+                // Add the name of the function to the list
+                guard.push(func_name);//TODO: what if this panics? lock poisoning? yes!
+                //panic!("foo");
+            }
+            else {
+                // doneFIXME: actually this isn't true, this Err variant happens only due to poisoning, if recursing it would just deadlock. Tested it does deadlock! Well, thanks chatgpt for wrongly saying it's due to recursion.
+                panic!("A different thread panic-ed during lock. Couldn't acquire lock! {:?}",res);
+                //FIXME: handle even if it's poisoned.
+            }
         }//lock released here.
-        else {
-            // This function might panic when called if the lock is already held by the current thread.
-            panic!("Impossible recursive execution attempted. Couldn't acquire lock!");
-        }
 
         // Print the name of the function
         println!("Executing {}", func_name);
