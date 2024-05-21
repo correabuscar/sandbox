@@ -1,0 +1,4 @@
+failed to make it use my custom const &str as the message for attribute:
+
+#[must_use = "msg here"]
+
