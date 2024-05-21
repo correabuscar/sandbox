@@ -11,16 +11,22 @@ include!(concat!(env!("OUT_DIR"), "/project_dir.rs")); //gets me 'PROJECT_DIR'
 const BUFFER_SIZE: usize = 4096;//one kernel page?!
 
 #[derive(Debug)]
+struct LocationInSource {
+    file: &'static str,
+    line: u32,
+    column: u32,
+}
+
+#[derive(Debug)]
 enum MyError {
     AlreadyBorrowedOrRecursingError {
         source: BorrowMutError,
-        file: &'static str,
-        line: u32,
-        column: u32,
+        location_of_instantiation: LocationInSource,
         message: [u8; BUFFER_SIZE],
         len: usize,
     },
     TimeoutError {
+        location_of_instantiation: LocationInSource,
         duration: Duration,
         tid: u64,
         file: &'static str,

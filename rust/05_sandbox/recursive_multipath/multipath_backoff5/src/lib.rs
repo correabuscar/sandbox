@@ -592,8 +592,75 @@ where
     }
 }
 
+
+const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 4096;//one kernel page?!
+
+#[derive(Debug)]
+enum MyError {
+    AlreadyBorrowedOrRecursingError {
+        //msg: &'static str,
+        msg: [u8; CUSTOM_ERROR_MSG_BUFFER_SIZE],
+        //FIXME: use stuff from /home/user/sandbox/rust/05_sandbox/error/error_propagation_with_own_msg_and_location
+        source:std::cell::BorrowMutError,
+    },
+    TimeoutError {
+        duration:std::time::Duration,
+        thread_id:u64,
+    },
+    TLSAccessError {
+        source: std::thread::AccessError,
+    }
+}
+
+// Define a custom Result type
+type MyResult<T> = Result<T, MyError>;
+
+impl From<std::cell::BorrowMutError> for MyError {
+    fn from(error: std::cell::BorrowMutError) -> Self {
+        MyError::AlreadyBorrowedOrRecursingError {
+            source:error
+        }
+    }
+}
+
+// Implement Display for the custom error type
+impl fmt::Display for MyError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MyError::AlreadyBorrowedOrRecursingError{ source } => write!(f, "Already borrowed or recursing error, source error: {0} {0:?}", source),
+            MyError::TimeoutError{duration, thread_id} => write!(f, "Timeout after {:?} while trying to find a free slot for thread {}", duration, thread_id),
+            MyError::TLSAccessError { source } => write!(f, "Unvisiting errored, this is pretty bad as it means inconsistency in tracking from now on, source error='{}'",source),
+        }
+    }
+}
+
+// Implement the Error trait
+impl std::error::Error for MyError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            MyError::AlreadyBorrowedOrRecursingError { source } => Some(source),
+            MyError::TimeoutError{ .. } => None,
+            MyError::TLSAccessError { source } => Some(source),
+        }
+    }
+}
+
+// Macro to create MyError with file, line, and column information
+macro_rules! my_error {
+    ($variant:ident, $($arg:tt)*) => {
+        MyError::$variant {
+            file: file!(),
+            line: line!(),
+            column: column!(),
+            $($arg)*
+        }
+    };
+}
+
+
 pub trait UnvisitTrait {
     fn unvisit(&self);
+    fn try_unvisit(&self) -> MyResult<()>;
 }
 
 
@@ -602,6 +669,10 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocal
 
     //mustn't call this manually
     fn unvisit(&self) {
+        let _ = self.try_unvisit();
+    }
+    //mustn't call this manually
+    fn try_unvisit(&self) -> MyResult<()> {
         //unvisits
         //if self.can_heap_alloc {
         //TODO: try_with() "This function will still panic!() if the key is uninitialized and the key’s initializer panics."
@@ -629,9 +700,12 @@ impl UnvisitTrait for RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocal
             drop(res_borrow);//now can be dropped
         });
         if let Err(err)=res {
+            //LocalKey::try_with() errored?!
             //TODO: this is pretty bad, maybe somehow set the is_recursing bool to some default ?
             eprintln!("!!! unvisiting errored, this is pretty bad as it means inconsistency in tracking, error='{}'",err);
+            return Err(MyError::TLSAccessError{source:err});
         }
+        return Ok(());
     }
 }//impl
 
@@ -849,6 +923,7 @@ fn got_value(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::t
 //const MUST_USE_MSG: &str = "if unused the guard will be immediately dropped thus unless recursion happened internally(and even if detected you've no way of knowing about it unless through the return value which you already ignored), anything after this call won't be detected as recursion because the guard is to be used for such a thing as long as it's alive";
 
 
+//TODO: dedup the message that's used here in 3 places
 #[must_use = "if unused the guard will be immediately dropped thus unless recursion happened internally(and even if detected you've no way of knowing about it unless through the return value which you already ignored), anything after this call won't be detected as recursion because the guard is to be used for such a thing as long as it's alive" ]
 //#[must_use = MUST_USE_MSG] //`attribute value must be a literal`
 pub fn macro_helper1(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration) -> std::option::Option<RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone>> {
