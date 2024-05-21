@@ -16,6 +16,7 @@ unsafe impl GlobalAlloc for MyGlobalAllocator {
         //okFIXME: infinite recursion below due to std::thread::current() allocating due to using Arc
         //let maybe_zone1_guard = multipath_backoff5::recursion_detection_zone!(noheapalloc start, ONE_SECOND);
         //XXX: this is just another way of doing same thing as we do in dealloc/realloc below
+        //multipath_backoff5::recursion_detection_zone!(noheapalloc start, ONE_SECOND, true);//XXX: shows must_use msg!
         let zone1_guard = multipath_backoff5::recursion_detection_zone!(noheapalloc start, ONE_SECOND, true);
         //if let std::option::Option::Some(zone1_guard)=maybe_zone1_guard {
             if !zone1_guard.is_recursing {

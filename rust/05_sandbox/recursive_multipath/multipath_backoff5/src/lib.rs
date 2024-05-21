@@ -85,7 +85,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> Drop for NoHeapAl
             //step2of3: we drop the previously set value
             //ok even if it wasn't set, the RefCell::new(None) still has to be dropped,
             //we've to drop the RefCell, else nothing else will drop it after.
-            println!("Dropping element at index '{}'", index);//FIXME: remove this
+            eprintln!("Dropping element at index '{}'", index);//FIXME: remove this
             unsafe { ManuallyDrop::drop(elem) }
             //self.values[index]=unsafe { std::mem::zeroed() };
             //XXX: wait, why did I need to manually drop? oh it's because of the init: the const fn new() to be 'const fn' and make a new RefCell must not drop the prev. value which was just a mem::zeroed() RefCell not a real one.
@@ -309,6 +309,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
         None
     }//fn
 
+    /// returns true if the current value is already borrowed by the current thread which means it's recursing, unless you know of another way it can attempt to re-borrow without recursion? hmm TODO: coroutines could reborrow without thread recursing !? oh, async code?! unclear as I don't know how either work, but the former doesn't yet exist in rust.
     pub fn is_recursing(&self) -> bool {
         let our_tid_actual: u64 = get_current_thread_id();
         //if we have already allocated it, return early
@@ -326,8 +327,8 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
 
     /// returns true if it was already set(and thus we just found it again)
     /// returns false if it wasn't already set, and either we found a spot for it or we didn't.
-    /// If no slots are available, retry until timeout in which case returns None,
-    /// if success returns a mutable ref to the existing value whether or not it was  just set
+    /// If no slots are available, retry(ie. it blocks) until timeout in which case returns None,
+    /// but if success returns a mutable ref to the existing value whether or not it was  just set
     /// Since the value is supposed to be accessible only on current thread, it's not protected or
     /// wrapped into some kind of sync. primitive, so you've direct mutability to it.
     pub fn get_or_set<'a>(
@@ -360,7 +361,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                     //let current_val=unsafe { self.values[index].assume_init() };
 //                    let value_ptr = unsafe { self.values.as_ptr().offset(index as isize) as *mut T};
 //                    let mut_ref_to_value=unsafe { &mut *value_ptr };
-                    //TODO: use try_borrow_mut() here:
+                    //doneTODO: use try_borrow_mut() here:
                     let maybe:Result<RefMut<Option<T>>, std::cell::BorrowMutError>=self.values[index].try_borrow_mut();
                     if let Ok(mut_ref_to_value)=maybe {
                         //let mut_ref_to_value:RefMut<Option<T>>=self.values[index].borrow_mut();
@@ -376,7 +377,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                         //return (true, Some(current_val));
                         return (true, Some(mut_ref_to_value));
                     } else {
-                        return (false,None); //FIXME: maybe Result?
+                        return (false,None); //FIXME: maybe Result? 1of2 AlreadyBorrowedOrRecursingError(BorrowMutError)
                     }
                 },
                 _any_else => {
@@ -466,7 +467,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                         assert_ne!(what_was, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(8)");
                         if start_time.elapsed() >= timeout {
                             // Timeout reached
-                            return (false,None);
+                            return (false,None);//TODO: return Result? 2of2 TimeoutError(Duration, tid:u64)
                             //} else { // fall thru aka continue;
                             //    continue;
                         };
@@ -845,6 +846,11 @@ fn got_value(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::t
     }
 }
 
+//const MUST_USE_MSG: &str = "if unused the guard will be immediately dropped thus unless recursion happened internally(and even if detected you've no way of knowing about it unless through the return value which you already ignored), anything after this call won't be detected as recursion because the guard is to be used for such a thing as long as it's alive";
+
+
+#[must_use = "if unused the guard will be immediately dropped thus unless recursion happened internally(and even if detected you've no way of knowing about it unless through the return value which you already ignored), anything after this call won't be detected as recursion because the guard is to be used for such a thing as long as it's alive" ]
+//#[must_use = MUST_USE_MSG] //`attribute value must be a literal`
 pub fn macro_helper1(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration) -> std::option::Option<RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone>> {
     if let Some(was_visited_before)=got_value(ref_to_static, timeout) {
         let guard: RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> = RecursionDetectionZoneGuard::new(was_visited_before, &ref_to_static);
@@ -855,6 +861,7 @@ pub fn macro_helper1(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout
     }
 }
 
+#[must_use = "if unused the guard will be immediately dropped thus unless recursion happened internally(and even if detected you've no way of knowing about it unless through the return value which you already ignored), anything after this call won't be detected as recursion because the guard is to be used for such a thing as long as it's alive" ]
 pub fn macro_helper2(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout: std::time::Duration, default_value_on_timeout:bool) -> RecursionDetectionZoneGuard<&NoHeapAllocsThreadLocalForThisZone> {
     let was_visited_before=if let Some(was_visited_before)=got_value(ref_to_static, timeout) {
         was_visited_before
@@ -866,6 +873,7 @@ pub fn macro_helper2(ref_to_static: &NoHeapAllocsThreadLocalForThisZone, timeout
 }
 
 //TODO: find out why this needs the 'static lifetime but our noheap type doesn't hmm..
+#[must_use = "if unused the guard will be immediately dropped thus unless recursion happened internally(and even if detected you've no way of knowing about it unless through the return value which you already ignored), anything after this call won't be detected as recursion because the guard is to be used for such a thing as long as it's alive" ]
 pub fn macro_helper3(ref_to_static:&'static HeapAllocsThreadLocalForThisZone) -> RecursionDetectionZoneGuard<&'static HeapAllocsThreadLocalForThisZone> {
         let was_visited_before=ref_to_static.try_with(|refcell| {
             let mut ref_mut=refcell.borrow_mut();
