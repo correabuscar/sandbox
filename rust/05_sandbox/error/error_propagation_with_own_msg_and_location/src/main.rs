@@ -134,7 +134,7 @@ mod my_error_things {
             $($field: $value),*
         }
     }};
-}
+    }
 } //mod
   //
   //#[deny(unused_must_use)] //no effect
@@ -238,7 +238,7 @@ mod static_noalloc_msg {
 
         //ret_type
     }};
-} //macro
+    } //macro
 } //mod
 
 use std::cell::RefCell;
