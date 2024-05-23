@@ -1,9 +1,9 @@
 // Define the VariantName trait
-trait VariantNameAsStr {
-    fn variant_name_as_str(&self) -> &str;
-}
+//trait VariantNameAsStr {
+//    fn variant_name_as_str(&self) -> &str;
+//}
 macro_rules! enum_str {
-    //XXX: arm matches unit varians like Red and struct variants like Red { field1: i32, field2: i64, }, and a mixture of both is supported!
+    //XXX: arm matches unit variants like Red and struct variants like Red { field1: i32, field2: i64, }, and a mixture of both is supported!
     ($(#[$attr:meta])* $vis:vis enum $name:ident $(<$($gen:ident),*>)?, $($variant:ident $({ $($field:ident: $ftype:ty),* $(,)? })?),* $(,)?) => {
         $(#[$attr])*
         $vis enum $name $(<$($gen),*>)? {
@@ -12,8 +12,9 @@ macro_rules! enum_str {
             ),*
         }//enum
 
-        impl $(<$($gen),*>)? VariantNameAsStr for $name $(<$($gen),*>)? {
-            fn variant_name_as_str(&self) -> &str {
+        //impl $(<$($gen),*>)? VariantNameAsStr for $name $(<$($gen),*>)? {
+        impl $(<$($gen),*>)? $name $(<$($gen),*>)? {
+            pub const fn variant_name_as_str(&self) -> &str {
                 match self {
                     $(
                         // Handle variants with fields
@@ -34,8 +35,9 @@ macro_rules! enum_str {
                 )*
             }//enum
 
-        impl $(<$($gen),*>)? VariantNameAsStr for $name $(<$($gen),*>)? {
-            fn variant_name_as_str(&self) -> &str {
+        //impl $(<$($gen),*>)? VariantNameAsStr for $name $(<$($gen),*>)? {
+        impl $(<$($gen),*>)? $name $(<$($gen),*>)? {
+            pub const fn variant_name_as_str(&self) -> &str {
                 match self {
                     $(
                         Self::$variant(..) => stringify!($variant),
@@ -102,6 +104,7 @@ enum_str! {
     StructVariant1 {
         field1: i32,
     },
+    //TupleVariant(i32),//XXX: can't match this here!
 }
 
 enum_str! {
@@ -131,4 +134,8 @@ fn main() {
     };
     assert_eq!(error2.variant_name_as_str(), "TimeoutError");
     println!("{:?}", error1);
+    let c=Color::Blue;
+    assert_eq!(c.variant_name_as_str(),"Blue");
+    let c2=Color2::<i128,&str>::Green("text",2);
+    assert_eq!(c2.variant_name_as_str(),"Green");
 }
