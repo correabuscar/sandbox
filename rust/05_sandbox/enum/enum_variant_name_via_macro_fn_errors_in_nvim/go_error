@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+rust-analyzer diagnostics ./
+#$ rust-analyzer diagnostics .
+#processing crate: enum_variant_name_via_macro_fn_errors_in_nvim, module: /home/user/sandbox/rust/05_sandbox/enum/enum_variant_name_via_macro_fn_errors_in_nvim/src/main.rs
+#Diagnostic { code: RustcHardError("E0023"), message: "this pattern has 1 field, but the corresponding tuple struct has 0 fields", range: FileRange { file_id: FileId(11), range: 1190..1626 }, severity: Error, unused: false, experimental: false, fixes: None, main_node: None }
+#
+#diagnostic scan complete
+#
+#Error: diagnostic error detected
+#$ rust-analyzer --version
+#rust-analyzer 1.76.0-nightly
