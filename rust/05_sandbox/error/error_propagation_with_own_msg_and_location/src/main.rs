@@ -285,6 +285,7 @@ mod static_noalloc_msg {
         }
 
         pub const fn new(msg: [u8; SIZE], msg_len: usize) -> Self {
+            assert!(msg_len <= SIZE);
             //let mut inst=NoAllocFixedLenMessageOfPreallocatedSize {
             NoAllocFixedLenMessageOfPreallocatedSize {
                 msg,

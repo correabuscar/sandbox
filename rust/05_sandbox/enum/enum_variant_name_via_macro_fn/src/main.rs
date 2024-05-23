@@ -4,7 +4,7 @@ trait VariantNameAsStr {
 }
 macro_rules! enum_str {
     //XXX: arm matches unit varians like Red and struct variants like Red { field1: i32, field2: i64, }, and a mixture of both is supported!
-    ($(#[$attr:meta])* $vis:vis enum $name:ident $(<$($gen:ident),*>)?, $($variant:ident $({ $($field:ident: $ftype:ty),* })?),* $(,)?) => {
+    ($(#[$attr:meta])* $vis:vis enum $name:ident $(<$($gen:ident),*>)?, $($variant:ident $({ $($field:ident: $ftype:ty),* $(,)? })?),* $(,)?) => {
         $(#[$attr])*
         $vis enum $name $(<$($gen),*>)? {
             $(
@@ -26,7 +26,7 @@ macro_rules! enum_str {
     };
 
     //XXX: arm matches only tuple variants eg. Red(i32,i64,i128) but not Red, nor Red { field:i32 }, so you can't mix them!
-    ($(#[$attr:meta])* $vis:vis enum $name:ident $(<$($gen:ident),*>)?, $($variant:ident $(($($ftype:ty),*))?),* $(,)?) => {
+    ($(#[$attr:meta])* $vis:vis enum $name:ident $(<$($gen:ident),*>)?, $($variant:ident $(($($ftype:ty),* $(,)? ))?),* $(,)?) => {
         $(#[$attr])*
             $vis enum $name $(<$($gen),*>)? {
                 $(
@@ -101,12 +101,15 @@ enum_str! {
 enum_str! {
     pub enum Color,
     Red, Green, Blue,
+    StructVariant1 {
+        field1: i32,
+    },
 }
 
 enum_str! {
     pub enum Color2<T,G>,
     //Tee { f: i32 }, // if u use this, then the tuple variant below isn't accepted!
-    Red(T,G), Green(G,i32), Blue(i64),
+    Red(T,G), Green(G,i32), Blue(i64,i128,),
     //Magenta,//XXX: this isn't accepted here!
     //Foo { field1: i32 }, //XXX: this isn't accepted here!
 }
