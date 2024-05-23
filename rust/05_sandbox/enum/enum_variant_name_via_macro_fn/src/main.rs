@@ -1,46 +1,3 @@
-/*macro_rules! enum_str {
-    // Match for an enum with variants that can have fields, with specified visibility
-    ($vis:vis $name:ident, $($variant:ident $({ $($field:ident: $ftype:ty),* })?),*) => {
-        #[derive(Debug)]
-        $vis enum $name {
-            $($variant $({ $($field: $ftype),* })?),*
-        }
-
-        impl VariantNameAsStr for $name {
-            //fn is pub due to it being a trait impl!
-            fn variant_name_as_str(&self) -> &str {
-                match self {
-                    $(
-                        // Handle variants with fields
-                        Self::$variant $({ $($field: _),* })? => stringify!($variant),
-                    )*
-                }
-            }
-        }
-    };
-}*/
-
-/*macro_rules! enum_str {
-    ($vis:vis $name:ident $(<$($gen:ident),*>)?, $($variant:ident $({ $($field:ident: $ftype:ty),* })?),* $(,)?) => {
-        //#[derive(Debug)]
-        $vis enum $name $(<$($gen),*>)? {
-            $($variant $({ $($field: $ftype),* })?),*
-        }
-
-        impl $(<$($gen),*>)? VariantNameAsStr for $name $(<$($gen),*>)? {
-            //fn is pub due to it being a trait impl!
-            fn variant_name_as_str(&self) -> &str {
-                match self {
-                    $(
-                        // Handle variants with fields
-                        Self::$variant $({ $($field: _),* })? => stringify!($variant),
-                    )*
-                }
-            }
-        }
-    };
-}*/
-
 // Define the VariantName trait
 trait VariantNameAsStr {
     fn variant_name_as_str(&self) -> &str;
@@ -89,54 +46,6 @@ macro_rules! enum_str {
     };//arm
 }//macro
 
-/*macro_rules! apply_attrs_to_enum {
-    ($(#[$attr:meta])* enum $name:ident $($rest:tt)*) => {
-        $(#[$attr])*
-        enum $name $($rest)*
-    };
-}
-
-macro_rules! enum_str {
-    ($(#[$attr:meta])* $vis:vis $name:ident $(<$($gen:ident),*>)?, $($variant:ident $({ $($field:ident: $ftype:ty),* })?),* $(,)?) => {
-//        apply_attrs_to_enum! {
-            $attrs $vis $name $(<$($gen),*>)? {
-                $($variant $({ $($field: $ftype),* })?),*
-            }
-//        }
-
-        impl $(<$($gen),*>)? VariantNameAsStr for $name $(<$($gen),*>)? {
-            fn variant_name_as_str(&self) -> &str {
-                match self {
-                    $(
-                        // Handle variants with fields
-                        Self::$variant $({ $($field: _),* })? => stringify!($variant),
-                        //Self::$variant $({..})? => stringify!($variant),
-                    )*
-                }
-            }
-        }
-    };
-}*/
-
-/*macro_rules! enum_str {
-    ($vis:vis $name:ident<$($gen:ident),*>, $($variant:ident $({ $($field:ident: $ftype:ty),* })?),*) => {
-        #[derive(Debug)]
-        $vis enum $name<$($gen),*> {
-            $($variant $({ $($field: $ftype),* })?),*
-        }
-
-        impl<$($gen),*> VariantNameAsStr $name<$($gen),*> {
-            $vis fn variant_name_as_str(&self) -> &str {
-                match self {
-                    $(
-                        // Handle variants with fields
-                        Self::$variant $({ $($field: _),* })? => stringify!($variant),
-                    )*
-                }
-            }
-        }
-    };
-}*/
 
 // Define custom types used in the enum fields
 #[derive(Debug)]
@@ -153,13 +62,6 @@ pub const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 256;
 #[derive(Debug)]
 pub struct NoAllocFixedLenMessageOfPreallocatedSize<const SIZE: usize>;
 
-
-//// Implement the VariantName trait for the enum
-//impl VariantNameAsStr for MyError {
-//    fn variant_name_as_str(&self) -> &str {
-//        self.variant_name()
-//    }
-//}
 
 // Use the macro to declare the enum with visibility
 enum_str! {
