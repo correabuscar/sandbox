@@ -17,37 +17,42 @@ macro_rules! replace_with_2_dots {
 //
 #[macro_export]
 macro_rules! enum_str {
-    ($(#[$attr:meta])*
-     $vis:vis enum $name:ident $(<$($gen:ident),*>)?,
-     $(
-         $variant:ident
-             $( (
-                 $($tfield:ty),*
-                 $(,)?
-             ) )?
-             $( {
-                 $($sfield:ident: $stype:ty),*
-                 $(,)?
-             } )?
-     ),*
-     $(,)?
-     ) => {
+    (
+        //matches attributes like #[allow(dead_code)], if any!
+        $(#[$attr:meta])*
+        //matches 'pub enum Something<T,G,F>' but also just 'enum Something', and ends with a comma
+        $vis:vis enum $name:ident $(<$($gen:ident),*>)?,
+        $(
+            //matches VariantName, VariantName(), VariantName(i32), VariantName(i32,i128,)
+            //but also weirds like: VariantName(,)
+            //also matches VariantName {}
+            $variant:ident
+            $( (
+                    $($tfield:ty),*
+                    $(,)?
+            ) )?
+            $( {
+                $($sfield:ident: $stype:ty),*
+                    $(,)?
+            } )?
+        ),*
+        $(,)?
+    ) => {
         $(#[$attr])*
-        $vis enum $name $(<$($gen),*>)? {
-            $(
-                $variant $( ( $($tfield),* ) )?
-                         $( { $($sfield: $stype),* })?
-            ),*
-        }//enum
+            $vis enum $name $(<$($gen),*>)? {
+                $(
+                    $variant $( ( $($tfield),* ) )?
+                    $( { $($sfield: $stype),* })?
+                ),*
+            }//enum
 
         //impl $(<$($gen),*>)? VariantNameAsStr for $name $(<$($gen),*>)? {
         impl $(<$($gen),*>)? $name $(<$($gen),*>)? {
             pub const fn variant_name_as_str(&self) -> &str {
                 match self {
                     $(
-                        // Handle variants with fields
                         Self::$variant $( ( $crate::replace_with_2_dots!( $($tfield),* ) ) )?
-                                       $( { $($sfield: _),* } )?
+                        $( { $($sfield: _),* } )?
                         => stringify!($variant),
                     )*
                 }//match
@@ -74,6 +79,7 @@ pub struct NoAllocFixedLenMessageOfPreallocatedSize<const SIZE: usize>;
 // Use the macro to declare the enum with visibility
 enum_str! {
     #[derive(Debug)]
+    #[warn(dead_code)]
     pub enum MyError,
     AlreadyBorrowedOrRecursingError {
         source: BorrowMutError,
@@ -118,12 +124,20 @@ pub enum Color0 {
 }
 
 enum_str! {
-    pub enum Color,
+    #[allow(dead_code)]
+    enum Color,
     Red, Green, Blue,
+    StructVariant0 {},
     StructVariant1 {
         field1: i32,
     },
+    StructVariant2 {
+        field1: i32,
+        field2: i32,
+    },
     TupleVariant(i32),
+    Ooops(,),//FIXME: shouldn't match but hey, the macro itself is a hack!
+    //Oops2(){},//it errors but it's not clear why it does, unless u know it's bad syntax.
 }
 
 enum_str! {
