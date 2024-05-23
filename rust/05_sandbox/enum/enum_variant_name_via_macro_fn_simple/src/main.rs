@@ -34,9 +34,9 @@ macro_rules! enum_str {
     };
 }
 
-enum Foo {
-    TupleVarianttttt(), //this works!
-}
+//enum Foo {
+//    TupleVarianttttt(), //this works!
+//}
 
 enum_str! {
 
@@ -47,8 +47,8 @@ enum_str! {
         field1: i32,
     },
     TupleVariant(i32,),
-    //TupleVariant2(),
-    //TupleVariant3(i8,u8,i128,),
+    TupleVariant2(),
+    TupleVariant3(i8,u8,i128,),
 }
 
 fn main() {

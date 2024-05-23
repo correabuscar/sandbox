@@ -1,4 +1,7 @@
+#!/usr/bin/env bash
 export RUST_BACKTRACE=1
 cargo clean
 cargo run
 cargo expand
+rust-analyzer diagnostics .
+echo "exit code: $?"
