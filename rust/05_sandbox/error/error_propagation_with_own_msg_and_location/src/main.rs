@@ -88,6 +88,7 @@ mod my_error_things {
             //};
             //let variant_name= std::any::type_name_of_val(self);
             let variant_name=self.variant_name_only();
+            self.as_str();
             //let fixed=crate::format_into_buffer!("{}::{}", type_name, variant_name).get_msg();/* E0716: temporary value dropped while borrowed consider using a `let` binding to create a longer lived value */
             let fixed: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE>=crate::format_into_buffer!("{}::{}", type_name, variant_name);
             //let fixed=fixed.get_msg();
@@ -187,7 +188,7 @@ mod my_error_things {
     impl fmt::Display for MyError {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
-                //TODO: use for the enum to &str this: https://docs.rs/strum_macros/latest/strum_macros/derive.Display.html
+                //mehTODO: use for the enum to &str this: https://docs.rs/strum_macros/latest/strum_macros/derive.Display.html  but we don't want to use external crates. So I guess we need to do the macro_rules way, since proc macros need to be in their own crates!
                 MyError::AlreadyBorrowedOrRecursingError {
                     location_of_instantiation,
                     custom_message,

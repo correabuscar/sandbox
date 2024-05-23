@@ -1,0 +1,2 @@
+this is no good as it depends on the Debug impl to represent the name of the
+variant!
