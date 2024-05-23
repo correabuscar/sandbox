@@ -46,8 +46,8 @@ trait VariantNameAsStr {
     fn variant_name_as_str(&self) -> &str;
 }
 macro_rules! enum_str {
-    //arm matches unit varians like Red and struct variants like Red { field1: i32, field2: i64, }, and a mixture of both is supported!
-    ($(#[$attr:meta])* $vis:vis $name:ident $(<$($gen:ident),*>)?, $($variant:ident $({ $($field:ident: $ftype:ty),* })?),* $(,)?) => {
+    //XXX: arm matches unit varians like Red and struct variants like Red { field1: i32, field2: i64, }, and a mixture of both is supported!
+    ($(#[$attr:meta])* $vis:vis enum $name:ident $(<$($gen:ident),*>)?, $($variant:ident $({ $($field:ident: $ftype:ty),* })?),* $(,)?) => {
         $(#[$attr])*
         $vis enum $name $(<$($gen),*>)? {
             $(
@@ -68,8 +68,8 @@ macro_rules! enum_str {
         }//impl
     };
 
-    //arm matches only tuple variants eg. Red(i32,i64,i128) but not Red, nor Red { field:i32 }, so you can't mix them!
-    ($(#[$attr:meta])* $vis:vis $name:ident $(<$($gen:ident),*>)?, $($variant:ident $(($($ftype:ty),*))?),* $(,)?) => {
+    //XXX: arm matches only tuple variants eg. Red(i32,i64,i128) but not Red, nor Red { field:i32 }, so you can't mix them!
+    ($(#[$attr:meta])* $vis:vis enum $name:ident $(<$($gen:ident),*>)?, $($variant:ident $(($($ftype:ty),*))?),* $(,)?) => {
         $(#[$attr])*
             $vis enum $name $(<$($gen),*>)? {
                 $(
@@ -164,7 +164,7 @@ pub struct NoAllocFixedLenMessageOfPreallocatedSize<const SIZE: usize>;
 // Use the macro to declare the enum with visibility
 enum_str! {
     #[derive(Debug)]
-    pub MyError,
+    pub enum MyError,
     AlreadyBorrowedOrRecursingError {
         source: BorrowMutError,
         location_of_instantiation: LocationInSource,
@@ -182,7 +182,7 @@ enum_str! {
 
 enum_str! {
     #[derive(Debug)]
-    pub MyError2<T,F>,
+    pub enum MyError2<T,F>,
     AlreadyBorrowedOrRecursingError {
         source: BorrowMutError,
         location_of_instantiation: T,
@@ -197,10 +197,12 @@ enum_str! {
 }
 
 enum_str! {
-    pub Color,
-    Red, Green, Blue, }
+    pub enum Color,
+    Red, Green, Blue,
+}
+
 enum_str! {
-    pub Color2<T,G>,
+    pub enum Color2<T,G>,
     //Tee { f: i32 }, // if u use this, then the tuple variant below isn't accepted!
     Red(T,G), Green(G,i32), Blue(i64),
     //Magenta,//XXX: this isn't accepted here!
