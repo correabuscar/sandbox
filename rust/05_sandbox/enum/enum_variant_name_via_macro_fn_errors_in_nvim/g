@@ -1,4 +1,6 @@
+set -e
 export RUST_BACKTRACE=1
 cargo clean
 cargo run
 cargo expand
+echo done

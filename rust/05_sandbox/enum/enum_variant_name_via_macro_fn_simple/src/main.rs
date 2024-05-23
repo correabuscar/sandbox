@@ -34,14 +34,21 @@ macro_rules! enum_str {
     };
 }
 
+enum Foo {
+    TupleVarianttttt(), //this works!
+}
+
 enum_str! {
 
     Tee { f: i32 },
     Red, Green, Blue,
+    StructVariant2 {},
     StructVariant1 {
         field1: i32,
     },
-    TupleVariant(i32),//XXX: can't match this here!
+    TupleVariant(i32,),
+    //TupleVariant2(),
+    //TupleVariant3(i8,u8,i128,),
 }
 
 fn main() {

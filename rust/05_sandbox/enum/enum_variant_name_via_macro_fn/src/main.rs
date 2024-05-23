@@ -1,7 +1,15 @@
+// TODO: support empty enum?
+//TODO: should use {} in macro call/enum def. or keep it with just args and commas ?
+
 // Define the VariantName trait
 //trait VariantNameAsStr {
 //    fn variant_name_as_str(&self) -> &str;
 //}
+// https://users.rust-lang.org/t/enum-variant-name-as-str-without-debug-display-proc-macro-or-heap-allocation/111876/
+/// you can only have enums with variants that are either all tuple variants, OR unit and struct variants,
+/// so tuple OR unit+struct
+/// but you can't have all 3 tuple+unit+struct, or tuple+unit
+#[macro_export]
 macro_rules! enum_str {
     //XXX: arm matches unit variants like Red and struct variants like Red { field1: i32, field2: i64, }, and a mixture of both is supported!
     ($(#[$attr:meta])* $vis:vis enum $name:ident $(<$($gen:ident),*>)?, $($variant:ident $({ $($field:ident: $ftype:ty),* $(,)? })?),* $(,)?) => {
@@ -96,6 +104,15 @@ enum_str! {
         tid: u64,
         custom_message: NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE>
     },
+}
+
+pub enum Color0 {
+    Red, Green, Blue,
+    StructVariant1 {
+        field1: i32,
+    },
+    //Foo{i32},//XXX: not valid
+    Foo(i32),
 }
 
 enum_str! {
