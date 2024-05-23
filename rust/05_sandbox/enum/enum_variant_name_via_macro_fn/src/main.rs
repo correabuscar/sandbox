@@ -44,8 +44,7 @@ macro_rules! enum_str {
             }
         }//impl
     };//arm
-}//macro
-
+} //macro
 
 // Define custom types used in the enum fields
 #[derive(Debug)]
@@ -61,7 +60,6 @@ pub const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 256;
 
 #[derive(Debug)]
 pub struct NoAllocFixedLenMessageOfPreallocatedSize<const SIZE: usize>;
-
 
 // Use the macro to declare the enum with visibility
 enum_str! {
@@ -120,7 +118,10 @@ fn main() {
         location_of_instantiation: LocationInSource,
         custom_message: NoAllocFixedLenMessageOfPreallocatedSize,
     };
-    assert_eq!(error1.variant_name_as_str(), "AlreadyBorrowedOrRecursingError");
+    assert_eq!(
+        error1.variant_name_as_str(),
+        "AlreadyBorrowedOrRecursingError"
+    );
 
     let error2 = MyError::TimeoutError {
         location_of_instantiation: LocationInSource,
@@ -131,4 +132,3 @@ fn main() {
     assert_eq!(error2.variant_name_as_str(), "TimeoutError");
     println!("{:?}", error1);
 }
-
