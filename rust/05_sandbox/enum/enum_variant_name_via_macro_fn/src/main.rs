@@ -14,6 +14,7 @@
 //    };
 //}
 
+// TODO: can merge this with the main macro actually!
 /// just puts first arg
 #[macro_export]
 macro_rules! place_first_arg_ignore_rest_if_any {
@@ -37,13 +38,40 @@ macro_rules! place_first_arg_ignore_rest_if_any {
 /// matches any variants that are: unit, tuple or struct like,
 /// and also variants with associated value/constant like Ok=200 but in this latter case, but only when mixed with other variant types, you'd have to add eg. #[repr(u8)] //else, error[E0732]: `#[repr(inttype)]` must be specified
 /// empty enums are not supported, like pub enum Foo{}, on purpose!
+/// see: https://doc.rust-lang.org/reference/items/enumerations.html
 #[macro_export]
 macro_rules! enum_str {
     (
         //matches attributes like #[allow(dead_code)], if any!
         $(#[$attr:meta])*
         //matches 'pub enum Something<T,G,F>' but also just 'enum Something', and ends with a comma
+        //TODO: get genericparams right!
         $vis:vis enum $name:ident $(<$($gen:ident),*>)?
+         // Added support for a where clause
+        //FIXME: make this match each possible thing in the where, individually, due to: local ambiguity when calling macro `enum_str`: multiple parsing options: built-in NTs tt ('where_clause') or 1 other option.
+        $(where 
+            //yes 'where' with nothing following it is allowed in rust, oddly enough.
+            //WhereClause: where ( WhereClauseItem , )* WhereClauseItem ?
+            $(
+                //WhereClauseItem : LifetimeWhereClauseItem  | TypeBoundWhereClauseItem
+                //$( $where_clause:tt )+
+                $(
+                    //LifetimeWhereClauseItem : Lifetime `:` LifetimeBounds
+                    $lifetime:lifetime :
+                    $lifetime_bounds:tt
+                )?
+                $(
+                    //TypeBoundWhereClauseItem :     ForLifetimes? Type `:` TypeParamBounds?
+                    $(
+                        //ForLifetimes : `for` GenericParams
+                        for
+                        //TODO: get genericparams right!
+                        <$($generic_params:ident),*>
+                    )?
+                    $where_type:ty
+                )?
+            ),*
+        )?
         {
         $(
             //matches VariantName, VariantName(), VariantName(i32), VariantName(i32,i128,)
@@ -66,7 +94,19 @@ macro_rules! enum_str {
         }
     ) => {
         $(#[$attr])*
-            $vis enum $name $(<$($gen),*>)? {
+            $vis enum $name $(<$($gen),*>)?
+            $(where
+                $(
+                    $lifetime:$lifetime_bounds
+                )?
+                $(
+                    $(
+                        for <$generic_params>
+                    )?
+                )?
+                $where_type
+            )?
+            {
                 $(
                     $variant
                       $( ( $($tfield),* ) )?
@@ -182,8 +222,20 @@ enum_str! {
     }
 }
 
+//enum_str! {
+    pub enum MyEnum<'a, 'b> where 'a: 'b {
+        Variant1(&'a str),
+        Variant2(&'b str),
+    }
+//}
+
 enum_str! {
-    pub enum Color2<T,G> {
+    pub enum Color2<T,G>
+    where T:Copy, G: Clone,
+        T::Item: Copy,          // Bound on an associated type
+        String: PartialEq<T>,   // Bound on `String`, using the type parameter
+        i32: Default,           // Allowed, but not useful
+    {
         Tee { f: i32 },
         Red(T,G), Green(G,i32), Blue(i64,i128,),
         Magenta,
@@ -194,6 +246,16 @@ enum_str! {
     }
 }
 
+enum_str! {
+    pub enum Foo where { //empty where is supported in normal rust too!
+        Foo2,
+        r#New,
+        _Moo,
+        r#_Moo2,
+        東京,
+        r#東京2,
+    }
+}
 //enum_str! {
 //    pub enum YourEmpty,// {} //XXX: not supported on purpose!
 //}
