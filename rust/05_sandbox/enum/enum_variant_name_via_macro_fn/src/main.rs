@@ -43,27 +43,53 @@ macro_rules! place_first_arg_ignore_rest_if_any {
 macro_rules! enum_str {
     (
         //matches attributes like #[allow(dead_code)], if any!
-        $(#[$attr:meta])*
-        //matches 'pub enum Something<T,G,F>' but also just 'enum Something', and ends with a comma
-        //TODO: get genericparams right!
-        $vis:vis enum $name:ident $(<$($gen:ident),*>)?
+        //or the more likely-used one: #[repr(u8)]
+        $( #[ $enum_outer_attr:meta ] )* // this is enum's outer attribute
+                                         // meta: an Attr, the contents of an attribute
+        //matches 'pub enum Something<T,G,F>' but also just 'enum Something'
+        $visibility:vis
+        //TODO: get genericparams right/complete!
+        //Enumeration : `enum` IDENTIFIER  GenericParams? WhereClause? `{` EnumItems? `}`
+        enum $name:ident
+        //https://doc.rust-lang.org/reference/items/generics.html
+        // GenericParams : `<` `>` | `<` (GenericParam `,`)* GenericParam `,`? `>`
+        $(<
+            // GenericParam : OuterAttribute* ( LifetimeParam | TypeParam | ConstParam )
+            $(
+                // OuterAttribute : `#` `[` Attr `]`
+                $( #[ $enum_generics_outer_attr:meta ] )*
+                //it's supposed to be one of the following, but can't tell it that thru macro_rules matching,
+                //so it can be all 3 at once or none at all
+                //TODO: go on... from here:
+                //LifetimeParam : LIFETIME_OR_LABEL ( `:` LifetimeBounds )?
+                $(
+                )?
+                //TypeParam : IDENTIFIER( `:` TypeParamBounds? )? ( `=` Type )?
+                $(
+                $enum_generic:ident
+                )?
+                //ConstParam: `const` IDENTIFIER `:` Type ( `=` Block | IDENTIFIER | `-`?LITERAL )?
+                $(
+                )?
+            ),*
+            >)?
          // Added support for a where clause
-        //FIXME: make this match each possible thing in the where, individually, due to: local ambiguity when calling macro `enum_str`: multiple parsing options: built-in NTs tt ('where_clause') or 1 other option.
-        $(where 
+        //FIXME: make this match(verb) each possible thing in the where, individually, due to: local ambiguity when calling macro `enum_str`: multiple parsing options: built-in NTs tt ('where_clause') or 1 other option.
+        $(where
             //yes 'where' with nothing following it is allowed in rust, oddly enough.
             //WhereClause: where ( WhereClauseItem , )* WhereClauseItem ?
             $(
-                //WhereClauseItem : LifetimeWhereClauseItem  | TypeBoundWhereClauseItem
+                // WhereClauseItem : LifetimeWhereClauseItem  | TypeBoundWhereClauseItem
                 //$( $where_clause:tt )+
                 $(
-                    //LifetimeWhereClauseItem : Lifetime `:` LifetimeBounds
+                    // LifetimeWhereClauseItem : Lifetime `:` LifetimeBounds
                     $lifetime:lifetime :
                     $lifetime_bounds:tt
                 )?
                 $(
-                    //TypeBoundWhereClauseItem :     ForLifetimes? Type `:` TypeParamBounds?
+                    // TypeBoundWhereClauseItem :     ForLifetimes? Type `:` TypeParamBounds?
                     $(
-                        //ForLifetimes : `for` GenericParams
+                        // ForLifetimes : `for` GenericParams
                         for
                         //TODO: get genericparams right!
                         <$($generic_params:ident),*>
@@ -72,7 +98,7 @@ macro_rules! enum_str {
                 )?
             ),*
         )?
-        {
+        { //enum's opening brace
         $(
             //matches VariantName, VariantName(), VariantName(i32), VariantName(i32,i128,)
             //but also weirds like: VariantName(,)
@@ -91,10 +117,10 @@ macro_rules! enum_str {
             )?
         ),*
         $(,)?
-        }
+        } //enum's closing brace
     ) => {
-        $(#[$attr])*
-            $vis enum $name $(<$($gen),*>)?
+        $(#[$enum_outer_attr])*
+            $visibility enum $name $(<$($gen),*>)?
             $(where
                 $(
                     $lifetime:$lifetime_bounds
@@ -121,7 +147,12 @@ macro_rules! enum_str {
                 match self {
                     $(
                         Self::$variant
+                        //below, .. is the Rest pattern https://doc.rust-lang.org/reference/patterns.html#rest-patterns
+                        //this handles both unit and tuple  enum variants:
                         $( ( $crate::place_first_arg_ignore_rest_if_any!(.., $($tfield),* ) ) )?
+                        //below, _ is the Inferred type, https://doc.rust-lang.org/reference/types/inferred.html
+                        //so it's not the Wildcard pattern https://doc.rust-lang.org/reference/patterns.html#wildcard-pattern
+                        //this handles only the struct enum variants:
                         $( { $($sfield: _),* } )?
                         => stringify!($variant),
                     )*
