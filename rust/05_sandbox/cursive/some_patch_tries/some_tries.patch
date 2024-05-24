@@ -37,10 +37,10 @@ index 4984d57..106e171 100644
  ncurses-backend = ["ncurses", "maplit"]
  pancurses-backend = ["pancurses", "maplit"]
 diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
-index a250d60..ecebbf2 100644
+index a250d60..3440e47 100644
 --- a/cursive/src/backends/curses/n.rs
 +++ b/cursive/src/backends/curses/n.rs
-@@ -395,9 +395,12 @@ impl backend::Backend for Backend {
+@@ -395,9 +395,13 @@ impl backend::Backend for Backend {
          ncurses::refresh();
      }
  
@@ -48,7 +48,8 @@ index a250d60..ecebbf2 100644
 -        let text=&text.replace('\0'," "); // or the unwrap() will panic
 -        ncurses::mvaddstr(pos.y as i32, pos.x as i32, text).unwrap();
 +    fn print_at<'a>(&self, pos: Vec2, text: &'a str) {
-+        let text:Cow<'a, str>=delete_nuls(text);
++        // remove '\0' from &str or else the unwrap() will panic
++        let text:Cow<'a, str>=delete_nuls2(text);
 +        use std::os::raw::{c_char, c_int};
 +        let len = text.len() as c_int;
 +        let text=text.as_ptr() as *const c_char;
@@ -56,7 +57,7 @@ index a250d60..ecebbf2 100644
      }
  
      fn print_at_rep(&self, pos: Vec2, repetitions: usize, text: &str) {
-@@ -414,6 +417,132 @@ impl backend::Backend for Backend {
+@@ -414,6 +418,142 @@ impl backend::Backend for Backend {
  
  }
  
@@ -136,6 +137,16 @@ index a250d60..ecebbf2 100644
 +        None => Cow::Borrowed(text) //no heap alloc
 +    };
 +    assert_eq!(initial_len, text.len(), "it heap allocated more than once, we did the logic wrong");
++    text
++}
++
++#[inline(always)]
++fn delete_nuls2<'a>(text:&'a str) -> Cow<'a, str> {
++    let text:Cow<'a, str>=if text.contains('\0') {
++        Cow::Owned(text.replace('\0',""))
++    } else {
++        Cow::Borrowed(text)
++    };
 +    text
 +}
 +
