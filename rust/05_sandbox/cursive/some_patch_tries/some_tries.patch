@@ -36,26 +36,8 @@ index 4984d57..106e171 100644
  default = ["ncurses-backend"]
  ncurses-backend = ["ncurses", "maplit"]
  pancurses-backend = ["pancurses", "maplit"]
-diff --git a/cursive/examples/vpv.rs b/cursive/examples/vpv.rs
-index 38e1933..04aaf06 100644
---- a/cursive/examples/vpv.rs
-+++ b/cursive/examples/vpv.rs
-@@ -11,6 +11,13 @@ use std::time;
- // This example is a visual version of the `pv` tool.
- 
- fn main() {
-+    use cursive::{views::TextView, Cursive, CursiveExt};
-+
-+    let mut app = Cursive::new();
-+    app.add_layer(TextView::new("Hello Nullbyte: \0"));
-+    app.add_global_callback('q', |a| a.quit());
-+    app.run();
-+    return;
-     let mut siv = cursive::default();
- 
-     // We'll use this channel to signal the end of the transfer
 diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
-index dc2f4e3..cdd4201 100644
+index a250d60..ecebbf2 100644
 --- a/cursive/src/backends/curses/n.rs
 +++ b/cursive/src/backends/curses/n.rs
 @@ -395,9 +395,12 @@ impl backend::Backend for Backend {
@@ -84,7 +66,7 @@ index dc2f4e3..cdd4201 100644
 +//    //let text=&text.replace('\0',"\u{FFFD}"); //heap allocs always!
 +//    let text:Cow<'a, str>=if text.contains('\0') {
 +//        //parses &str twice, once for .contains() and once for .replace()
-+//        Cow::Owned(text.replace('\0',"\u{FFFD}")) // heap allocs possibly more than once due to replaces 1 with 3 bytes
++//        Cow::Owned(text.replace('\0',"\u{FFFD}")) // heap allocs possibly more than once due to replaces 1 with 2 bytes
 +//    } else {
 +//        Cow::Borrowed(text) //no heap alloc
 +//    };
@@ -111,7 +93,7 @@ index dc2f4e3..cdd4201 100644
 +                replaced.push(if c == '\0' { ' ' } else { c });
 +            }
 +            Cow::Owned(
-+            //text.replace('\0',"\u{FFFD}") // heap allocs possibly more than once due to 1 byte vs 3 bytes repl.
++            //text.replace('\0',"\u{FFFD}") // heap allocs possibly more than once due to 1 byte vs 2 bytes repl.
 +            //replace_null_bytes_from_index(text, index) // this assumes index is at utf8 boundary which is a guarantee on here at our call site, else that function would have no real way of ensuring that, so keeping the logic local and not in a fn.
 +            replaced)
 +        },
@@ -147,7 +129,7 @@ index dc2f4e3..cdd4201 100644
 +                replaced.push(if c == '\0' { '\u{FFFD}' } else { c });
 +            }
 +            Cow::Owned(
-+            //text.replace('\0',"\u{FFFD}") // heap allocs possibly more than once due to 1 byte vs 3 bytes repl.
++            //text.replace('\0',"\u{FFFD}") // heap allocs possibly more than once due to 1 byte vs 2 bytes repl.
 +            //replace_null_bytes_from_index(text, index) // this assumes index is at utf8 boundary which is a guarantee on here at our call site, else that function would have no real way of ensuring that, so keeping the logic local and not in a fn.
 +            replaced)
 +        },
@@ -178,7 +160,7 @@ index dc2f4e3..cdd4201 100644
 +                }
 +            }
 +            Cow::Owned(
-+            //text.replace('\0',"\u{FFFD}") // heap allocs possibly more than once due to 1 byte vs 3 bytes repl.
++            //text.replace('\0',"\u{FFFD}") // heap allocs possibly more than once due to 1 byte vs 2 bytes repl.
 +            //replace_null_bytes_from_index(text, index) // this assumes index is at utf8 boundary which is a guarantee on here at our call site, else that function would have no real way of ensuring that, so keeping the logic local and not in a fn.
 +            replaced)
 +        },
@@ -207,3 +189,21 @@ index dc2f4e3..cdd4201 100644
  #[test]
  fn test_print_at_rep_nul_char_in_string() {
      let backend=Backend::init().unwrap();
+diff --git a/examples/vpv.rs b/examples/vpv.rs
+index 38e1933..04aaf06 100644
+--- a/examples/vpv.rs
++++ b/examples/vpv.rs
+@@ -11,6 +11,13 @@ use std::time;
+ // This example is a visual version of the `pv` tool.
+ 
+ fn main() {
++    use cursive::{views::TextView, Cursive, CursiveExt};
++
++    let mut app = Cursive::new();
++    app.add_layer(TextView::new("Hello Nullbyte: \0"));
++    app.add_global_callback('q', |a| a.quit());
++    app.run();
++    return;
+     let mut siv = cursive::default();
+ 
+     // We'll use this channel to signal the end of the transfer
