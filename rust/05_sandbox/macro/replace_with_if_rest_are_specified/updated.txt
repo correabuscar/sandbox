@@ -1,0 +1,2 @@
+a better version of this is found inside of:
+/home/user/sandbox/rust/05_sandbox/enum/enum_variant_name_via_macro_fn
