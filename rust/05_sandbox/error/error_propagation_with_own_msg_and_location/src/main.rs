@@ -69,6 +69,7 @@ mod my_error_things {
 
     impl MyError {
         pub const fn variant_name_only(&self) -> &str {
+            //FIXME: use this macro /home/user/sandbox/rust/05_sandbox/enum/enum_variant_name_via_macro_fn
             match self {
                 MyError::AlreadyBorrowedOrRecursingError {..} => "AlreadyBorrowedOrRecursingError",
                 MyError::TimeoutError {..} => "TimeoutError",

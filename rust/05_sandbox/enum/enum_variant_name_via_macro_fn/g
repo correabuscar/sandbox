@@ -2,5 +2,8 @@
 
 export RUST_BACKTRACE=1
 cargo run ; ec="$?"
+if test "0" == "$ec"; then
+  cargo expand
+fi
 echo "exit code: $ec"
 #sleep 2

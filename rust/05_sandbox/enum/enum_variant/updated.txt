@@ -1,0 +1,2 @@
+a better version of this is:
+../enum_variant_name_via_macro_fn
