@@ -1,0 +1,209 @@
+diff --git a/cursive/Cargo.toml b/cursive/Cargo.toml
+index 4984d57..106e171 100644
+--- a/cursive/Cargo.toml
++++ b/cursive/Cargo.toml
+@@ -26,19 +26,21 @@ maplit = { version = "1.0", optional = true }
+ log = "0.4"
+ ahash = "0.8"
+ 
+-[dependencies.bear-lib-terminal]
+-optional = true
+-version = "2"
++#[dependencies.bear-lib-terminal]
++#optional = true
++#version = "2"
+ 
+ [dependencies.ncurses]
+ features = ["wide"]
+ optional = true
+ version = "6"
++path = "../../ncurses-rs"
+ 
+ [dependencies.pancurses]
+ features = ["wide"]
+ optional = true
+ version = "0.17"
++path = "../../pancurses"
+ 
+ [dependencies.termion]
+ optional = true
+@@ -51,7 +53,7 @@ version = "0.27"
+ [features]
+ doc-cfg = ["cursive_core/doc-cfg"]  # Enable doc_cfg, a nightly-only doc feature.
+ builder = ["cursive_core/builder"]
+-blt-backend = ["bear-lib-terminal"]
++#blt-backend = ["bear-lib-terminal"]
+ default = ["ncurses-backend"]
+ ncurses-backend = ["ncurses", "maplit"]
+ pancurses-backend = ["pancurses", "maplit"]
+diff --git a/cursive/examples/vpv.rs b/cursive/examples/vpv.rs
+index 38e1933..04aaf06 100644
+--- a/cursive/examples/vpv.rs
++++ b/cursive/examples/vpv.rs
+@@ -11,6 +11,13 @@ use std::time;
+ // This example is a visual version of the `pv` tool.
+ 
+ fn main() {
++    use cursive::{views::TextView, Cursive, CursiveExt};
++
++    let mut app = Cursive::new();
++    app.add_layer(TextView::new("Hello Nullbyte: \0"));
++    app.add_global_callback('q', |a| a.quit());
++    app.run();
++    return;
+     let mut siv = cursive::default();
+ 
+     // We'll use this channel to signal the end of the transfer
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index dc2f4e3..cdd4201 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -395,9 +395,12 @@ impl backend::Backend for Backend {
+         ncurses::refresh();
+     }
+ 
+-    fn print_at(&self, pos: Vec2, text: &str) {
+-        let text=&text.replace('\0'," "); // or the unwrap() will panic
+-        ncurses::mvaddstr(pos.y as i32, pos.x as i32, text).unwrap();
++    fn print_at<'a>(&self, pos: Vec2, text: &'a str) {
++        let text:Cow<'a, str>=delete_nuls(text);
++        use std::os::raw::{c_char, c_int};
++        let len = text.len() as c_int;
++        let text=text.as_ptr() as *const c_char;
++        unsafe { ncurses::ll::mvaddnstr(pos.y as i32, pos.x as i32, text, len) };
+     }
+ 
+     fn print_at_rep(&self, pos: Vec2, repetitions: usize, text: &str) {
+@@ -414,6 +417,132 @@ impl backend::Backend for Backend {
+ 
+ }
+ 
++//use std::borrow::Cow;
++//#[inline(always)]
++//fn replace_nuls<'a>(text:&'a str) -> Cow<'a, str> {
++//    //let text=&text.replace('\0',"\u{FFFD}"); //heap allocs always!
++//    let text:Cow<'a, str>=if text.contains('\0') {
++//        //parses &str twice, once for .contains() and once for .replace()
++//        Cow::Owned(text.replace('\0',"\u{FFFD}")) // heap allocs possibly more than once due to replaces 1 with 3 bytes
++//    } else {
++//        Cow::Borrowed(text) //no heap alloc
++//    };
++//    text
++//}
++use std::borrow::Cow;
++#[inline(always)]
++fn replace_nuls2<'a>(text:&'a str) -> Cow<'a, str> {
++    //let text=&text.replace('\0',"\u{FFFD}"); //heap allocs always!
++    //this whole fn parses &str once
++    let initial_len=text.len();
++    let text:Cow<'a, str>=match text.find('\0') {
++        Some(start_index) => {
++            let mut replaced = String::with_capacity(text.len());
++            // Append characters before start_index, excluding the one at start_index
++            replaced.push_str(&text[..start_index]);
++            // Iterate over Unicode characters (UTF-8 code points) rather than individual bytes
++            // starting from start_index, replacing null characters with spaces.
++            // In Rust, an &str is always guaranteed to be valid UTF-8.
++            // When we're dealing with UTF-8 encoded strings in Rust, the null character
++            // (\0) is treated as a standalone character and does
++            // not form part of any UTF-8 encoded character.
++            for c in text[start_index..].chars() {
++                replaced.push(if c == '\0' { ' ' } else { c });
++            }
++            Cow::Owned(
++            //text.replace('\0',"\u{FFFD}") // heap allocs possibly more than once due to 1 byte vs 3 bytes repl.
++            //replace_null_bytes_from_index(text, index) // this assumes index is at utf8 boundary which is a guarantee on here at our call site, else that function would have no real way of ensuring that, so keeping the logic local and not in a fn.
++            replaced)
++        },
++        None => Cow::Borrowed(text) //no heap alloc
++    };
++    assert_eq!(initial_len, text.len(), "it heap allocated more than once, we did the logic wrong");
++    text
++}
++
++#[inline(always)]
++fn replace_nuls3<'a>(text:&'a str) -> Cow<'a, str> {
++    //let text=&text.replace('\0',"\u{FFFD}"); //heap allocs always!
++    //this whole fn parses &str once
++    let mut initial_len=text.len();
++    let text:Cow<'a, str>=match text.find('\0') {
++        Some(start_index) => {
++            // Count the number of '\0' characters from start_index onwards
++            let null_count = text[start_index..].chars().filter(|&c| c == '\0').count();
++            // Calculate the length of the new string
++            let new_len = text.len() + null_count*2;
++            initial_len=new_len;
++            //alloc once:
++            let mut replaced = String::with_capacity(new_len);
++            // Append characters before start_index, excluding the one at start_index
++            replaced.push_str(&text[..start_index]);
++            // Iterate over Unicode characters (UTF-8 code points) rather than individual bytes
++            // starting from start_index, replacing null characters with spaces.
++            // In Rust, an &str is always guaranteed to be valid UTF-8.
++            // When we're dealing with UTF-8 encoded strings in Rust, the null character
++            // (\0) is treated as a standalone character and does
++            // not form part of any UTF-8 encoded character.
++            for c in text[start_index..].chars() {
++                replaced.push(if c == '\0' { '\u{FFFD}' } else { c });
++            }
++            Cow::Owned(
++            //text.replace('\0',"\u{FFFD}") // heap allocs possibly more than once due to 1 byte vs 3 bytes repl.
++            //replace_null_bytes_from_index(text, index) // this assumes index is at utf8 boundary which is a guarantee on here at our call site, else that function would have no real way of ensuring that, so keeping the logic local and not in a fn.
++            replaced)
++        },
++        None => Cow::Borrowed(text) //no heap alloc
++    };
++    assert_eq!(initial_len, text.len(), "it heap allocated more than once, we did the logic wrong");
++    text
++}
++
++fn delete_nuls<'a>(text:&'a str) -> Cow<'a, str> {
++    //let text=&text.replace('\0',"\u{FFFD}"); //heap allocs always!
++    //this whole fn parses &str once
++    //let initial_len=text.len();
++    let text:Cow<'a, str>=match text.find('\0') {
++        Some(start_index) => {
++            let mut replaced = String::with_capacity(text.len());
++            // Append characters before start_index, excluding the one at start_index
++            replaced.push_str(&text[..start_index]);
++            // Iterate over Unicode characters (UTF-8 code points) rather than individual bytes
++            // starting from start_index, replacing null characters with spaces.
++            // In Rust, an &str is always guaranteed to be valid UTF-8.
++            // When we're dealing with UTF-8 encoded strings in Rust, the null character
++            // (\0) is treated as a standalone character and does
++            // not form part of any UTF-8 encoded character.
++            for c in text[start_index..].chars() {
++                if c != '\0' {
++                    replaced.push(c);
++                }
++            }
++            Cow::Owned(
++            //text.replace('\0',"\u{FFFD}") // heap allocs possibly more than once due to 1 byte vs 3 bytes repl.
++            //replace_null_bytes_from_index(text, index) // this assumes index is at utf8 boundary which is a guarantee on here at our call site, else that function would have no real way of ensuring that, so keeping the logic local and not in a fn.
++            replaced)
++        },
++        None => Cow::Borrowed(text) //no heap alloc
++    };
++    //assert_eq!(initial_len, text.len(), "it heap allocated more than once, we did the logic wrong");
++    text
++}
++
++//fn replace_null_bytes_from_index(text: &str, start_index: usize) -> String {
++//    let mut replaced = String::with_capacity(text.len());
++//
++//    for (i, c) in text.chars().enumerate() {
++//        if i >= start_index {
++//            if c == '\0' {
++//                replaced.push('\u{FFFD}');
++//            } else {
++//                replaced.push(c);
++//            }
++//        }
++//    }
++//
++//    replaced
++//}
++
+ #[test]
+ fn test_print_at_rep_nul_char_in_string() {
+     let backend=Backend::init().unwrap();
