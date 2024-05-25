@@ -1,0 +1,6 @@
+export RUST_BACKTRACE=1
+cargo clean
+cargo check
+cargo clippy
+cargo run
+echo "exit code: $?"

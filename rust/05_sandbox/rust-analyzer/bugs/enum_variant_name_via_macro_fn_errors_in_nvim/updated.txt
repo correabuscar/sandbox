@@ -1,0 +1,3 @@
+the updated version of this is:
+/home/user/sandbox/rust/05_sandbox/enum/enum_variant_name_via_macro_fn_simple
+which has itself another updated version!

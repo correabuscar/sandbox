@@ -1,3 +1,0 @@
-the updated version of this is:
-../enum_variant_name_via_macro_fn_simple
-which has itself another updated version!
