@@ -1,4 +1,4 @@
-//use std::sync::Arc;
+use std::sync::Arc;
 
 use no_heap_allocations_thread_local::NoHeapAllocThreadLocal;
 use no_heap_allocations_thread_local::get_current_thread_id;
@@ -17,12 +17,18 @@ impl Drop for MyType {
 }
 
 const HOW_MANY: usize = 10;
-static FOO: NoHeapAllocThreadLocal<HOW_MANY, MyType> = NoHeapAllocThreadLocal::new();
+//static FOO: NoHeapAllocThreadLocal<HOW_MANY, MyType> = NoHeapAllocThreadLocal::new();
 
 fn main() {
     println!("Hello thread local without any allocations on heap");
     //#[allow(non_snake_case)]
-    //let FOO: Arc<NoHeapAllocThreadLocal<HOW_MANY, MyType>> = Arc::new(NoHeapAllocThreadLocal::new());
+    // bug: this below is ignored by: $ rust-analyzer diagnostics .
+    // unless a line comment(even if just empty) is added to it like:
+    // #[allow(non_snake_case)] //
+    // after which even deleting it won't change it back to error again like:
+    // non_snake_case: Variable `FOO` should have snake_case name, e.g. `foo`
+    #[allow(non_snake_case)]
+    let FOO: Arc<NoHeapAllocThreadLocal<HOW_MANY, MyType>> = Arc::new(NoHeapAllocThreadLocal::new());
     println!("{:?}", FOO);
     {
         let first_val=MyType(10101);
@@ -46,14 +52,14 @@ fn main() {
     }//block
     println!("{:?}", FOO);
 
-    let _res = FOO.get_or_set(MyType(30303),std::time::Duration::from_secs(1));
+    //let _res = FOO.get_or_set(MyType(30303),std::time::Duration::from_secs(1));
     // ^ cannot move out of `FOO` because it is borrowed: borrow of `FOO` occurs here; this is good: can't Send it while outstanding borrows are still active
     // however doneTODO: do other threads see &self as borrowed during this?! XXX: they don't, but they see that specific RefCell for this thread as being '<borrowed>', but they don't lock up on &self being borrowed in this thread! I guess it's a property of statics then?!
 
     let mut handles = Vec::new();
     for i in 1..=HOW_MANY*2 {
         #[allow(non_snake_case)]
-        //let FOO=FOO.clone();
+        let FOO=FOO.clone();
         let handle=std::thread::spawn(move || {
             let current_thread_id = get_current_thread_id();//FOO::get  std::thread::current().id().as_u64();
             //let set_to=MyType(current_thread_id.get() as usize * 10);
@@ -102,7 +108,7 @@ fn main() {
     }
     println!("{:?}", FOO);
     //let f=FOO.clone();
-    //drop(FOO);
+    drop(FOO);
     //Arc::drop(&mut FOO);//won't work, need &mut; and "explicit use of destructor method: explicit destructor calls not allowed"
     //unsafe { std::mem::ManuallyDrop::drop(&mut FOO) };
     //println!("{:?}", f);
