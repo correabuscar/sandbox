@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+export RUST_BACKTRACE=1
+rust-analyzer --version
+rust-analyzer diagnostics ./
+echo "exit code: $?"

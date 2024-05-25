@@ -1,6 +1,7 @@
 fn main() {
     //#[allow(non_snake_case)]
     // bug: this ^ below is ignored by: $ rust-analyzer diagnostics .
+    // it's this already: https://github.com/rust-lang/rust-analyzer/issues/6541
     // "non_snake_case: Variable `FOO` should have snake_case name, e.g. `foo`"
     // unless any editing has happened
     // XXX: ^ that's explained by rust-analyzer running `cargo check` for on-the-fly code due to:
