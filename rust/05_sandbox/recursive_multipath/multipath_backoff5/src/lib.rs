@@ -35,6 +35,18 @@ pub struct NoHeapAllocThreadLocal<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS
     values: [ManuallyDrop<RefCell<Option<T>>>; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS],
     //if 'after' is set, it means the value has already been set and is thus safe to read
     after: [AtomicU64; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS],
+
+    //XXX: actually do we really need this to be !Send ?
+    //TODO: test what happens if we borrow a value then send the whole struct to another thread, what happens to the borrowed which is held after the send? the send shouldn't be allowed there i'd guess
+    //"Send: A type is Send if it is safe to transfer the ownership of a value of that type to another thread. This means you can move the value from one thread to another."
+    //trying to impl !Send (below) failed due to needing to add `#![feature(negative_impls)]` to the crate attributes to enable,
+    //so we use this trick instead:
+    //_not_send_:std::marker::PhantomData<*const ()>,//XXX: don't need it to not be Send, it can be Send.
+    // This makes the struct !Send
+    // The *const () is a raw pointer type, which is not Send, making the entire struct not Send.
+
+    //_not_send_:std::marker::PhantomData<std::rc::Rc<()>>,
+    //Rc isn't Send(ah but it's also not Sync too! which is no good), thus our struct is prevented from being auto Send
 }
 
 /* FALSE(chatgpt):" RefCell does use heap allocation internally to manage its borrow checking. It uses dynamic borrowing rules at runtime rather than static borrowing rules enforced by the Rust compiler. This dynamic borrowing is implemented through reference counting and interior mutability, which involves heap allocation for the reference count and the data being managed. This allows RefCell to provide runtime borrow checking and interior mutability without violating Rust's borrowing rules." - chatgpt 3.5
@@ -48,12 +60,14 @@ At runtime each borrow causes a modification/check of the refcount." -src: https
 
 //this is needed to can be shared between threads, and we internally ensure that's true.
 unsafe impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> Sync for NoHeapAllocThreadLocal<MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS,T> {}
+//XXX: E0658: negative trait bounds are not yet fully implemented; use marker types for now see issue #68318, add `#![feature(negative_impls)]` to the crate attributes to enable
+//impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> !Send for NoHeapAllocThreadLocal<MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS,T> {}
 
 impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> Drop for NoHeapAllocThreadLocal<MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS, T> {
     fn drop(&mut self) {
         //dontmatterTODO: can this be called concurrently? then we may have a problem. Apparently can't be.
         //dontmatterTODO: can this be called by one thread while another one tries to set a value?! apparently not.
-        //i guess since our type aka Self is not Send, or it's a static(never dropped), then only one thread will be dropping it at most. But what if manual drop? So if it's inside an Arc then only one thread will be dropping it and only when for sure it's not used by others. Can't seem to can otherwise manually drop this which is great.
+        //i guess since our type aka Self is not Send(actually it can be but makes no diff.), or it's a static(never dropped), then only one thread will be dropping it at most(even if it's Send). But what if manual drop? So if it's inside an Arc then only one thread will be dropping it and only when for sure it's not used by others. Can't seem to can otherwise manually drop this which is great.
         //dontmatterFIXME: ensure this is properly implemented! like, if one thread calls drop() and the other makes a new element, this isn't doing it right!
         let mut index=0;
         for elem in &mut self.values { //.iter().enumerate() {
@@ -73,7 +87,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> Drop for NoHeapAl
                     },
                     Err(prev_val) => {
                         assert_ne!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(11)");
-                        panic!("this shouldn't have been reached, some kind of race happened, like one thread called drop() and another called to make a new element for itself, but since the type isn't Send this means it's a static that a thread called drop() on manually while another thread was using it to make a new element...");
+                        panic!("this shouldn't have been reached, some kind of race happened, like one thread called drop() and another called to make a new element for itself (which is unclear to me, at this time, if it can happen), but this means it's a static that a thread called drop() on manually while another thread was using it to make a new element...");
                     }
                 }//match
 
@@ -116,7 +130,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> Drop for NoHeapAl
                     },
                     Err(prev_val) => {
                         assert_ne!(prev_val, existing_tid,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(9)");
-                        panic!("this shouldn't have been reached, inconsistency detected there should've been thread id='{}' stored at this index='{}' but it was tid='{}' instead, OR (todo: check if this is possible here:) some kind of race happened, like one thread called drop() and another called to make a new element for itself, but since the type isn't Send this means it's a static that a thread called drop() on manually while another thread was using it to make a new element...", existing_tid, index, prev_val);
+                        panic!("this shouldn't have been reached, inconsistency detected there should've been thread id='{}' stored at this index='{}' but it was tid='{}' instead, OR (todo: check if this is possible here:) some kind of race happened, like one thread called drop() and another called to make a new element for itself, but this means it's a static that a thread called drop() on manually while another thread was using it to make a new element...", existing_tid, index, prev_val);
                     }
             }//match
             index+=1;
