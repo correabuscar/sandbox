@@ -833,6 +833,7 @@ where
 
 /// not meant to be accessible by caller, but can't be helped due to the macro using it as a nested type in the static!
 #[derive(Debug)]
+#[non_exhaustive] //see below the 'impl' comments as to why
 pub struct StuffAboutLocation {
     //this is 1 or more while in the zone
     //if it's more than 1 it's currently recursing and recursion started from within the zone
@@ -880,7 +881,24 @@ impl std::ops::AddAssign<u64> for StuffAboutLocation {
 impl StuffAboutLocation {
     //surebutnotinourTLimplFIXME: user can still init the struct with struct initializer syntax and set max to be less
     //than current(if current is >0), then u'd have to call update_max() from below!
-    pub fn initial() -> StuffAboutLocation {
+    //workaround, so now XXX: this can't be constructed without our initial fn!(outside our crate)
+    /*
+     * "Non-exhaustive types cannot be constructed outside of the defining crate:
+
+    Non-exhaustive variants (struct or enum variant) cannot be constructed with a StructExpression[1] (including with functional update syntax[2]).
+    enum instances can be constructed.
+    "
+    [1] https://doc.rust-lang.org/reference/expressions/struct-expr.html
+    [2] https://doc.rust-lang.org/reference/expressions/struct-expr.html#functional-update-syntax
+    src: https://doc.rust-lang.org/reference/attributes/type_system.html#the-non_exhaustive-attribute
+
+    "There are limitations when matching on non-exhaustive types outside of the defining crate:
+
+    When pattern matching on a non-exhaustive variant (struct or enum variant), a StructPattern must be used which must include a `..`. Tuple variant constructor visibility is lowered to min($vis, pub(crate)).
+    "
+    itgoodTODO: does this mean my 'pub' constructor isn't 'pub' in another crate? hmm, well I guess I don't need it to be, oh wait, yes I do because it's in the macro call? or is it anymore? it isn't, it's in function that's called by macro, so it should be good!
+    */
+    pub const fn initial() -> StuffAboutLocation {
         return StuffAboutLocation { times_visited_currently:0, max_times_visited_ever:0 };
     }
 
