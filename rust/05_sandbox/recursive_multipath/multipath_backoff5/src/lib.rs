@@ -37,7 +37,8 @@ pub struct NoHeapAllocThreadLocal<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS
     after: [AtomicU64; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS],
 
     //XXX: actually do we really need this to be !Send ?
-    //TODO: test what happens if we borrow a value then send the whole struct to another thread, what happens to the borrowed which is held after the send? the send shouldn't be allowed there i'd guess
+    //okTODO: test what happens if we borrow a value then send the whole struct to another thread, what happens to the borrowed which is held after the send? the send shouldn't be allowed there i'd guess; ok we can't because we tied the returned borrow_mut() to self, so it knows &self is borrowed and won't send it to another thread while it's borrowed. TODO: wait, so if &self is seen as borrowed in this thread, is it seen as borrowed in any other thread? (when it's a global static)
+
     //"Send: A type is Send if it is safe to transfer the ownership of a value of that type to another thread. This means you can move the value from one thread to another."
     //trying to impl !Send (below) failed due to needing to add `#![feature(negative_impls)]` to the crate attributes to enable,
     //so we use this trick instead:

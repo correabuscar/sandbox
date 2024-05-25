@@ -15,7 +15,7 @@
 //}
 
 // TODO: can merge this with the main macro actually!
-/// just puts first arg
+/// unconditionally places the first arg
 #[macro_export]
 macro_rules! place_first_arg_ignore_rest_if_any {
     ($mandatory:tt $(, $optional:tt)* $(,)?) => {
@@ -149,6 +149,9 @@ macro_rules! enum_str {
                         Self::$variant
                         //below, .. is the Rest pattern https://doc.rust-lang.org/reference/patterns.html#rest-patterns
                         //this handles both unit and tuple  enum variants:
+                        //"Each repetition in the transcriber must contain at least one metavariable to decide how many times to expand it. " src: https://doc.rust-lang.org/reference/macros-by-example.html#repetitions
+                        //this is why we must use $tfield below to know whether to even create the whole line
+                        //and then know to place () if it's empty, or (..) if it has any $tfield-s
                         $( ( $crate::place_first_arg_ignore_rest_if_any!(.., $($tfield),* ) ) )?
                         //below, _ is the Inferred type, https://doc.rust-lang.org/reference/types/inferred.html
                         //so it's not the Wildcard pattern https://doc.rust-lang.org/reference/patterns.html#wildcard-pattern

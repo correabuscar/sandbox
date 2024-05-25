@@ -46,6 +46,10 @@ fn main() {
     }//block
     println!("{:?}", FOO);
 
+    //let _res = FOO.get_or_set(MyType(30303),std::time::Duration::from_secs(1));
+    // ^ cannot move out of `FOO` because it is borrowed: borrow of `FOO` occurs here; this is good: can't Send it while outstanding borrows are still active
+    // however TODO: do other threads see &self as borrowed during this?!
+
     let mut handles = Vec::new();
     for i in 1..=HOW_MANY*2 {
         #[allow(non_snake_case)]
@@ -87,6 +91,10 @@ fn main() {
         }); //spawn
         handles.push(handle);
     }
+//    if let (already_existed,Some(val)) = res {
+//        assert_eq!(true, already_existed);
+//        assert_eq!(*val, Some(MyType(30303)));
+//    }
      // Wait for all threads to finish
     for handle in handles {
         handle.join().unwrap();
