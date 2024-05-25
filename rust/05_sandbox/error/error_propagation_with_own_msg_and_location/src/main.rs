@@ -167,7 +167,8 @@ mod my_error_things {
 ////            MyError::AlreadyBorrowedOrRecursingError(
 ////                format!("BorrowMutError: {}", err)
 ////                )
-//            //FIXME: since using the macro inside this function, i don't see file:line:column of the caller, thus this is bad, let's not use '?' but map_err() instead, and the '?' after it;
+//            //FIXME: since using the macro inside this function, i don't see file:line:column of the caller, thus this is bad(NOTE: coulda maybe used #[track_caller] here and     println!("{}", std::panic::Location::caller()); https://doc.rust-lang.org/reference/attributes/codegen.html#the-track_caller-attribute ), so:
+//            //XXX: due to ^ let's not use '?' but map_err() instead, and the '?' after it;
 //            //XXX: thus not implementing From trait for our error type will prevent using '?' and "tell" us to use map_err()
 //            let borrow_error = crate::my_error!(
 //                crate::my_error_things::MyError::AlreadyBorrowedOrRecursingError,
