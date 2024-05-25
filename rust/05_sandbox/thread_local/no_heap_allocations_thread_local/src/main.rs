@@ -22,11 +22,11 @@ const HOW_MANY: usize = 10;
 fn main() {
     println!("Hello thread local without any allocations on heap");
     //#[allow(non_snake_case)]
-    // bug: this below is ignored by: $ rust-analyzer diagnostics .
-    // unless a line comment(even if just empty) is added to it like:
-    // #[allow(non_snake_case)] //
-    // after which even deleting it won't change it back to error again like:
-    // non_snake_case: Variable `FOO` should have snake_case name, e.g. `foo`
+    // bug: this ^ below is ignored by: $ rust-analyzer diagnostics .
+    // "non_snake_case: Variable `FOO` should have snake_case name, e.g. `foo`"
+    // unless any editing has happened
+    // XXX: ^ that's explained by rust-analyzer running `cargo check` for on-the-fly code due to:
+    //  "on-the-fly diagnostics are mostly unimplemented (`cargo check` diagnostics will be shown when saving a file): #3107" https://github.com/rust-lang/rust-analyzer/issues/3107
     #[allow(non_snake_case)]
     let FOO: Arc<NoHeapAllocThreadLocal<HOW_MANY, MyType>> = Arc::new(NoHeapAllocThreadLocal::new());
     println!("{:?}", FOO);

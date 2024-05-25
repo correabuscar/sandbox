@@ -41,6 +41,7 @@ enum_str! {
 
 //XXX src/main.rs|36-40 col 1 error| E0023: this pattern has 1 field, but the corresponding tuple struct has 3 fields
 //run with: $ rust-analyzer diagnostics ./
+//see: https://github.com/rust-lang/rust/issues/125464
 
 fn main() {
 }
