@@ -83,7 +83,7 @@ macro_rules! enum_str {
                         $(
                             $enum_generics_lifetime_bounds:lifetime
                             //+
-                        )+*  //TODO: so is this $()+ and literal *, or $()+* aka 0 or more of + separated elements that don't end with + ?!
+                        )+*  //TODO: crap!//so is this $()+ and literal *, or $()+* aka 0 or more of + separated elements that don't end with + ?! "$ ( ... ) sep rep" "sep is an optional separator token. It may not be a delimiter or one of the repetition operators. Common examples are , and ;." src: https://veykril.github.io/tlborm/decl-macros/macros-methodical.html#repetitions
                     )?
                 )?
                 //TypeParam : IDENTIFIER( `:` TypeParamBounds? )? ( `=` Type )?
