@@ -66,11 +66,29 @@ macro_rules! enum_str {
                 //TODO: go on... from here:
                 //LifetimeParam : LIFETIME_OR_LABEL ( `:` LifetimeBounds )?
                 $(
-                    $enum_generics_lifetime:lifetime
+                    // LIFETIME_OR_LABEL here and not LIFETIME_TOKEN(which is what 'lifetime' does)
+                    $enum_generics_lifetime:lifetime //so not this! but a lone ' errors, so this!
+//                    //LIFETIME_OR_LABEL : `'` NON_KEYWORD_IDENTIFIER (not immediately followed by `'`)
+//                    ' //XXX: errors on this, so we've to use 'lifetime' then!
+//                    //NON_KEYWORD_IDENTIFIER : IDENTIFIER_OR_KEYWORD Except a strict or reserved keyword
+//                    // https://doc.rust-lang.org/reference/keywords.html#strict-keywords
+//                    // https://doc.rust-lang.org/reference/keywords.html#reserved-keywords
+//                    // ok wel do any ident then :)) 'cuz how can we except those! ^
+//                    $enum_generics_lifetime_id:ident
+                    // ( `:` LifetimeBounds )?
+                    $(
+                        :
+                        // LifetimeBounds : ( Lifetime `+` )* Lifetime?
+                        // so LifetimeBounds is itself optional, basically. Can be one, of if more, sep.by +
+                        $(
+                            $enum_generics_lifetime_bounds:lifetime
+                            //+
+                        )+*  //TODO: so is this $()+ and literal *, or $()+* aka 0 or more of + separated elements that don't end with + ?!
+                    )?
                 )?
                 //TypeParam : IDENTIFIER( `:` TypeParamBounds? )? ( `=` Type )?
                 $(
-                $enum_generic:ident
+                    $enum_generic:ident
                 )?
                 //ConstParam: `const` IDENTIFIER `:` Type ( `=` Block | IDENTIFIER | `-`?LITERAL )?
                 $(
@@ -81,6 +99,8 @@ macro_rules! enum_str {
                     )?
                 )?
             ),*
+            // `,`?
+            $(,)? //FIXME: lone comma possibly with this, but shouldn't be!
             >)?
          // Added support for a where clause
         //FIXME: make this match(verb) each possible thing in the where, individually, due to: local ambiguity when calling macro `enum_str`: multiple parsing options: built-in NTs tt ('where_clause') or 1 other option.
@@ -93,7 +113,7 @@ macro_rules! enum_str {
                 $(
                     // LifetimeWhereClauseItem : Lifetime `:` LifetimeBounds
                     $lifetime:lifetime
-                    :
+                    : //yeah this isn't optional here, but it is optional above, in the generics
                     // LifetimeBounds : ( Lifetime `+` )* Lifetime?
                     // so LifetimeBounds is itself optional, basically.
                     $(
@@ -109,7 +129,30 @@ macro_rules! enum_str {
                         //TODO: get genericparams right!
                         <$($generic_params:ident),*>
                     )?
+                    // Type `:`
                     $where_type:ty
+                    :
+                    // TypeParamBounds?
+                    $(
+                        // TypeParamBounds : TypeParamBound ( `+` TypeParamBound )* `+`?
+                        $(
+                            // TypeParamBound : Lifetime | TraitBound
+                            $(
+                                // Lifetime
+                                $where_type_param_bound_lifetime:lifetime
+                            )?
+                            // TraitBound
+                            $(
+                                // TraitBound : `?`? ForLifetimes? TypePath | `( ?`? ForLifetimes? TypePath `)`
+                                $(?)?
+                                // ForLifetimes?
+                                //TODO: ^
+                                // TypePath
+                                $where_type_param_bound_traitbound_typepath:path
+                            )?
+                        )++
+                        $(+)?
+                    )?
                 )?
             ),*
             //can end with optional comma, but this makes `where ,` be valid(even tho it isn't) because ofc. FIXME: if u can.
