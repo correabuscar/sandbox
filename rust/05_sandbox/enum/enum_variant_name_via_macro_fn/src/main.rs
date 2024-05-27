@@ -286,6 +286,7 @@ macro_rules! enum_str {
 //                        //"Each repetition in the transcriber must contain at least one metavariable to decide how many times to expand it. " src: https://doc.rust-lang.org/reference/macros-by-example.html#repetitions
 //                        //this is why we must use $enumitem_tuple_field below to know whether to even create the whole line
 //                        //and then know to place () if it's empty, or (..) if it has any $enumitem_tuple_field-s
+//                        //TODO: can maybe use here(below) this instead: ${ignore(enumitem_tuple_field)} see: https://veykril.github.io/tlborm/decl-macros/minutiae/metavar-expr.html#ignoreident  which doesn't compile hmm! missing $ sign on inner metavar so: ${ignore($enumitem_tuple_field)} should work!
 //                        $( ( $crate::place_first_arg_ignore_rest_if_any!(.., $($enumitem_tuple_field),* ) ) )?
 //                        //below, _ is the Inferred type, https://doc.rust-lang.org/reference/types/inferred.html
 //                        //so it's not the Wildcard pattern https://doc.rust-lang.org/reference/patterns.html#wildcard-pattern
