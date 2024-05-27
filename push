@@ -1,4 +1,4 @@
 #!/bin/bash
 
 git push -u --all
-git push -u --tags
+#git push -u --tags
