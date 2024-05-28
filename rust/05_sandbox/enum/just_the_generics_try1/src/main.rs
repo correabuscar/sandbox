@@ -57,13 +57,13 @@ macro_rules! foo {
                     // ( `:` LifetimeBounds )?
                     $(
                         :
-                        // FIXME: how to match this properly:
+                        // perfectFIXME: how to match this properly:
                         // LifetimeBounds : ( Lifetime `+` )* Lifetime?
                         // so LifetimeBounds is itself implicitly optional: can be none,one, or if more separated by +
                         $(
                             $lifebound:lifetime
-                            +
-                        )*
+                            $(+ $morelifebounds:lifetime)*
+                        )?
                     )?
                 ),*
 
@@ -87,8 +87,8 @@ macro_rules! foo {
                         :
                         $(
                             $lifebound
-                            +
-                        )*
+                            $(+ $morelifebounds)*
+                        )?
                     )?
                 ),*
                 >
@@ -104,7 +104,7 @@ macro_rules! foo {
 foo!();
 foo!(enum Foo_1{});
 foo!(enum Foo0<>{});
-foo!(enum Foo0ops<,>{});//FIXME: shouldn't match this!
+foo!(enum Foo0ops<,>{});//FIXME: shouldn't match this lone comma
 foo!(enum Foo1<'a>{
 _foo(&'a str),
 });
@@ -114,14 +114,14 @@ _foo(&'a str),
 foo!(enum Foo2<'a:>{
 _foo(&'a str),
 });
-foo!(enum Foo2oops<'a:,>{//FIXME: shouldn't match this!
+foo!(enum Foo2oops<'a:,>{//FIXME: shouldn't match this lone comma
 _foo(&'a str),
 });
-foo!(enum Foo3<'a: 'b+,'b:>{//FIXME: shouldn't require the + ending!
+foo!(enum Foo3<'a: 'b,'b:>{
 _foo(&'a str),
 _foo2(&'b str),
 });
-foo!(enum Foo4<'a: 'b + 'c+,'b:, 'c:>{//FIXME: shouldn't require the + ending!
+foo!(enum Foo4<'a: 'b + 'c,'b:, 'c:>{
 _foo(&'a str),
 _foo2(&'b str, &'c str),
 });
