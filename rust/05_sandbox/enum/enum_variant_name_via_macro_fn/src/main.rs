@@ -51,9 +51,9 @@ macro_rules! enum_str {
         $visibility:vis
         // vis: a possibly empty Visibility qualifier
 
-        //TODO: get genericparams right/complete!
         //Enumeration : `enum` IDENTIFIER  GenericParams? WhereClause? `{` EnumItems? `}`
         enum $name:ident
+        //TODO: get genericparams right/complete!
         //https://doc.rust-lang.org/reference/items/generics.html
         // GenericParams : `<` `>` | `<` (GenericParam `,`)* GenericParam `,`? `>`
         $(<
@@ -79,7 +79,7 @@ macro_rules! enum_str {
                     $(
                         :
                         // LifetimeBounds : ( Lifetime `+` )* Lifetime?
-                        // so LifetimeBounds is itself optional, basically. Can be one, of if more, sep.by +
+                        // so LifetimeBounds is itself optional, basically: can be none,one, or if more separated by +
                         $(
                             $enum_generics_lifetime_bounds:lifetime
                             //+
