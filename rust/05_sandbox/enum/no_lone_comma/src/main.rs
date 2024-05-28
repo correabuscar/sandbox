@@ -74,7 +74,7 @@ macro_rules! match_generic_params {
             $(,)?
         )?
     ) => {
-        match_generic_params!(@transcribe $($param $(, $param2)*)*);
+        match_generic_params!(@transcribe $($param $(, $param2)*)?);
     };
     (@transcribe ) => {
         println!("no args");
@@ -110,6 +110,8 @@ fn main() {
     match_generic_params!(A,);
     match_generic_params!(A, B);
     match_generic_params!(A, B,);
+    match_generic_params!(A, B, C);
+    match_generic_params!(A, B, C,);
 
     // Invalid case (uncomment to see the error)
     //match_generic_params!(,); // fixedFIXME: This should result in an error
