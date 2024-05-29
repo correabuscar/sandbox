@@ -34,8 +34,12 @@ pub enum DeviceOpenError {
 impl std::fmt::Display for DeviceOpenError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            DeviceOpenError::Io(err, path) => write!(f, "Error accessing file '{}': {}", path.display(), err),
-            DeviceOpenError::NotADevice(path) => write!(f, "The file '{}' is not a device", path.display()),
+            DeviceOpenError::Io(err, path) => {
+                write!(f, "Error accessing file '{}': {}", path.display(), err)
+            }
+            DeviceOpenError::NotADevice(path) => {
+                write!(f, "The file '{}' is not a device", path.display())
+            }
         }
     }
 }
@@ -45,10 +49,14 @@ impl std::error::Error for DeviceOpenError {}
 impl From<DeviceOpenError> for io::Error {
     fn from(err: DeviceOpenError) -> io::Error {
         match err {
-            DeviceOpenError::Io(err, path) => io::Error::new(err.kind(), format!("Error accessing file '{}': {}", path.display(), err)),
-            DeviceOpenError::NotADevice(path) => {
-                io::Error::new(io::ErrorKind::Other, format!("The file '{}' is not a device", path.display()))
-            }
+            DeviceOpenError::Io(err, path) => io::Error::new(
+                err.kind(),
+                format!("Error accessing file '{}': {}", path.display(), err),
+            ),
+            DeviceOpenError::NotADevice(path) => io::Error::new(
+                io::ErrorKind::Other,
+                format!("The file '{}' is not a device", path.display()),
+            ),
         }
     }
 }
@@ -77,9 +85,9 @@ fn humanly_visible_os_chars(os_path: &std::ffi::OsStr) -> String {
         //then we show it as ascii + hex
         for byte in os_path.as_bytes() {
             match std::char::from_u32(u32::from(*byte)) {
-                Some(c) if (*byte >=0x20) && (*byte <= 0x7E) => {
+                Some(c) if (*byte >= 0x20) && (*byte <= 0x7E) => {
                     formatted_path.push(c);
-                },
+                }
                 _ => {
                     formatted_path.push_str(&format!("\\x{:02X}", byte));
                 }
@@ -95,40 +103,48 @@ pub fn open_device<P: AsRef<Path>>(path: P) -> io::Result<File> {
     // Convert the path to a C string
     let path = path.as_ref();
     //FIXME: this uses heap! does File::open use heap?
-//    let path_cstr = std::ffi::CString::new(path.as_os_str().as_bytes()).map_err(|_| {
-//        DeviceOpenError::Io(
-//            io::Error::new(io::ErrorKind::InvalidInput, "Invalid path"),
-//            path.to_path_buf(),
-//        )
-//    })?;
-    let os_str_path=path.as_os_str();
-    let path_cstr = std::ffi::CString::new(os_str_path.as_bytes())
-        .map_err(|e| {
-            let visible_path = humanly_visible_os_chars(os_str_path);
-            io::Error::new(io::ErrorKind::InvalidInput,
-                format!("Invalid path '{}', error: {}",
-                    //path.display()
-                    visible_path
-                    , e)
-                )
-        })?;
-
+    //    let path_cstr = std::ffi::CString::new(path.as_os_str().as_bytes()).map_err(|_| {
+    //        DeviceOpenError::Io(
+    //            io::Error::new(io::ErrorKind::InvalidInput, "Invalid path"),
+    //            path.to_path_buf(),
+    //        )
+    //    })?;
+    let os_str_path = path.as_os_str();
+    let path_cstr = std::ffi::CString::new(os_str_path.as_bytes()).map_err(|e| {
+        let visible_path = humanly_visible_os_chars(os_str_path);
+        io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "Invalid path '{}', error: {}",
+                //path.display()
+                visible_path,
+                e
+            ),
+        )
+    })?;
 
     // Open the file
     let file = File::open(&path).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()))?;
-//    let file = File::open(&path)?;
+    //    let file = File::open(&path)?;
 
     // Use the stat function to get file type
     let mut stat_info: stat = unsafe { std::mem::zeroed() };
     let result = unsafe { libc::stat(path_cstr.as_ptr(), &mut stat_info) };
 
     if result != 0 {
-        return Err(io::Error::new(io::ErrorKind::Other, format!("Failed to stat '{}': {}", path.display(), io::Error::last_os_error())));
-//        return Err(io::Error::last_os_error());
-//        return Err(DeviceOpenError::Io(
-//            io::Error::last_os_error(),
-//            path.to_path_buf(),
-//        )).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()));
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            format!(
+                "Failed to stat '{}': {}",
+                path.display(),
+                io::Error::last_os_error()
+            ),
+        ));
+        //        return Err(io::Error::last_os_error());
+        //        return Err(DeviceOpenError::Io(
+        //            io::Error::last_os_error(),
+        //            path.to_path_buf(),
+        //        )).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()));
     }
 
     // Check if the file is a character or block device
@@ -136,7 +152,10 @@ pub fn open_device<P: AsRef<Path>>(path: P) -> io::Result<File> {
         Ok(file)
     } else {
         //Err(DeviceOpenError::NotADevice(path.to_path_buf()))
-        Err(io::Error::new(io::ErrorKind::Other, DeviceOpenError::NotADevice(path.to_path_buf())))
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            DeviceOpenError::NotADevice(path.to_path_buf()),
+        ))
     }
 }
 
@@ -146,9 +165,8 @@ fn example() -> io::Result<()> {
     Ok(())
 }
 
-
-
-fn main() { //-> Result<(), std::io::Error> {
+fn main() {
+    //-> Result<(), std::io::Error> {
     match open_device("/dev/null") {
         Ok(file) => println!("Successfully opened device: {:?}", file),
         Err(e) => println!("Failed to open device: {}", e),
@@ -168,8 +186,8 @@ fn main() { //-> Result<(), std::io::Error> {
     }
     match open_device(
         //PathBuf::from("/dev/n\0ull")
-        "foo\0null"
-        ) {
+        "foo\0null",
+    ) {
         Ok(file) => println!("Successfully opened device: {:?}", file),
         Err(e) => println!("Failed to open device: {}", e),
     }
@@ -185,4 +203,3 @@ fn main() { //-> Result<(), std::io::Error> {
 
     //Ok(())
 }
-
