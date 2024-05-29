@@ -15,10 +15,16 @@ impl std::fmt::Display for DeviceOpenError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             DeviceOpenError::Io(err, path) => {
-                write!(f, "Error accessing file '{}': {}", path.display(), err)
+                write!(f, "Error accessing file '{}': {}",
+                    //path.display(),
+                    humanly_visible_os_chars(path),
+                    err)
             }
             DeviceOpenError::NotADevice(path) => {
-                write!(f, "The file '{}' is not a device", path.display())
+                write!(f, "The file '{}' is not a device",
+                    //path.display(),
+                    humanly_visible_os_chars(path),
+                    )
             }
         }
     }
@@ -31,18 +37,26 @@ impl From<DeviceOpenError> for io::Error {
         match err {
             DeviceOpenError::Io(err, path) => io::Error::new(
                 err.kind(),
-                format!("Error accessing file '{}': {}", path.display(), err),
+                format!("Error accessing file '{}': {}",
+                    humanly_visible_os_chars(path),
+                    //path.display(),
+                    err),
             ),
             DeviceOpenError::NotADevice(path) => io::Error::new(
                 io::ErrorKind::Other,
-                format!("The file '{}' is not a device", path.display()),
+                format!("The file '{}' is not a device",
+                    //path.display()
+                    humanly_visible_os_chars(path),
+                    ),
             ),
         }
     }
 }
 
-fn humanly_visible_os_chars(os_path: &std::ffi::OsStr) -> String {
-    if let Some(arg_str) = os_path.to_str() {
+fn humanly_visible_os_chars<P: AsRef<Path>>(path: P) -> String {
+    //(os_path: &std::ffi::OsStr) -> String {
+    let path=path.as_ref().as_os_str();
+    if let Some(arg_str) = path.to_str() {
         // If the argument is valid UTF-8,
         if arg_str.contains('\0') {
             // show the nuls as \x00, keep the rest like ♥ as they are
@@ -63,7 +77,7 @@ fn humanly_visible_os_chars(os_path: &std::ffi::OsStr) -> String {
         let mut formatted_path = String::new();
         //not fully utf8
         //then we show it as ascii + hex
-        for byte in os_path.as_bytes() {
+        for byte in path.as_bytes() {
             match std::char::from_u32(u32::from(*byte)) {
                 Some(c) if (*byte >= 0x20) && (*byte <= 0x7E) => {
                     formatted_path.push(c);
@@ -87,8 +101,10 @@ fn humanly_visible_os_chars(os_path: &std::ffi::OsStr) -> String {
 /// Opens a file and checks if it is a char device.
 /// Returns an error if the file is not a character device.
 pub fn open_char_device<P: AsRef<Path>>(path: P) -> io::Result<File> {
-    // Convert the path to a C string
     let path = path.as_ref();
+//    let metadata = std::fs::metadata(path)
+//        .map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()))?;
+
     //FIXME: this uses heap! does File::open use heap?
     let os_str_path = path.as_os_str();
     let path_cstr = std::ffi::CString::new(os_str_path.as_bytes()).map_err(|e| {
