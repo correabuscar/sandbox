@@ -11,26 +11,6 @@ pub enum DeviceOpenError {
     NotADevice(PathBuf),
 }
 
-//impl std::fmt::Display for DeviceOpenError {
-//    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-//        match self {
-//            DeviceOpenError::Io(err, path) => {
-//                write!(f, "Error accessing file '{}': {}", path.display(), err)
-//            }
-//            DeviceOpenError::NotADevice(path) => {
-//                write!(f, "The file '{}' is not a device", path.display())
-//            }
-//        }
-//    }
-//}
-//
-//impl std::error::Error for DeviceOpenError {}
-//
-//impl From<io::Error> for DeviceOpenError {
-//    fn from(err: io::Error) -> Self {
-//        DeviceOpenError::Io(err, PathBuf::new())
-//    }
-//}
 impl std::fmt::Display for DeviceOpenError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
@@ -131,7 +111,7 @@ pub fn open_device<P: AsRef<Path>>(path: P) -> io::Result<File> {
     })?;
 
     // Open the file
-    let file = File::open(&path).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()))?;
+    let file = File::open(os_str_path).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()))?;
     //    let file = File::open(&path)?;
 
     // Use the stat function to get file type
@@ -147,11 +127,6 @@ pub fn open_device<P: AsRef<Path>>(path: P) -> io::Result<File> {
                 io::Error::last_os_error()
             ),
         ));
-        //        return Err(io::Error::last_os_error());
-        //        return Err(DeviceOpenError::Io(
-        //            io::Error::last_os_error(),
-        //            path.to_path_buf(),
-        //        )).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()));
     }
 
     // Check if the file is a character or block device
@@ -172,41 +147,76 @@ fn example() -> io::Result<()> {
     Ok(())
 }
 
-fn main() {
-    //-> Result<(), std::io::Error> {
-    match open_device("/dev/null") {
+#[test]
+fn test_open_device() {
+    any_test_open_device();
+}
+fn any_test_open_device() {
+    //TODO: ensure the contents of it match
+    let res = open_device("/dev/null");
+    match &res {
         Ok(file) => println!("Successfully opened device: {:?}", file),
         Err(e) => println!("Failed to open device: {}", e),
     }
+    assert!(
+        res.is_ok(),
+        "you're in chroot? or don't have /dev/null ? '{:?}'",
+        res
+    );
 
-    match open_device("src/main.rs") {
+    let res = open_device("src/main.rs");
+    match &res {
         Ok(file) => println!("Successfully opened device: {:?}", file),
         Err(e) => println!("Failed to open device: {}", e),
     }
-    match open_device("this is the name of a non exiting file here") {
+    assert!(res.is_err(), "{:?}", res);
+
+    let res = open_device("this is the name of a non exiting file here");
+    match &res {
         Ok(file) => println!("Successfully opened device: {:?}", file),
         Err(e) => println!("Failed to open device: {}", e),
     }
-    match open_device("heart emoji ♥ containing one") {
+    assert!(res.is_err(), "{:?}", res);
+
+    let res = open_device("heart emoji ♥ containing one");
+    match &res {
         Ok(file) => println!("Successfully opened device: {:?}", file),
         Err(e) => println!("Failed to open device: {}", e),
     }
-    match open_device(
+    assert!(res.is_err(), "{:?}", res);
+
+    let res = open_device(
         //PathBuf::from("/dev/n\0ull")
         "foo\0null",
-    ) {
+    );
+    match &res {
         Ok(file) => println!("Successfully opened device: {:?}", file),
         Err(e) => println!("Failed to open device: {}", e),
     }
-    match open_device("heart emoji ♥ containing one, and a \0nul!") {
+    assert!(res.is_err(), "{:?}", res);
+
+    let res = open_device(PathBuf::from("/dev/n\0ull"));
+    match &res {
         Ok(file) => println!("Successfully opened device: {:?}", file),
         Err(e) => println!("Failed to open device: {}", e),
     }
-    //open_device("this is the name of a non exiting file here")?;
-    match example() {
+    assert!(res.is_err(), "{:?}", res);
+
+    let res = open_device("heart emoji ♥ containing one, and a \0nul!");
+    match &res {
+        Ok(file) => println!("Successfully opened device: {:?}", file),
+        Err(e) => println!("Failed to open device: {}", e),
+    }
+    assert!(res.is_err(), "{:?}", res);
+
+    let res = example();
+    match &res {
         Ok(_) => println!("Successfully opened device"),
         Err(e) => println!("Failed to open device: {}", e),
     }
+    assert!(res.is_ok(), "{:?}", res);
+}
 
-    //Ok(())
+fn main() {
+    any_test_open_device();
 }
