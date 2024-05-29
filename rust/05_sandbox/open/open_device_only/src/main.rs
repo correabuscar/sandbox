@@ -1,4 +1,4 @@
-use libc::{stat, S_IFBLK, S_IFCHR, S_IFMT};
+use libc::{stat, /*S_IFBLK,*/ S_IFCHR, S_IFMT};
 use std::fs::File;
 use std::io;
 use std::os::unix::ffi::OsStrExt;
@@ -129,8 +129,11 @@ pub fn open_device<P: AsRef<Path>>(path: P) -> io::Result<File> {
         ));
     }
 
-    // Check if the file is a character or block device
-    if (stat_info.st_mode & S_IFMT) == S_IFCHR || (stat_info.st_mode & S_IFMT) == S_IFBLK {
+    // Check if the file is a character device:
+    // "/dev/null is indeed classified as a character device when inspected with the stat command."
+    // "Device type: 1,3 further confirms that it's a character device. The first number (1) indicates the major device number, which represents the device type (character device), and the second number (3) is the minor device number."
+    // - chatgpt 3.5
+    if (stat_info.st_mode & S_IFMT) == S_IFCHR /* || (stat_info.st_mode & S_IFMT) == S_IFBLK*/ {
         Ok(file)
     } else {
         //Err(DeviceOpenError::NotADevice(path.to_path_buf()))
