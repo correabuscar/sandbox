@@ -87,6 +87,17 @@ fn humanly_visible_os_chars<P: AsRef<Path>>(path: P) -> String {
     }
 }
 
+// Custom extension trait for Result
+trait ResultExt<T> {
+    fn map_device_error(self, path: &Path) -> Result<T, io::Error>;
+}
+
+impl<T> ResultExt<T> for Result<T, io::Error> {
+    fn map_device_error(self, path: &Path) -> Result<T, io::Error> {
+        self.map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()).into())
+    }
+}
+
 // XXX: this can replace a cargo File::open call(presumably), but for rustc variants we need something else!
 // cargo: https://github.com/rust-lang/cargo/blob/cbc12a2ebe0a99836249de0f80f025192e58cb4b/credential/cargo-credential/src/stdio.rs#L11
 // rustc: https://github.com/rust-lang/rust/blob/4cf5723dbe471ef0a32857b968b91498551f5e38/library/std/src/sys/pal/unix/process/process_common.rs#L479-L486
@@ -99,8 +110,9 @@ fn humanly_visible_os_chars<P: AsRef<Path>>(path: P) -> String {
 /// meant to be a File::open() replacement for cases when /dev/null is used in cargo/rustc code!
 pub fn open_char_device<P: AsRef<Path>>(path: P) -> io::Result<File> {
     let path = path.as_ref();
-    let metadata =
-        std::fs::metadata(path).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()))?;
+    //    let metadata =
+    //        std::fs::metadata(path).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()))?;
+    let metadata = std::fs::metadata(path).map_device_error(path)?;
 
     // Check if the file is a character device:
     // "/dev/null is indeed classified as a character device when inspected with the stat command."
@@ -109,20 +121,16 @@ pub fn open_char_device<P: AsRef<Path>>(path: P) -> io::Result<File> {
     use std::os::unix::fs::FileTypeExt;
     if metadata.file_type().is_char_device() {
         // Open the file as usual
-        File::open(path).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()).into())
+        //File::open(path).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()).into())
+        File::open(path).map_device_error(path)
     } else {
         // Return an error indicating that the file is not a character device
         Err(DeviceOpenError::NotADevice(path.to_path_buf()).into())
     }
 }
 
-fn example() -> io::Result<File> {
-    let file = open_char_device("/dev/null")?;
-    // Use file as needed
-    Ok(file)
-}
-fn example_err() -> io::Result<File> {
-    let file = open_char_device("./src/main.rs")?;
+fn example(path: &str) -> io::Result<File> {
+    let file = open_char_device(path)?;
     // Use file as needed
     Ok(file)
 }
@@ -132,7 +140,7 @@ fn test_open_char_device() {
     any_test_open_char_device();
 }
 fn any_test_open_char_device() {
-    //TODO: ensure the contents of it match
+    //TODO: ensure the contents of errors match expected.
     let res = open_char_device("/dev/null");
     match &res {
         Ok(file) => println!("Successfully opened device: {:?}", file),
@@ -140,7 +148,7 @@ fn any_test_open_char_device() {
     }
     assert!(
         res.is_ok(),
-        "you're in chroot? or don't have /dev/null ? '{:?}'",
+        "you're in chroot? or don't have /dev/null ? Should be this: crw-rw-rw- 1 root root 1, 3 29.05.2024 11:07 /dev/null   Error: '{:?}'",
         res
     );
 
@@ -192,20 +200,39 @@ fn any_test_open_char_device() {
     assert!(res.is_err(), "{:?}", res);
     assert_eq!(res.err().unwrap().kind(), io::ErrorKind::InvalidInput);
 
-    let res = example();
+    let res = example("/dev/null");
     match &res {
         Ok(file) => println!("Successfully opened device: {:?}", file),
         Err(e) => println!("Failed to open device: {}", e),
     }
     assert!(res.is_ok(), "{:?}", res);
 
-    let res = example_err();
+    let res = example("./src/main");
     match &res {
         Ok(file) => println!("Successfully opened device: {:?}", file),
         Err(e) => println!("Failed to open device: {}", e),
     }
     assert!(res.is_err(), "{:?}", res);
     assert_eq!(res.err().unwrap().kind(), io::ErrorKind::NotFound);
+
+    let res = example("/dev/tty");
+    match &res {
+        Ok(file) => println!("Successfully opened device: {:?}", file),
+        Err(e) => println!("Failed to open device: {}", e),
+    }
+    assert!(res.is_ok(), "{:?} Should be this for this to pass: crw-rw-rw- 1 root tty 5, 0 29.05.2024 21:53 /dev/tty", res);
+
+    let res = example("/dev/tty0");
+    match &res {
+        Ok(file) => println!("Successfully opened device: {:?}", file),
+        Err(e) => println!("Failed to open device: {}", e),
+    }
+    assert!(res.is_err(), "{:?}", res);
+    assert_eq!(
+        res.err().unwrap().kind(),
+        io::ErrorKind::PermissionDenied,
+        "Should be this for this to pass: crw--w---- 1 root tty 4, 0 29.05.2024 11:07 /dev/tty0"
+    );
 }
 
 fn main() {
