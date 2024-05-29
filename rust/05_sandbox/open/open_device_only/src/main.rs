@@ -1,4 +1,3 @@
-use libc::{stat, /*S_IFBLK,*/ S_IFCHR, S_IFMT};
 use std::fs::File;
 use std::io;
 use std::os::unix::ffi::OsStrExt;
@@ -15,16 +14,20 @@ impl std::fmt::Display for DeviceOpenError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             DeviceOpenError::Io(err, path) => {
-                write!(f, "Error accessing file '{}': {}",
-                    //path.display(),
+                write!(
+                    f,
+                    "Error accessing character device '{}': {}",
                     humanly_visible_os_chars(path),
-                    err)
+                    err
+                )
             }
             DeviceOpenError::NotADevice(path) => {
-                write!(f, "The file '{}' is not a device",
+                write!(
+                    f,
+                    "The file '{}' is not a character device",
                     //path.display(),
                     humanly_visible_os_chars(path),
-                    )
+                )
             }
         }
     }
@@ -34,28 +37,21 @@ impl std::error::Error for DeviceOpenError {}
 
 impl From<DeviceOpenError> for io::Error {
     fn from(err: DeviceOpenError) -> io::Error {
-        match err {
-            DeviceOpenError::Io(err, path) => io::Error::new(
-                err.kind(),
-                format!("Error accessing file '{}': {}",
-                    humanly_visible_os_chars(path),
-                    //path.display(),
-                    err),
-            ),
-            DeviceOpenError::NotADevice(path) => io::Error::new(
-                io::ErrorKind::Other,
-                format!("The file '{}' is not a device",
-                    //path.display()
-                    humanly_visible_os_chars(path),
-                    ),
-            ),
+        //doneTODO: this code repeats twice here and above in Display
+        //println!("FROM:{}",err.to_string());
+        match &err {
+            DeviceOpenError::Io(inner_err, _path) => {
+                io::Error::new(inner_err.kind(), err.to_string())
+            }
+            DeviceOpenError::NotADevice(_path) => {
+                io::Error::new(io::ErrorKind::NotFound, err.to_string())
+            }
         }
     }
 }
 
 fn humanly_visible_os_chars<P: AsRef<Path>>(path: P) -> String {
-    //(os_path: &std::ffi::OsStr) -> String {
-    let path=path.as_ref().as_os_str();
+    let path = path.as_ref().as_os_str();
     if let Some(arg_str) = path.to_str() {
         // If the argument is valid UTF-8,
         if arg_str.contains('\0') {
@@ -100,64 +96,35 @@ fn humanly_visible_os_chars<P: AsRef<Path>>(path: P) -> String {
 // [2] https://github.com/rust-lang/rust/blob/a83f933a9da258cf037e3cab37cd486bfd861a7d/library/std/src/sys/pal/common/small_c_string.rs#L36
 /// Opens a file and checks if it is a char device.
 /// Returns an error if the file is not a character device.
+/// meant to be a File::open() replacement for cases when /dev/null is used in cargo/rustc code!
 pub fn open_char_device<P: AsRef<Path>>(path: P) -> io::Result<File> {
     let path = path.as_ref();
-//    let metadata = std::fs::metadata(path)
-//        .map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()))?;
-
-    //FIXME: this uses heap! does File::open use heap?
-    let os_str_path = path.as_os_str();
-    let path_cstr = std::ffi::CString::new(os_str_path.as_bytes()).map_err(|e| {
-        let visible_path = humanly_visible_os_chars(os_str_path);
-        io::Error::new(
-            io::ErrorKind::InvalidInput,
-            format!(
-                "Invalid path '{}', error: {}",
-                //path.display()
-                visible_path,
-                e
-            ),
-        )
-    })?;
-
-    // Open the file
-    let file = File::open(os_str_path).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()))?;
-
-    // Use the stat function to get file type
-    let mut stat_info: stat = unsafe { std::mem::zeroed() };
-    let result = unsafe { libc::stat(path_cstr.as_ptr(), &mut stat_info) };
-
-    if result != 0 {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!(
-                "Failed to stat '{}': {}",
-                path.display(),
-                io::Error::last_os_error()
-            ),
-        ));
-    }
+    let metadata =
+        std::fs::metadata(path).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()))?;
 
     // Check if the file is a character device:
     // "/dev/null is indeed classified as a character device when inspected with the stat command."
     // "Device type: 1,3 further confirms that it's a character device. The first number (1) indicates the major device number, which represents the device type (character device), and the second number (3) is the minor device number."
     // - chatgpt 3.5
-    if (stat_info.st_mode & S_IFMT) == S_IFCHR
-    /* || (stat_info.st_mode & S_IFMT) == S_IFBLK*/
-    {
-        Ok(file)
+    use std::os::unix::fs::FileTypeExt;
+    if metadata.file_type().is_char_device() {
+        // Open the file as usual
+        File::open(path).map_err(|e| DeviceOpenError::Io(e, path.to_path_buf()).into())
     } else {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            DeviceOpenError::NotADevice(path.to_path_buf()),
-        ))
+        // Return an error indicating that the file is not a character device
+        Err(DeviceOpenError::NotADevice(path.to_path_buf()).into())
     }
 }
 
-fn example() -> io::Result<()> {
-    let _file = open_char_device("/dev/null")?;
+fn example() -> io::Result<File> {
+    let file = open_char_device("/dev/null")?;
     // Use file as needed
-    Ok(())
+    Ok(file)
+}
+fn example_err() -> io::Result<File> {
+    let file = open_char_device("./src/main.rs")?;
+    // Use file as needed
+    Ok(file)
 }
 
 #[test]
@@ -183,6 +150,7 @@ fn any_test_open_char_device() {
         Err(e) => println!("Failed to open device: {}", e),
     }
     assert!(res.is_err(), "{:?}", res);
+    assert_eq!(res.err().unwrap().kind(), io::ErrorKind::NotFound);
 
     let res = open_char_device("this is the name of a non exiting file here");
     match &res {
@@ -190,6 +158,7 @@ fn any_test_open_char_device() {
         Err(e) => println!("Failed to open device: {}", e),
     }
     assert!(res.is_err(), "{:?}", res);
+    assert_eq!(res.err().unwrap().kind(), io::ErrorKind::NotFound);
 
     let res = open_char_device("heart emoji ♥ containing one");
     match &res {
@@ -197,6 +166,7 @@ fn any_test_open_char_device() {
         Err(e) => println!("Failed to open device: {}", e),
     }
     assert!(res.is_err(), "{:?}", res);
+    assert_eq!(res.err().unwrap().kind(), io::ErrorKind::NotFound);
 
     let res = open_char_device("foo\0null");
     match &res {
@@ -204,6 +174,7 @@ fn any_test_open_char_device() {
         Err(e) => println!("Failed to open device: {}", e),
     }
     assert!(res.is_err(), "{:?}", res);
+    assert_eq!(res.err().unwrap().kind(), io::ErrorKind::InvalidInput);
 
     let res = open_char_device(PathBuf::from("/dev/n\0ull"));
     match &res {
@@ -211,6 +182,7 @@ fn any_test_open_char_device() {
         Err(e) => println!("Failed to open device: {}", e),
     }
     assert!(res.is_err(), "{:?}", res);
+    assert_eq!(res.err().unwrap().kind(), io::ErrorKind::InvalidInput);
 
     let res = open_char_device("heart emoji ♥ containing one, and a \0nul!");
     match &res {
@@ -218,13 +190,22 @@ fn any_test_open_char_device() {
         Err(e) => println!("Failed to open device: {}", e),
     }
     assert!(res.is_err(), "{:?}", res);
+    assert_eq!(res.err().unwrap().kind(), io::ErrorKind::InvalidInput);
 
     let res = example();
     match &res {
-        Ok(_) => println!("Successfully opened device"),
+        Ok(file) => println!("Successfully opened device: {:?}", file),
         Err(e) => println!("Failed to open device: {}", e),
     }
     assert!(res.is_ok(), "{:?}", res);
+
+    let res = example_err();
+    match &res {
+        Ok(file) => println!("Successfully opened device: {:?}", file),
+        Err(e) => println!("Failed to open device: {}", e),
+    }
+    assert!(res.is_err(), "{:?}", res);
+    assert_eq!(res.err().unwrap().kind(), io::ErrorKind::NotFound);
 }
 
 fn main() {
