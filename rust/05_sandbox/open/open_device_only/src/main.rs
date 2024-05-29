@@ -97,6 +97,13 @@ fn humanly_visible_os_chars(os_path: &std::ffi::OsStr) -> String {
     }
 }
 
+// XXX: this can replace a cargo File::open call(presumably), but for rustc variants we need something else!
+// cargo: https://github.com/rust-lang/cargo/blob/cbc12a2ebe0a99836249de0f80f025192e58cb4b/credential/cargo-credential/src/stdio.rs#L11
+// rustc: https://github.com/rust-lang/rust/blob/4cf5723dbe471ef0a32857b968b91498551f5e38/library/std/src/sys/pal/unix/process/process_common.rs#L479-L486
+// .. https://github.com/rust-lang/rust/blob/a83f933a9da258cf037e3cab37cd486bfd861a7d/library/std/src/sys/pal/unix/fs.rs#L1160-L1171
+// and for my code I might want things like this: [1] [2]
+// [1] https://github.com/rust-lang/rust/blob/a83f933a9da258cf037e3cab37cd486bfd861a7d/library/std/src/sys/pal/unix/fs.rs#L1157
+// [2] https://github.com/rust-lang/rust/blob/a83f933a9da258cf037e3cab37cd486bfd861a7d/library/std/src/sys/pal/common/small_c_string.rs#L36
 /// Opens a file and checks if it is a device.
 /// Returns an error if the file is not a character or block device.
 pub fn open_device<P: AsRef<Path>>(path: P) -> io::Result<File> {
