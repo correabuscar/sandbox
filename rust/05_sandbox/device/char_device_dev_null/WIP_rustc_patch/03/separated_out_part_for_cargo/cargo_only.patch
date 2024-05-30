@@ -1,0 +1,112 @@
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/src/tools/cargo/credential/cargo-credential/src/stdio.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/src/tools/cargo/credential/cargo-credential/src/stdio.rs
++++ cargo/credential/cargo-credential/src/stdio.rs
+@@ -8,7 +8,13 @@ where
+ {
+     let open_write = |f| std::fs::OpenOptions::new().write(true).open(f);
+ 
++    #[cfg(windows)]
+     let mut stdin = File::open(imp::IN_DEVICE).or_else(|_| File::open(imp::NULL_DEVICE))?;
++    #[cfg(unix)] // respecting same cfg as the one in 'mod'
++    let mut stdin = std::open_char_device(imp::IN_DEVICE).or_else(|_| std::open_char_device(imp::NULL_DEVICE))?;
++    #[cfg(not(any(windows,unix)))]
++    compile_error!("Well, what's this unhandled case of not Windows and not any unix-es?!");
++
+     let mut stdout = open_write(imp::OUT_DEVICE).or_else(|_| open_write(imp::NULL_DEVICE))?;
+ 
+     let _stdin_guard = imp::ReplacementGuard::new(Stdio::Stdin, &mut stdin)?;
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/src/tools/cargo/credential/cargo-credential/src/lib.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/src/tools/cargo/credential/cargo-credential/src/lib.rs
++++ cargo/credential/cargo-credential/src/lib.rs
+@@ -231,6 +231,7 @@ pub fn main(credential: impl Credential)
+         serde_json::to_writer(std::io::stdout(), &result)
+             .expect("failed to serialize credential provider error");
+         println!();
++        //panic!("{:?}",result); //don't know how to tell cargo to get here, so commented out so far! TODO: actually test this works!
+     }
+ }
+ 
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/src/tools/cargo/crates/cargo-util/src/process_builder.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/src/tools/cargo/crates/cargo-util/src/process_builder.rs
++++ cargo/crates/cargo-util/src/process_builder.rs
+@@ -248,7 +248,7 @@ impl ProcessBuilder {
+             Ok(())
+         } else {
+             Err(ProcessError::new(
+-                &format!("process didn't exit successfully: {}", self),
++                &format!("process9 didn't exit successfully: {}", self),
+                 Some(exit),
+                 None,
+             )
+@@ -312,7 +312,7 @@ impl ProcessBuilder {
+             Ok(output)
+         } else {
+             Err(ProcessError::new(
+-                &format!("process didn't exit successfully: {}", self),
++                &format!("process8 didn't exit successfully: {}", self),
+                 Some(output.status),
+                 Some(&output),
+             )
+@@ -419,14 +419,14 @@ impl ProcessBuilder {
+             let to_print = if capture_output { Some(&output) } else { None };
+             if let Some(e) = callback_error {
+                 let cx = ProcessError::new(
+-                    &format!("failed to parse process output: {}", self),
++                    &format!("failed2 to parse process output: {}", self),
+                     Some(output.status),
+                     to_print,
+                 );
+                 bail!(anyhow::Error::new(cx).context(e));
+             } else if !output.status.success() {
+                 bail!(ProcessError::new(
+-                    &format!("process didn't exit successfully: {}", self),
++                    &format!("process1 didn't exit successfully: {}", self),
+                     Some(output.status),
+                     to_print,
+                 ));
+@@ -557,8 +557,9 @@ fn piped(cmd: &mut Command, pipe_stdin:
+ }
+ 
+ fn close_tempfile_and_log_error(file: NamedTempFile) {
++    let path=file.path().to_owned();
+     file.close().unwrap_or_else(|e| {
+-        tracing::warn!("failed to close temporary file: {e}");
++        tracing::warn!("failed to close temporary file '{:?}', error: '{}'", path,e);
+     });
+ }
+ 
+@@ -585,12 +586,16 @@ mod imp {
+                 error = command.exec()
+             }
+         }
++        let f=
+         if let Some(file) = file {
++            let p=file.path().to_owned();
+             close_tempfile_and_log_error(file);
+-        }
++            p
++        } else { std::path::PathBuf::from("None") };
+ 
++        let ff=&format!("could4 not execute process '{}', error:{:?}, temp(arg)file:'{:?}'", process_builder, error, f);
+         Err(anyhow::Error::from(error).context(ProcessError::new(
+-            &format!("could not execute process {}", process_builder),
++                    ff,
+             None,
+             None,
+         )))
+Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/src/tools/cargo/crates/cargo-util/src/process_error.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/src/tools/cargo/crates/cargo-util/src/process_error.rs
++++ cargo/crates/cargo-util/src/process_error.rs
+@@ -100,7 +100,7 @@ impl ProcessError {
+     ///
+     /// * `cmd` is usually but not limited to [`std::process::Command`].
+     pub fn could_not_execute(cmd: impl fmt::Display) -> ProcessError {
+-        ProcessError::new(&format!("could not execute process {cmd}"), None, None)
++        ProcessError::new(&format!("could3 not execute process {cmd}"), None, None)
+     }
+ }
+ 
