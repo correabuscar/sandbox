@@ -1,0 +1,1 @@
+rsync -av --update /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/build/ /1tmpchroot/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/build/

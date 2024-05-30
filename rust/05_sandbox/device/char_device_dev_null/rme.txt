@@ -1,0 +1,22 @@
+future me intructions:
+
+* ok so build rust package on gentoo with that WIP package
+dev-lang/rust-1.76.0-r1::localrepo was built with the following:
+USE="clippy doc nightly rust-analyzer rust-src rustfmt system-bootstrap system-llvm verify-sig wasm (-big-endian) -debug -dist (-llvm-libunwind) -lto (-miri) (-parallel-compiler) -profiler -test" CPU_FLAGS_X86="sse2" LLVM_TARGETS="AArch64 ARM WebAssembly (X86) -AMDGPU -ARC -AVR -BPF -CSKY -DirectX -Hexagon -Lanai -LoongArch -M68k -MSP430 -Mips -NVPTX -PowerPC -RISCV -SPIRV -Sparc -SystemZ -VE -XCore -Xtensa"
+
+* then make a btrfs rw snapshot which will act as our chroot
+su -
+btrfs subvolume snapshot / /1snapshots.btrfs$(date --iso-8601='ns' | tr ':,+' '_' ).btrfs.snap"
+mount -o subvol=1snapshots.btrfs/2024-05-29T22_41_50_860228782_02_00.btrfs.snap  /dev/sda1 /1tmpchroot
+chroot /1tmpchroot/
+cargo new foo
+exit
+* copy everything from ./1tmpchroot in /1tmpchroot  (such as the foo/* scripts
+  and the script in ./var/tmp/ )
+* you can now compile rust on host and when done:
+* from outside of chroot, as root, run the script from:
+/1tmpchroot/var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/sync_with_the_one_from_host_tmp
+* now that u have rust/cargo in chroot, get in (or from another already in,
+  terminal):
+chroot /1tmpchroot/
+* now u can cd /foo and run ./gmy
