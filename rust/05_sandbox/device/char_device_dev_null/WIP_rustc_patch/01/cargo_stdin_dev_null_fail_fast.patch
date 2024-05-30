@@ -971,7 +971,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.76.0-r1/work/rustc-1.76.0-src/library/st
 +        PathBuf::from(cstr.to_string_lossy().into_owned())
 +    }
 +
-+    /// mod of the original open_c() from https://github.com/rust-lang/rust/blob/23ea77b8edc902f4a90cda62af66f8b300e5de54/library/std/src/sys/pal/unix/fs.rs#L1160-L1171
++    /// mod of the original open_c() from a few lines below(well it's from 1.76.0), or from https://github.com/rust-lang/rust/blob/23ea77b8edc902f4a90cda62af66f8b300e5de54/library/std/src/sys/pal/unix/fs.rs#L1160-L1171
 +    pub fn open_char_device_c(path: &CStr, opts: &OpenOptions) -> io::Result<File> {
 +        let path_buf = path_from_cstr(path);
 +
