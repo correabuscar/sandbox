@@ -1,0 +1,1 @@
+this patch must be applied for the code to take effect when using ./gmy
