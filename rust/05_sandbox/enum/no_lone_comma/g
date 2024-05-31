@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 export RUST_BACKTRACE=1
+export RUSTFLAGS="-Z debug-macros -Z macro-backtrace -Z trace-macros"
 cargo run ; ec="$?"
 if test "0" == "$ec"; then
   cargo expand

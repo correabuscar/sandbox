@@ -20,7 +20,7 @@ macro_rules! foo {
                     // GenericParam : OuterAttribute* ( LifetimeParam | TypeParam | ConstParam )
 
                     // OuterAttribute : `#` `[` Attr `]`
-                    $( #[ $enum_generics_outer_attr:meta ] )*
+                    $( #[ $enum_generics_outer_attr_1of2:meta ] )*
 
                     // XXX: we ignore "| TypeParam | ConstParam )" in this try(but we wouldn't be able to ensure to pick only 1 of the 3 because 0,2 and 3 of the 3 will also match)!
                     // So we assume LifetimeParam appears mandatorily below:
@@ -30,7 +30,7 @@ macro_rules! foo {
                     // LIFETIME_OR_LABEL here and not LIFETIME_TOKEN(which is what 'lifetime' does)
                     // LIFETIME_OR_LABEL : `'` NON_KEYWORD_IDENTIFIER (not immediately followed by `'`)
                     // ^ can't do that because lone ' won't be accepted!, so XXX: 'lifetime' will do here because anything else will compile error at transcribe site.
-                    $lif:lifetime
+                    $lif_1of2:lifetime
 
                     // ( `:` LifetimeBounds )?
                     $(
@@ -39,8 +39,8 @@ macro_rules! foo {
                         // LifetimeBounds : ( Lifetime `+` )* Lifetime?
                         // so LifetimeBounds is itself implicitly optional: can be none,one, or if more separated by +
                         $(
-                            $lifebound:lifetime
-                            $(+ $morelifebounds:lifetime)*
+                            $lifebound_1of2:lifetime
+                            $(+ $morelifebounds_1of2:lifetime)*
                         )?
                     )?
 
@@ -49,7 +49,7 @@ macro_rules! foo {
                         // GenericParam : OuterAttribute* ( LifetimeParam | TypeParam | ConstParam )
 
                         // OuterAttribute : `#` `[` Attr `]`
-                        $( #[ $enum_generics_outer_attr_2:meta ] )*
+                        $( #[ $enum_generics_outer_attr_2of2:meta ] )*
 
                         // XXX: we ignore "| TypeParam | ConstParam )" in this try(but we wouldn't be able to ensure to pick only 1 of the 3 because 0,2 and 3 of the 3 will also match)!
                         // So we assume LifetimeParam appears mandatorily below:
@@ -59,7 +59,7 @@ macro_rules! foo {
                         // LIFETIME_OR_LABEL here and not LIFETIME_TOKEN(which is what 'lifetime' does)
                         // LIFETIME_OR_LABEL : `'` NON_KEYWORD_IDENTIFIER (not immediately followed by `'`)
                         // ^ can't do that because lone ' won't be accepted!, so XXX: 'lifetime' will do here because anything else will compile error at transcribe site.
-                        $lif_2:lifetime
+                        $lif_2of2:lifetime
 
                         // ( `:` LifetimeBounds )?
                         $(
@@ -68,8 +68,8 @@ macro_rules! foo {
                             // LifetimeBounds : ( Lifetime `+` )* Lifetime?
                             // so LifetimeBounds is itself implicitly optional: can be none,one, or if more separated by +
                             $(
-                                $lifebound_2:lifetime
-                                $(+ $morelifebounds_2:lifetime)*
+                                $lifebound_2of2:lifetime
+                                $(+ $morelifebounds_2of2:lifetime)*
                             )?
                         )?
                      )*
@@ -94,24 +94,24 @@ macro_rules! foo {
                 $(
                     <
                     $(
-                        $(#[$enum_generics_outer_attr])*
-                        $lif
+                        $(#[$enum_generics_outer_attr_1of2])*
+                        $lif_1of2
                         $(
                             :
                             $(
-                                $lifebound
-                                $(+ $morelifebounds)*
+                                $lifebound_1of2
+                                $(+ $morelifebounds_1of2)*
                             )?
                         )?
                         $(
                             ,
-                            $(#[$enum_generics_outer_attr_2])*
-                            $lif_2
+                            $(#[$enum_generics_outer_attr_2of2])*
+                            $lif_2of2
                             $(
                                 :
                                 $(
-                                    $lifebound_2
-                                    $(+ $morelifebounds_2)*
+                                    $lifebound_2of2
+                                    $(+ $morelifebounds_2of2)*
                                 )?
                             )?
                         )*

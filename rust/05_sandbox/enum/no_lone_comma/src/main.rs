@@ -41,14 +41,14 @@ macro_rules! match_generic_params2 {
     // Match (GenericParam `,`)* GenericParam `,`?
     (
         $(
-            $param:ident
+            $param_1of2:ident
             $(
-              ,  $param2:ident
+              ,  $param_2of2:ident
             )*
             $(,)?
         )?
     ) => {
-        match_generic_params!(@transcribe $($param $(, $param2)*)*);
+        match_generic_params!(@transcribe $($param_1of2 $(, $param_2of2)*)*);
     };
     (@transcribe $($params:ident),*) => {
         // This branch will match the input if it conforms to the EBNF
@@ -66,15 +66,15 @@ macro_rules! match_generic_params {
     // Match (GenericParam `,`)* GenericParam `,`?
     (
         $(
-            $param:ident
+            $param_1of2:ident
             $(
-              ,  $param2:ident
+              ,  $param_2of2:ident
             )*
             //optionally can end with one comma but only if there was an ident already!
             $(,)?
         )?
     ) => {
-        match_generic_params!(@transcribe $($param $(, $param2)*)?);
+        match_generic_params!(@transcribe $($param_1of2 $(, $param_2of2)*)?);
     };
     (@transcribe ) => {
         println!("no args");
