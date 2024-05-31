@@ -98,7 +98,6 @@ macro_rules! foo {
                                     $(
                                         // ForLifetimes : `for` GenericParams
                                         for
-                                        //TODO: get genericparams right!
                                         // FIXME: well, we're inside genericparams and we're supposed to parse another one, whoopsies! so recursion but how exactly?!
                                         < /* TODO */ >
                                     )?
