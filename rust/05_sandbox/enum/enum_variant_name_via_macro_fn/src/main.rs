@@ -44,6 +44,7 @@ macro_rules! enum_str {
     (
         //matches attributes like #[allow(dead_code)], if any!
         //or the more likely-used one: #[repr(u8)]
+        //or doc comments like /// text, which are #[doc = " text"]
         $( #[ $enum_outer_attr:meta ] )* // this is enum's outer attribute
                                          // meta: an Attr, the contents of an attribute
 
@@ -57,19 +58,22 @@ macro_rules! enum_str {
         //https://doc.rust-lang.org/reference/items/generics.html
         // GenericParams : `<` `>` | `<` (GenericParam `,`)* GenericParam `,`? `>`
         $(<
+            // XXX: if you change anything in the below GenericParam code block, remember to also change it in the one after that deals with more GenericParam prefixed by comma (which is needed so lone comma won't be matched)
             // GenericParam : OuterAttribute* ( LifetimeParam | TypeParam | ConstParam )
-            $(
+            //$( //see below, tl;dr: same effect even if this isn't here.
                 // OuterAttribute : `#` `[` Attr `]`
                 $( #[ $enum_generics_outer_attr:meta ] )*
                 //it's supposed to be one of the following, but can't tell it that thru macro_rules matching,
-                //so it can be all 3 at once or none at all
-                //TODO: go on... from here:
+                //so it can be all 3 at once or none at all; I guess we let the compiler warn us about this at expanded location!
+
+                //so what we do next is optionalize each of ( LifetimeParam | TypeParam | ConstParam )
+
                 //LifetimeParam : LIFETIME_OR_LABEL ( `:` LifetimeBounds )?
                 $(
                     // LIFETIME_OR_LABEL here and not LIFETIME_TOKEN(which is what 'lifetime' does)
                     $enum_generics_lifetime:lifetime //so not this! but a lone ' errors, so this!
 //                    //LIFETIME_OR_LABEL : `'` NON_KEYWORD_IDENTIFIER (not immediately followed by `'`)
-//                    ' //XXX: errors on this, so we've to use 'lifetime' then!
+//                    ' //XXX: errors on this, so we've to use 'lifetime' then! and expect compile errors at expansion site to catch the relevant cases!
 //                    //NON_KEYWORD_IDENTIFIER : IDENTIFIER_OR_KEYWORD Except a strict or reserved keyword
 //                    // https://doc.rust-lang.org/reference/keywords.html#strict-keywords
 //                    // https://doc.rust-lang.org/reference/keywords.html#reserved-keywords
@@ -77,18 +81,25 @@ macro_rules! enum_str {
 //                    $enum_generics_lifetime_id:ident
                     // ( `:` LifetimeBounds )?
                     $(
-                        :
+                        : // lone ":" is valid!
                         // LifetimeBounds : ( Lifetime `+` )* Lifetime?
                         // so LifetimeBounds is itself optional, basically: can be none,one, or if more separated by +
+//                        $(
+//                            $enum_generics_lifetime_bounds:lifetime
+//                            //+
+//                        )+*  //diditdifferentlyTODO: crap!//XXX: so this is $()+ and literal *, not $()+* aka 0 or more of + separated elements that don't end with + !! "$ ( ... ) sep rep" "sep is an optional separator token. It may not be a delimiter or one of the repetition operators. Common examples are , and ;." src: https://veykril.github.io/tlborm/decl-macros/macros-methodical.html#repetitions
                         $(
                             $enum_generics_lifetime_bounds:lifetime
-                            //+
-                        )+*  //TODO: crap!//so is this $()+ and literal *, or $()+* aka 0 or more of + separated elements that don't end with + ?! "$ ( ... ) sep rep" "sep is an optional separator token. It may not be a delimiter or one of the repetition operators. Common examples are , and ;." src: https://veykril.github.io/tlborm/decl-macros/macros-methodical.html#repetitions
+                            $(+ $enum_generics_lifetime_bounds_2:lifetime)*
+                        )?
                     )?
-                )?
+
+
+                 )? //the LifetimeParam
                 //TypeParam : IDENTIFIER( `:` TypeParamBounds? )? ( `=` Type )?
                 $(
                     $enum_generic:ident
+                    //TODO: go on
                 )?
                 //ConstParam: `const` IDENTIFIER `:` Type ( `=` Block | IDENTIFIER | `-`?LITERAL )?
                 $(
@@ -98,9 +109,18 @@ macro_rules! enum_str {
                         //TODO: rest
                     )?
                 )?
-            ),*
+
+                //TODO: more than the one(above) generics? go on then, dupe the above :/
+                $(
+                    ,
+                    //XXX: duplicates the above!
+                    //TODO: here
+                )*
+                //optionally can end with one comma but only if there was an ident already!(already done, this is why there's 2 dup blocks for GenericParam !
+                $(,)?
+            //)? //XXX:can have 0 or more generics, but due to everything inside this being optional, can't use this due to 'repetition matches empty token tree'), but since everything inside is optional, it has the same effect as if this $()? was in use here!
             // `,`?
-            $(,)? //FIXME: lone comma possibly with this, but shouldn't be!
+            //$(,)? //doneFIXME: lone comma possibly with this, but shouldn't be!
             >)?
          // Added support for a where clause
         //FIXME: make this match(verb) each possible thing in the where, individually, due to: local ambiguity when calling macro `enum_str`: multiple parsing options: built-in NTs tt ('where_clause') or 1 other option.
