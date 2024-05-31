@@ -114,12 +114,13 @@ macro_rules! enum_str {
                             )?
                             // TraitBound
                             $(
-                                // TraitBound : `?`? ForLifetimes? TypePath | `( ?`? ForLifetimes? TypePath `)`
+                                // TraitBound : `?`? ForLifetimes? TypePath | `(` `?`? ForLifetimes? TypePath `)`
                                 $(?)?
                                 // ForLifetimes?
                                 //TODO: ^
                                 // TypePath
                                 $enum_generics_lifetime_param_type_param_bound_traitbound_typepath:path
+                                //TODO: `(` `?`? ForLifetimes? TypePath `)`
                             )?
                             // ( `+` TypeParamBound )*
                             $(
