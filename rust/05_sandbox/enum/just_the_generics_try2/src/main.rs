@@ -95,6 +95,13 @@ macro_rules! foo {
                                     $(?)?
                                     // ForLifetimes?
                                     //TODO: ^
+                                    $(
+                                        // ForLifetimes : `for` GenericParams
+                                        for
+                                        //TODO: get genericparams right!
+                                        // FIXME: well, we're inside genericparams and we're supposed to parse another one, whoopsies! so recursion but how exactly?!
+                                        < /* TODO */ >
+                                    )?
                                     // TypePath
                                     $enum_generics_lifetime_param_type_param_bound_traitbound_typepath:path
                                     //TODO: `(` `?`? ForLifetimes? TypePath `)`
