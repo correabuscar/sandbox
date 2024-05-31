@@ -78,7 +78,7 @@ macro_rules! enum_str {
 //                    //NON_KEYWORD_IDENTIFIER : IDENTIFIER_OR_KEYWORD Except a strict or reserved keyword
 //                    // https://doc.rust-lang.org/reference/keywords.html#strict-keywords
 //                    // https://doc.rust-lang.org/reference/keywords.html#reserved-keywords
-//                    // ok wel do any ident then :)) 'cuz how can we except those! ^
+//                    // ok wel do any ident then  'cuz how can we except those! ^
 //                    $enum_generics_lifetime_id:ident
                     // ( `:` LifetimeBounds )?
                     $(
@@ -97,13 +97,49 @@ macro_rules! enum_str {
 
 
                  )? //the LifetimeParam
-                //TypeParam : IDENTIFIER( `:` TypeParamBounds? )? ( `=` Type )?
+                // TypeParam : IDENTIFIER( `:` TypeParamBounds? )? ( `=` Type )?
                 $(
-                    $enum_generic_1of2:ident
+                    $enum_generic_typeparam_ident_1of2:ident
                     //TODO: go on
+                    // ( `:` TypeParamBounds? )?
+                    $(
+                        :
+                        // TypeParamBounds?
+                        //$(
+                            // TypeParamBounds : TypeParamBound ( `+` TypeParamBound )* `+`?
+                            // TypeParamBound : Lifetime | TraitBound
+                            $(
+                                // Lifetime
+                                $enum_generics_lifetime_param_type_param_bound_lifetime_1of2:lifetime
+                            )?
+                            // TraitBound
+                            $(
+                                // TraitBound : `?`? ForLifetimes? TypePath | `( ?`? ForLifetimes? TypePath `)`
+                                $(?)?
+                                // ForLifetimes?
+                                //TODO: ^
+                                // TypePath
+                                $enum_generics_lifetime_param_type_param_bound_traitbound_typepath:path
+                            )?
+                            // ( `+` TypeParamBound )*
+                            $(
+                                //FIXME: good one roost: `$enum_generics_lifetime_param_type_param_bound_traitbound_typepath:path` may be followed by `+`, which is not allowed for `path` fragments: not allowed after `path` fragments
+                                +
+                                // TypeParamBound : Lifetime | TraitBound
+                            )*
+                            // `+`?
+                            $(+)?
+                        //)?
+                    )?
+                    // ( `=` Type )?
+                    $(
+                        =
+                        $enum_generic_typeparam_ident_type_1of2:ty
+                    )?
                 )?
-                //ConstParam: `const` IDENTIFIER `:` Type ( `=` Block | IDENTIFIER | `-`?LITERAL )?
+                // ConstParam: `const` IDENTIFIER `:` Type ( `=` Block | IDENTIFIER | `-`?LITERAL )?
                 $(
+                    //FIXME:good one roost: `$enum_generic_typeparam_ident_type_1of2:ty` may be followed by `const`, which is not allowed for `ty` fragments: not allowed after `ty` fragments
                     const $enum_generics_constparam_ident_1of2:ident : $enum_generics_constparam_type_1of2:ty
                     $(
                         =
@@ -117,9 +153,9 @@ macro_rules! enum_str {
                     //XXX: duplicates the above! with _2of2 prefixes for metavars!
                     //TODO: here
                 )*
-                //optionally can end with one comma but only if there was an ident already!(already done, this is why there's 2 dup blocks for GenericParam !
+                //optionally can end with one comma but only if there was an ident already!(already done, this is why there's 2 dup blocks for GenericParam !)
                 $(,)?
-            //)? //XXX:can have 0 or more generics, but due to everything inside this being optional, can't use this due to 'repetition matches empty token tree'), but since everything inside is optional, it has the same effect as if this $()? was in use here!
+            //)? //XXX:can have 0 or more generics, but due to everything inside this being optional, can't use this due to 'repetition matches empty token tree', but since everything inside is optional, it has the same effect as if this $()? was in use here!
             // `,`?
             //$(,)? //doneFIXME: lone comma possibly with this, but shouldn't be!
             >)?
