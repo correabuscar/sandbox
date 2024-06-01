@@ -3,12 +3,158 @@
 //#![feature(stmt_expr_attributes)]
 //#![deny(unused_must_use)] // yeah it works here, ofc! but it's too broad!
 
+mod some_macro {
+/// matches any variants that are: unit, tuple or struct like, with/without discriminant (ie. Ok=200)
+/// though you'd have to add eg. #[repr(u8)] //else, error[E0732]: `#[repr(inttype)]` must be specified
+/// empty enums are not supported, like pub enum Foo{}, on purpose!
+/// see: https://doc.rust-lang.org/reference/items/enumerations.html
+#[macro_export]
+macro_rules! enum_str {
+    (
+        //matches attributes like #[allow(dead_code)], if any!
+        //or the more likely-used one: #[repr(u8)]
+        //or doc comments like /// text, which are #[doc = " text"]
+        $( #[ $enum_outer_attr:meta ] )* // this is enum's outer attribute
+                                         // meta: an Attr, the contents of an attribute
+
+        //matches 'pub enum Something<T,G,F>' but also just 'enum Something'
+        $visibility:vis
+        // vis: a possibly empty Visibility qualifier
+        // aka it can be missing, or has an implied $()? wrapper!
+
+        //Enumeration : `enum` IDENTIFIER  GenericParams? WhereClause? `{` EnumItems? `}`
+        enum $name:ident
+        //https://doc.rust-lang.org/reference/items/generics.html
+        // GenericParams : `<` `>` | `<` (GenericParam `,`)* GenericParam `,`? `>`
+        $(< $($generics_simple:ident),* > )?
+        { //enum's opening brace
+
+        // EnumItems : EnumItem ( `,` EnumItem )* `,`?
+        $(
+            // EnumItem : OuterAttribute* Visibility? IDENTIFIER ( EnumItemTuple | EnumItemStruct )? EnumItemDiscriminant?
+            // OuterAttribute*
+            $(
+                #[ $enumitem_outer_attr:meta ]
+            )*
+            // Visibility?
+            //$(
+                $enumitem_visibility:vis
+                // vis: a possibly empty Visibility qualifier, so $()? isn't needed(and in fact an error!)
+            //)?
+            //matches VariantName, VariantName(), VariantName(i32), VariantName(i32,i128,)
+            //but also weirds like: VariantName(,)
+            //also matches VariantName {}, VariantName { f:i32, }, VariantName { f:i32, g: u8, },
+            //but also weirds like: StructVariantOops1 {,}
+
+            // IDENTIFIER
+            $variant:ident //aka enumitem
+
+            // ( EnumItemTuple | EnumItemStruct )?
+            // XXX: that | aka OR, can't be achieved this way(not just here), so the invalid version of both(or none) at same time could match here:
+            //$(
+                // EnumItemTuple : `(` TupleFields? `)`
+                $( (
+                        // TupleFields?
+                        //$(
+                            // TupleFields : TupleField (`,` TupleField)* `,`?
+                            $(
+                                // TupleField : OuterAttribute* Visibility? Type
+
+                                // OuterAttribute*
+                                $(
+                                    #[ $enumitem_tuple_field_outer_attr:meta ]
+                                )*
+                                // Visibility?
+                                //$(
+                                $enumitem_tuple_field_visibility:vis
+                                // vis: a possibly empty Visibility qualifier, so $()? isn't needed(and in fact an error!)
+                                //)?
+                                // Type
+                                $enumitem_tuple_field:ty
+                            ),*
+                            // `,`?
+                            $(,)?
+                        //)?
+                ) )?
+
+                // EnumItemStruct : `{` StructFields? `}`
+                $( {
+                    // StructFields?
+                    //$(
+                        // StructFields : StructField (`,` StructField)* `,`?
+                        $(
+                            // StructField : OuterAttribute* Visibility? IDENTIFIER `:` Type
+                            // OuterAttribute*
+                            $(
+                                #[ $enumitem_struct_field_outer_attr:meta ]
+                            )*
+                            // Visibility?
+                            //$(
+                            $enumitem_tuple_struct_visibility:vis
+                            // vis: a possibly empty Visibility qualifier, so $()? isn't needed(and in fact an error!)
+                            //)?
+                            // IDENTIFIER `:` Type
+                            $enumitem_struct_field_ident:ident : $enumitem_struct_field_type:ty
+                        ),*
+                        // `,`?
+                        $(,)?
+                    //)?
+                } )?
+            //)? //can't include this parent $()? block because the two inner ones are already $()? aka can be empty
+            // EnumItemDiscriminant?
+            $(
+                // EnumItemDiscriminant : `=` Expression
+                = $enumitem_discriminant:expr
+            )?
+        ),*
+        $(,)? //don't care if lone comma can be matched too, better to not dup the matcher block.
+        } //enum's closing brace
+    ) => {
+        $(#[$enum_outer_attr])*
+            $visibility enum $name
+            $(<$($generics_simple),*>)?
+        {
+            $(
+                $( #[ $enumitem_outer_attr ] )*
+                $variant
+                $( ( $($enumitem_tuple_field),* ) )?
+                $( { $($enumitem_struct_field_ident: $enumitem_struct_field_type),* } )?
+                $( = $enumitem_discriminant )?
+            ),*
+        }//enum
+
+        impl
+            $(<$($generics_simple),*>)?
+            $name
+            $(<$($generics_simple),*>)?
+            {
+                pub const fn variant_name_as_str(&self) -> &str {
+                    match self {
+                        $(
+                            Self::$variant
+                            // XXX: so {..} can be used for any enum variant!
+                            { .. }
+                            => stringify!($variant),
+                        )*
+                            //                        #[allow(unreachable_patterns)]
+                            //                        _ => {
+                            //                            //that {{}} is actually expanded to: {} aka escaped, and this panic!() works in 'const fn' as opposed to unreachable!()
+                            //                            panic!("Unreachable! This was only needed in case of empty enum like: enum Foo {{}}, because we can't conditionally not include the whole impl based on $variant due to macro saying it's already repeating at this depth");
+//                        }
+                    }//match
+                }//fn
+            }//impl
+    };//arm
+} //macro
+
+}
+
 mod my_error_things {
     include!(concat!(env!("OUT_DIR"), "/project_dir.rs")); //gets me 'PROJECT_DIR'
 
     //const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 6;
     pub const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 4096; //one kernel page?!
-                                                          //
+
     use std::cell::BorrowMutError;
     use std::fmt;
     use std::time::Duration;
@@ -38,43 +184,45 @@ mod my_error_things {
         }
     }
 
-//    #[derive(Debug)]
-    pub enum MyError {
-        AlreadyBorrowedOrRecursingError {
-            source: BorrowMutError,
-            //where an instance of this error was created, in source code
-            location_of_instantiation: LocationInSource,
-            //custom_message: [u8; CUSTOM_ERROR_MSG_BUFFER_SIZE],
-            custom_message: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<
-                CUSTOM_ERROR_MSG_BUFFER_SIZE,
-            >,
-            //custom_message: &'static str,
-            //custom_message_len: usize,
-        },
-        TimeoutError {
-            location_of_instantiation: LocationInSource,
-            #[allow(dead_code)]
-            duration: Duration,
-            #[allow(dead_code)]
-            tid: u64,
-            //custom_message: [u8; CUSTOM_ERROR_MSG_BUFFER_SIZE],
-            //custom_message_len: usize,
-            //custom_message: &'static str,
-            //custom_message: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize< { crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE } >,
-            custom_message: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<
-                CUSTOM_ERROR_MSG_BUFFER_SIZE,
-            >,
-        },
-    } // enum
+    crate::enum_str! {
+        //    #[derive(Debug)]
+        pub enum MyError {
+            AlreadyBorrowedOrRecursingError {
+                source: BorrowMutError,
+                //where an instance of this error was created, in source code
+                location_of_instantiation: LocationInSource,
+                //custom_message: [u8; CUSTOM_ERROR_MSG_BUFFER_SIZE],
+                custom_message: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<
+                    CUSTOM_ERROR_MSG_BUFFER_SIZE,
+                    >,
+                    //custom_message: &'static str,
+                    //custom_message_len: usize,
+            },
+            TimeoutError {
+                location_of_instantiation: LocationInSource,
+                #[allow(dead_code)]
+                duration: Duration,
+                #[allow(dead_code)]
+                tid: u64,
+                //custom_message: [u8; CUSTOM_ERROR_MSG_BUFFER_SIZE],
+                //custom_message_len: usize,
+                //custom_message: &'static str,
+                //custom_message: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize< { crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE } >,
+                custom_message: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<
+                    CUSTOM_ERROR_MSG_BUFFER_SIZE,
+                    >,
+            },
+        } // enum
+    }//macro
 
     impl MyError {
-        pub const fn variant_name_only(&self) -> &str {
-            //FIXME: use this macro /home/user/sandbox/rust/05_sandbox/enum/enum_variant_name_via_macro_fn
-            match self {
-                MyError::AlreadyBorrowedOrRecursingError {..} => "AlreadyBorrowedOrRecursingError",
-                MyError::TimeoutError {..} => "TimeoutError",
-            }
-        }
+        //pub const fn variant_name_only(&self) -> &str {
+        //    //FIXME: use this macro /home/user/sandbox/rust/05_sandbox/enum/enum_variant_name_via_macro_fn
+        //    match self {
+        //        MyError::AlreadyBorrowedOrRecursingError {..} => "AlreadyBorrowedOrRecursingError",
+        //        MyError::TimeoutError {..} => "TimeoutError",
+        //    }
+        //}
 
         pub fn variant_name_full(&self) -> crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE> {
             //let type_name = std::any::type_name::<Self>();/* error_propagation_with_own_msg_and_location::my_error_things::MyError */
@@ -88,8 +236,8 @@ mod my_error_things {
             //    std::intrinsics::variant_name(std::mem::discriminant(self))
             //};
             //let variant_name= std::any::type_name_of_val(self);
-            let variant_name=self.variant_name_only();
-            self.as_str();
+            let variant_name=self.variant_name_as_str();
+            //self.as_str();
             //let fixed=crate::format_into_buffer!("{}::{}", type_name, variant_name).get_msg();/* E0716: temporary value dropped while borrowed consider using a `let` binding to create a longer lived value */
             let fixed: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE>=crate::format_into_buffer!("{}::{}", type_name, variant_name);
             //let fixed=fixed.get_msg();
@@ -98,6 +246,7 @@ mod my_error_things {
 
         #[inline(always)]
         pub const fn type_name_full(&self) -> &str {
+            //both need this: #![feature(const_type_name)]
             std::any::type_name::<Self>()/* error_propagation_with_own_msg_and_location::my_error_things::MyError */
             //std::any::type_name_of_val(self) /* same ^ */
         }
@@ -266,21 +415,29 @@ mod static_noalloc_msg {
             let slice = self.get_msg();
             //write!(f, "{}", slice)
             //FIXME: use noalloc buffer for the struct name? to not hardcode it in &str
-            //FIXME: stringify!(SIZE) was wrong anyway, lol!
-            f.debug_struct(concat!("NoAllocFixedLenMessageOfPreallocatedSize<",stringify!(SIZE),">"))
+            //cantFIXME: stringify!(SIZE) was wrong anyway, lol!
+            f.debug_struct(concat!("NoAllocFixedLenMessageOfPreallocatedSize<",
+                    //stringify!(SIZE),
+                    ">"))
                 .field("msg", &slice)
                 .field("msg_len", &self.msg_len)
                 .finish()
         }
     }
-
+//macro_rules! foo {
+//    ($($e:tt),*) => {
+//        concat!( $( $e ),*)
+//        }
+//}
     impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         pub fn get_msg(&self) -> &str {
-            //TODO: maybe use something like https://github.com/rodrimati1992/const_format_crates/  like "concatcp: Concatenates integers, bool, char, and &str constants into a &'static str constant." instead of concat!()
-            let slice = std::str::from_utf8(&self.msg[..self.msg_len]).unwrap_or(concat!(
+            //itisprocmacrosonoTODO: maybe use something like https://github.com/rodrimati1992/const_format_crates/  like "concatcp: Concatenates integers, bool, char, and &str constants into a &'static str constant." instead of concat!()
+            let slice = std::str::from_utf8(&self.msg[..self.msg_len]).unwrap_or(
+                concat!(
                 "<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",
                 //stringify!(SIZE),//this is "SIZE" lol
-                SIZE, // expected a literal only literals (like `"foo"`, `-42` and `3.14`) can be passed to `concat!()`
+                //FIXME: can't put SIZE here without proc macros looks like
+                //SIZE, // expected a literal only literals (like `"foo"`, `-42` and `3.14`) can be passed to `concat!()`
                 ">>"
             ));
             slice
