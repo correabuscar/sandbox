@@ -215,14 +215,6 @@ mod my_error_things {
     }//macro
 
     impl MyError {
-        //pub const fn variant_name_only(&self) -> &str {
-        //    //FIXME: use this macro /home/user/sandbox/rust/05_sandbox/enum/enum_variant_name_via_macro_fn
-        //    match self {
-        //        MyError::AlreadyBorrowedOrRecursingError {..} => "AlreadyBorrowedOrRecursingError",
-        //        MyError::TimeoutError {..} => "TimeoutError",
-        //    }
-        //}
-
         pub fn variant_name_full(&self) -> crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE> {
             //let type_name = std::any::type_name::<Self>();/* error_propagation_with_own_msg_and_location::my_error_things::MyError */
             //let type_name= std::any::type_name_of_val(self); /* same ^ */
@@ -235,7 +227,7 @@ mod my_error_things {
             //    std::intrinsics::variant_name(std::mem::discriminant(self))
             //};
             //let variant_name= std::any::type_name_of_val(self);
-            let variant_name=self.variant_name_as_str();
+            let variant_name=self.variant_name_as_str();//made by enum_str! macro
             //self.as_str();
             //let fixed=crate::format_into_buffer!("{}::{}", type_name, variant_name).get_msg();/* E0716: temporary value dropped while borrowed consider using a `let` binding to create a longer lived value */
             let fixed: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE>=crate::format_into_buffer!("{}::{}", type_name, variant_name);
@@ -407,7 +399,7 @@ mod static_noalloc_msg {
             //write!(f, "{}", slice)
             //FIXME: use noalloc buffer for the struct name? to not hardcode it in &str, or macro_rules!
             //cantFIXME: stringify!(SIZE) was wrong anyway, lol!
-            f.debug_struct(concat!("NoAllocFixedLenMessageOfPreallocatedSize<",
+            f.debug_struct(concat!(stringify!(NoAllocFixedLenMessageOfPreallocatedSize),"::<",
                     //stringify!(SIZE),
                     ">"))
                 .field("msg", &slice)
@@ -423,9 +415,12 @@ mod static_noalloc_msg {
     impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         pub fn get_msg(&self) -> &str {
             //itisprocmacrosonoTODO: maybe use something like https://github.com/rodrimati1992/const_format_crates/  like "concatcp: Concatenates integers, bool, char, and &str constants into a &'static str constant." instead of concat!()
+            //TODO: use this /home/user/sandbox/rust/05_sandbox/strings/concat_strings_on_stack/concat_strings_and_a_num_const
             let slice = std::str::from_utf8(&self.msg[..self.msg_len]).unwrap_or(
                 concat!(
-                "<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",
+                "<invalid UTF-8 in this instance of ",
+                stringify!(NoAllocFixedLenMessageOfPreallocatedSize),
+                "::<",
                 //stringify!(SIZE),//this is "SIZE" lol
                 //FIXME: can't put SIZE here without proc macros looks like
                 //SIZE, // expected a literal only literals (like `"foo"`, `-42` and `3.14`) can be passed to `concat!()`
@@ -517,7 +512,7 @@ So, in summary, `format_args!` itself does not allocate memory on the heap. Howe
         #[must_use] // can't apply it to the expression 'ret_type'
         #[inline(always)]
         fn ensure_used<T>(t: T) -> T { t }
-        //#[deny(unused_must_use)] //XXX: has no effect here! but rather, only at call sites!
+        //#[deny(unused_must_use)] //XXX: has no effect here! but rather, only at call sites!(which this may seem like one, but doesn't count if it's in macro, it has to be at macro call site!)
         ensure_used(ret_type) /*XXX: if u see this, it's an error at macro invocation site, not inside the macro! you've to use the return of the macro!*/
         //it errors here: ^ unused_must_use: use `let _ = ...` to ignore the resulting value: `let _ = `, `;`
 
