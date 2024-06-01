@@ -150,7 +150,6 @@ macro_rules! enum_str {
 }
 
 mod my_error_things {
-    include!(concat!(env!("OUT_DIR"), "/project_dir.rs")); //gets me 'PROJECT_DIR'
 
     //const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 6;
     pub const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 4096; //one kernel page?!
@@ -171,8 +170,7 @@ mod my_error_things {
             write!(
                 f,
                 "{}:{}:{}",
-                file_without_prefix(self.file),
-                //self.file,
+                self.file,
                 self.line,
                 self.column
             )
@@ -328,14 +326,6 @@ mod my_error_things {
 //            borrow_error
 //        }
 //    }
-
-    fn file_without_prefix(file: &str) -> &str {
-        // Remove the prefix of PROJECT_DIR from the file field
-        match file.strip_prefix(PROJECT_DIR) {
-            Some(suffix) => suffix,
-            None => file,
-        }
-    }
 
     impl fmt::Display for MyError {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
