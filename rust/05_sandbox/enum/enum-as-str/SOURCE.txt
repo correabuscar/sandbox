@@ -1,0 +1,5 @@
+this is from: https://github.com/DanielKeep/rust-parse-generics
+it's not on crates.io hence why I had to copy it here to can test it outside
+of that project dir
+
+see ../enum-as-str-test

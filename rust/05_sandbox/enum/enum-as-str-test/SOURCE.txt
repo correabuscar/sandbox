@@ -1,0 +1,10 @@
+this is from: https://github.com/DanielKeep/rust-parse-generics
+it's not on crates.io hence why I had to copy it here to can test it outside
+of that project dir
+
+that just shows that it's possible to do, albeit mind numbindly complicated to
+write with macro_rules only, instead of proc macros
+
+but the repo itself is a bit outdated and fails with certain enum definitions
+like: discriminants (=value) aren't supported it seems.
+and there's an error about "record"
