@@ -421,7 +421,8 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                 //TODO: don't get starved
                 //let atomic_value: &AtomicU64 = &self.before[index];
                 //step1of3:
-                match self.before[index].compare_exchange(
+                //doneTODO: use compare_exchange_weak here and replace the expected returns for Err I guess; as to why it's mainly for ARM, see from minute 50 in this https://www.youtube.com/watch?v=rMGWeSjctlY
+                match self.before[index].compare_exchange_weak(
                     expected,
                     new_value,
                     Ordering::Release,
@@ -479,7 +480,8 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                         return (false,Some(mut_ref_to_value));//self.values[index]));
                     },//the Ok variant
                     Err(what_was) => {
-                        assert_ne!(what_was, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(8)");
+                        //XXX: don't assert check here because we used compare_exchange_weak which means we it could've failed even if the comparison succeeded, thus it failed on the store part, and thus the prev. value could've been the same one as expected.
+                        //assert_ne!(what_was, expected,"impossible, rust/atomics are broken on this platform, or we coded the logic of our program wrongly(8)");//due to compare_exchange_weak this 'what_was' can be 'expected' as well as something else.
                         if start_time.elapsed() >= timeout {
                             // Timeout reached
                             return (false,None);//TODO: return Result? 2of2 TimeoutError(Duration, tid:u64)
@@ -492,8 +494,11 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
             if start_time.elapsed() >= timeout {
                 return (false,None); // Timeout reached
             };
+
+            //else spin, FIXME: don't so spinlocks? if this is what this is :))
             // Sleep for a short duration before retrying
             std::thread::sleep(Self::SLEEP_TIME_BEFORE_RETRYING);
+            std::thread::yield_now();
             //TODO: put it to sleep until another thread releases any array element? or timeout is reached.
         }
     } //fn
