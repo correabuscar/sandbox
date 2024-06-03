@@ -1,5 +1,5 @@
 //#![feature(thread_id_value)]
-
+//TODO: test this with loom https://github.com/tokio-rs/loom
 
 //pub mod std {
 //    pub use crate as std;
@@ -37,7 +37,7 @@ pub struct NoHeapAllocThreadLocal<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS
     after: [AtomicU64; MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS],
 
     //XXX: actually do we really need this to be !Send ?
-    //okTODO: test what happens if we borrow a value then send the whole struct to another thread, what happens to the borrowed which is held after the send? the send shouldn't be allowed there i'd guess; ok we can't because we tied the returned borrow_mut() to self, so it knows &self is borrowed and won't send it to another thread while it's borrowed. TODO: wait, so if &self is seen as borrowed in this thread, is it seen as borrowed in any other thread? (when it's a global static)
+    //okTODO: test what happens if we borrow a value then send the whole struct to another thread, what happens to the borrowed which is held after the send? the send shouldn't be allowed there i'd guess; ok we can't because we tied the returned borrow_mut() to self, so it knows &self is borrowed and won't send it to another thread while it's borrowed. noTODO: wait, so if &self is seen as borrowed in this thread, is it seen as borrowed in any other thread? (when it's a global static); no.
 
     //"Send: A type is Send if it is safe to transfer the ownership of a value of that type to another thread. This means you can move the value from one thread to another."
     //trying to impl !Send (below) failed due to needing to add `#![feature(negative_impls)]` to the crate attributes to enable,
@@ -101,6 +101,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> Drop for NoHeapAl
             //ok even if it wasn't set, the RefCell::new(None) still has to be dropped,
             //we've to drop the RefCell, else nothing else will drop it after.
             eprintln!("Dropping element at index '{}'", index);//FIXME: remove this
+            //TODO: since I'm dropping T here and can happen on any thread, or should we say, any thread could've put that T in there and would be dropped by main thread, then doesn't T need to be Send? unclear.
             unsafe { ManuallyDrop::drop(elem) }
             //self.values[index]=unsafe { std::mem::zeroed() };
             //XXX: wait, why did I need to manually drop? oh it's because of the init: the const fn new() to be 'const fn' and make a new RefCell must not drop the prev. value which was just a mem::zeroed() RefCell not a real one.
@@ -425,7 +426,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                 match self.before[index].compare_exchange_weak(
                     expected,
                     new_value,
-                    Ordering::Release,
+                    Ordering::Release,//FIXME: did I want AcqRel here? or just Acquire? unclear, i must read more!
                     Ordering::Acquire,
                 ) {
                     Ok(what_was) => {
@@ -495,11 +496,12 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                 return (false,None); // Timeout reached
             };
 
-            //else spin, FIXME: don't so spinlocks? if this is what this is :))
+            //else spin, FIXME: don't so spinlocks? i guess it's ok here, unless we can todo the wait until another thread releases an array element, or timeout, whichever gets hit first.
             // Sleep for a short duration before retrying
             std::thread::sleep(Self::SLEEP_TIME_BEFORE_RETRYING);
             std::thread::yield_now();
-            //TODO: put it to sleep until another thread releases any array element? or timeout is reached.
+            // XXX: seems this spin_loop hint isn't appropriate here: https://doc.rust-lang.org/std/hint/fn.spin_loop.html  because yield_now() is better, however having a sleep might be good too, because otherwise too much cpu might be used during the wait.
+            //TODO: put it to sleep until another thread releases any array element? or timeout is reached. Possibly by park/unpark ? todo: read about that! since i know nothing atm.
         }
     } //fn
 
@@ -559,9 +561,9 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
         }
         //FIXME: pthread_self(or well pthread_create really) doesn't guarantee thread id is unique during the process' lifetime, only during the thread's lifetime.
         let current_thread_id: pthread_t= unsafe { pthread_self() };
-        assert!(current_thread_id > 0,"impossible");//XXX: is it still impossible tho?
+        assert!(current_thread_id > 0,"impossible");//TODO: is it still impossible tho?
         let current_tid:pid_t = unsafe { gettid() };
-        assert!(current_tid > 0,"impossible");//XXX: is it impossible tho?
+        assert!(current_tid > 0,"impossible");//TODO: is it impossible tho?
         //let mixed:u64 = overwrite_msb_u64_with_i32(current_thread_id, current_tid);
         let mixed:u64 = xor_msb_u64_with_reversed_i32(current_thread_id, current_tid);
         //TODO: keep track of all seen 'mixed', and warn if reuse, but how do we know?! this isn't called only once!
