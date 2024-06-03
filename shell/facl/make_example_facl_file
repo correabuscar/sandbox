@@ -1,0 +1,7 @@
+# Create a test file
+touch testfile.txt
+
+# Set an ACL on the test file
+setfacl -m u:user:rw testfile.txt
+getfacl testfile.txt
+

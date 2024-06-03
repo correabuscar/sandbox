@@ -1,0 +1,2 @@
+anything that's ran in a shell but it's not shell specific
+so getfacl/setfacl ran in bash would fit
