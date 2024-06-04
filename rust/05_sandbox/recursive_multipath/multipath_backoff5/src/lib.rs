@@ -426,7 +426,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                 match self.before[index].compare_exchange_weak(
                     expected,
                     new_value,
-                    Ordering::Release,//FIXME: did I want AcqRel here? or just Acquire? unclear, i must read more!
+                    Ordering::Release,//FIXME: did I want AcqRel here? or just Acquire? unclear, i must read more! unclear, but here's an example that did it same way: https://marabos.nl/atomics/memory-ordering.html#example-lazy-initialization-with-indirection   Well, maybe for this 'before' it's too strong, but for the 'after' below it's definitely good.
                     Ordering::Acquire,
                 ) {
                     Ok(what_was) => {
@@ -466,7 +466,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                         match self.after[index].compare_exchange(
                             expected,
                             new_value,
-                            Ordering::Release,
+                            Ordering::Release, // so I did these two orderings, for this 'after', right, because it's done here also: https://marabos.nl/atomics/memory-ordering.html#example-lazy-initialization-with-indirection
                             Ordering::Acquire,
                             ) {
                             Ok(what_was) => {
