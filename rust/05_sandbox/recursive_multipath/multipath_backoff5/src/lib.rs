@@ -501,7 +501,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
             std::thread::sleep(Self::SLEEP_TIME_BEFORE_RETRYING);
             std::thread::yield_now();
             // XXX: seems this spin_loop hint isn't appropriate here: https://doc.rust-lang.org/std/hint/fn.spin_loop.html  because yield_now() is better, however having a sleep might be good too, because otherwise too much cpu might be used during the wait.
-            //TODO: put it to sleep until another thread releases any array element? or timeout is reached. Possibly by park/unpark ? todo: read about that! since i know nothing atm.
+            //TODO: put it to sleep until another thread releases any array element? or timeout is reached. Possibly by park/unpark ? todo: read about that! since i know nothing atm. Ok not that since it requires thread handle(s), but maybe condition variables, read about that! ok condvar needs to use mutex, but on the bright side: "Both thread::park() and Condvar::wait() also have a variant with a time limit: thread::park_timeout() and Condvar::wait_timeout(). These take a Duration as an extra argument, which is the time after which it should give up waiting for a notification and unconditionally wake up. " - src: above the Summary url https://marabos.nl/atomics/basics.html#summary
         }
     } //fn
 
