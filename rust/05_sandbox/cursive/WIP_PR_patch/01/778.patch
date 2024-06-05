@@ -1,0 +1,511 @@
+From 6ace6aa0da09147fe05790353b61806ec49d3b1c Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Thu, 11 Apr 2024 10:43:43 +0200
+Subject: [PATCH 01/14] make it work with ncurses-rs v6
+
+but ncurses-rs needs the changes in this PR first:
+https://github.com/jeaye/ncurses-rs/pull/218
+(except the .gitignore and build.rs changes from there)
+---
+ cursive/Cargo.toml               |  2 +-
+ cursive/src/backends/curses/n.rs | 34 ++++++++++++++++----------------
+ 2 files changed, 18 insertions(+), 18 deletions(-)
+
+diff --git a/cursive/Cargo.toml b/cursive/Cargo.toml
+index 3a26f0b3..8e449fe5 100644
+--- a/cursive/Cargo.toml
++++ b/cursive/Cargo.toml
+@@ -33,7 +33,7 @@ version = "2"
+ [dependencies.ncurses]
+ features = ["wide"]
+ optional = true
+-version = "5.99.0"
++version = "6"
+ 
+ [dependencies.pancurses]
+ features = ["wide"]
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index ac571b78..d9f63896 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -353,28 +353,28 @@ impl backend::Backend for Backend {
+ 
+     fn set_effect(&self, effect: Effect) {
+         let style = match effect {
+-            Effect::Reverse => ncurses::A_REVERSE(),
+-            Effect::Simple => ncurses::A_NORMAL(),
+-            Effect::Dim => ncurses::A_DIM(),
+-            Effect::Bold => ncurses::A_BOLD(),
+-            Effect::Blink => ncurses::A_BLINK(),
+-            Effect::Italic => ncurses::A_ITALIC(),
+-            Effect::Strikethrough => ncurses::A_NORMAL(),
+-            Effect::Underline => ncurses::A_UNDERLINE(),
++            Effect::Reverse => ncurses::A_REVERSE,
++            Effect::Simple => ncurses::A_NORMAL,
++            Effect::Dim => ncurses::A_DIM,
++            Effect::Bold => ncurses::A_BOLD,
++            Effect::Blink => ncurses::A_BLINK,
++            Effect::Italic => ncurses::A_ITALIC,
++            Effect::Strikethrough => ncurses::A_NORMAL,
++            Effect::Underline => ncurses::A_UNDERLINE,
+         };
+         ncurses::attron(style);
+     }
+ 
+     fn unset_effect(&self, effect: Effect) {
+         let style = match effect {
+-            Effect::Reverse => ncurses::A_REVERSE(),
+-            Effect::Simple => ncurses::A_NORMAL(),
+-            Effect::Dim => ncurses::A_DIM(),
+-            Effect::Bold => ncurses::A_BOLD(),
+-            Effect::Blink => ncurses::A_BLINK(),
+-            Effect::Italic => ncurses::A_ITALIC(),
+-            Effect::Strikethrough => ncurses::A_NORMAL(),
+-            Effect::Underline => ncurses::A_UNDERLINE(),
++            Effect::Reverse => ncurses::A_REVERSE,
++            Effect::Simple => ncurses::A_NORMAL,
++            Effect::Dim => ncurses::A_DIM,
++            Effect::Bold => ncurses::A_BOLD,
++            Effect::Blink => ncurses::A_BLINK,
++            Effect::Italic => ncurses::A_ITALIC,
++            Effect::Strikethrough => ncurses::A_NORMAL,
++            Effect::Underline => ncurses::A_UNDERLINE,
+         };
+         ncurses::attroff(style);
+     }
+@@ -536,7 +536,7 @@ fn initialize_keymap() -> HashMap<i32, Event> {
+     }
+ 
+     // Ncurses provides a F1 variable, but no modifiers
+-    add_fn(ncurses::KEY_F1, Event::Key, &mut map);
++    add_fn(ncurses::KEY_F(1), Event::Key, &mut map);
+     add_fn(277, Event::Shift, &mut map);
+     add_fn(289, Event::Ctrl, &mut map);
+     add_fn(301, Event::CtrlShift, &mut map);
+
+From eb7f187babe0b47691dcaa738a1ffb719511f086 Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Thu, 11 Apr 2024 18:38:29 +0200
+Subject: [PATCH 02/14] get rid of a warning - it's ok to unwrap() here
+
+and we unwrap() to panic on any new Err returned
+from a future ncurses implementation change.
+
+newterm https://github.com/jeaye/ncurses-rs/blob/3aa22bc279e4929e3ab69d49f75a18eda3e431e9/src/lib.rs#L1023-L1029
+CString::new https://doc.rust-lang.org/std/ffi/struct.CString.html#method.new
+---
+ cursive/src/backends/curses/n.rs | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index d9f63896..8da31a1a 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -110,7 +110,12 @@ impl Backend {
+             let path = CString::new(output_path).unwrap();
+             unsafe { libc::fopen(path.as_ptr(), mode.as_ptr()) }
+         };
+-        ncurses::newterm(None, output, input);
++        let _ = ncurses::newterm(None, output, input).unwrap();
++        // unwrap() is guaranteed not* to panic here  ^  unless the underlaying
++        // ncurses-rs implementation changes API in the future and returns Err
++        // for other reasons as well, which we do want to catch/panic due to.
++        // *because no string is being passed as the first arg. to newterm
++
+         // Enable keypad (like arrows)
+         ncurses::keypad(ncurses::stdscr(), true);
+ 
+
+From bbefb8e42f78865a4a1333d0b5fcb530cce3e27a Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Thu, 11 Apr 2024 20:39:37 +0200
+Subject: [PATCH 03/14] some \0 aka nul bytes in &str are deleted ...
+
+...before sending the &str to ncurses backend,
+this is done for cursive's print_at() and print_at_rep() only!
+otherwise, nothing would get printed, silently.
+
+Why delete \0 instead of replace with eg. space?
+this explains it best:
+https://github.com/gyscos/cursive/pull/778#discussion_r1613859129
+
+This also fixes warnings about unused Result.
+
+Closes: #780
+---
+ cursive/src/backends/curses/n.rs | 40 ++++++++++++++++++++++++++++----
+ 1 file changed, 36 insertions(+), 4 deletions(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index 8da31a1a..4197ec8c 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -6,6 +6,7 @@ pub use ncurses;
+ use log::{debug, warn};
+ use ncurses::mmask_t;
+ 
++use std::borrow::Cow;
+ use std::cell::{Cell, RefCell};
+ use std::ffi::CString;
+ use std::fs::File;
+@@ -398,22 +399,53 @@ impl backend::Backend for Backend {
+         ncurses::refresh();
+     }
+ 
+-    fn print_at(&self, pos: Vec2, text: &str) {
+-        ncurses::mvaddstr(pos.y as i32, pos.x as i32, text);
++    fn print_at<'a>(&self, pos: Vec2, text: &'a str) {
++        // Remove '\0' from &str or else nothing would get printed
++        // As for why delete instead of replace with eg. space, see:
++        // https://github.com/gyscos/cursive/pull/778#discussion_r1613859129
++        let text = &delete_nuls(text);
++        let len = text.len() as i32;
++        // Ignore the value to avoid warning: unused `Result` that must be used
++        let _ = ncurses::mvaddnstr(pos.y as i32, pos.x as i32, text.as_ref(), len);
+     }
+ 
+     fn print_at_rep(&self, pos: Vec2, repetitions: usize, text: &str) {
++        // Remove '\0' from &str or else nothing would get printed
++        let text = &delete_nuls(text);
++        let len = text.len() as i32;
+         if repetitions > 0 {
+-            ncurses::mvaddstr(pos.y as i32, pos.x as i32, text);
++            let _ = ncurses::mvaddnstr(pos.y as i32, pos.x as i32, text, len);
+             let mut dupes_left = repetitions - 1;
+             while dupes_left > 0 {
+-                ncurses::addstr(text);
++                let _ = ncurses::addnstr(text, len);
+                 dupes_left -= 1;
+             }
+         }
+     }
+ }
+ 
++#[inline(always)]
++fn delete_nuls<'a>(text: &'a str) -> Cow<'a, str> {
++    let text: Cow<'a, str> = if text.contains('\0') {
++        Cow::Owned(text.replace('\0', ""))
++    } else {
++        Cow::Borrowed(text)
++    };
++    text
++}
++
++#[test]
++fn test_print_at_rep_nul_char_in_string() {
++    let text = "Some\0thing with \0nul\0s\0 in \0it";
++    let expected = "Something with nuls in it";
++    assert_eq!(expected, delete_nuls(text));
++
++    let backend = Backend::init().unwrap();
++    // These don't panic, they replace the \0-es with nothing
++    backend.print_at(Vec2::new(10, 10), "abc\0de\0f");
++    backend.print_at_rep(Vec2::new(10, 10), 10, "abc\0de\0f");
++}
++
+ /// Returns the Key enum corresponding to the given ncurses event.
+ fn get_mouse_button(bare_event: i32) -> MouseButton {
+     match bare_event {
+
+From 2f1238848f9e46a8169f854b88aece576a760768 Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Thu, 11 Apr 2024 21:36:41 +0200
+Subject: [PATCH 04/14] fix select_test's suggestion on how to run it
+
+--bin might've worked on cargo cca. 2018 ? unsure
+but --example works today
+---
+ cursive/examples/select_test.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cursive/examples/select_test.rs b/cursive/examples/select_test.rs
+index 823d0269..4848f186 100644
+--- a/cursive/examples/select_test.rs
++++ b/cursive/examples/select_test.rs
+@@ -4,7 +4,7 @@
+ // cargo test --example select_test -- --nocapture
+ 
+ fn main() {
+-    print!("To run this example call:\n$ cargo test --bin select_test -- --nocapture\n");
++    println!("To run this example call:\n$ cargo test --example select_test -- --nocapture");
+ }
+ 
+ #[cfg(test)]
+
+From 840e725832611bc682a58cd07dec30e63e741d6c Mon Sep 17 00:00:00 2001
+From: Emanuel Czirai <correabuscar+github_pwdrsts_accrelnotifs@gmail.com>
+Date: Tue, 28 May 2024 17:13:58 +0200
+Subject: [PATCH 05/14] bubble up this newterm error
+
+as suggested here: https://github.com/gyscos/cursive/pull/778#discussion_r1617327653
+
+Co-authored-by: Alexandre Bury <alexandre.bury@gmail.com>
+---
+ cursive/src/backends/curses/n.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index 4197ec8c..e7a25ccb 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -111,7 +111,7 @@ impl Backend {
+             let path = CString::new(output_path).unwrap();
+             unsafe { libc::fopen(path.as_ptr(), mode.as_ptr()) }
+         };
+-        let _ = ncurses::newterm(None, output, input).unwrap();
++        ncurses::newterm(None, output, input).map_err(|_| io::Error::new(io::ErrorKind::Other, "could not call newterm"))?;
+         // unwrap() is guaranteed not* to panic here  ^  unless the underlaying
+         // ncurses-rs implementation changes API in the future and returns Err
+         // for other reasons as well, which we do want to catch/panic due to.
+
+From 6a4678aa57ad5c83f2181148c62f083c9f58aaa9 Mon Sep 17 00:00:00 2001
+From: Emanuel Czirai <correabuscar+github_pwdrsts_accrelnotifs@gmail.com>
+Date: Tue, 28 May 2024 17:14:44 +0200
+Subject: [PATCH 06/14] remove unnecessary ref
+
+as suggested here: https://github.com/gyscos/cursive/pull/778#discussion_r1617328588
+
+Co-authored-by: Alexandre Bury <alexandre.bury@gmail.com>
+---
+ cursive/src/backends/curses/n.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index e7a25ccb..0ed95449 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -403,7 +403,7 @@ impl backend::Backend for Backend {
+         // Remove '\0' from &str or else nothing would get printed
+         // As for why delete instead of replace with eg. space, see:
+         // https://github.com/gyscos/cursive/pull/778#discussion_r1613859129
+-        let text = &delete_nuls(text);
++        let text = delete_nuls(text);
+         let len = text.len() as i32;
+         // Ignore the value to avoid warning: unused `Result` that must be used
+         let _ = ncurses::mvaddnstr(pos.y as i32, pos.x as i32, text.as_ref(), len);
+
+From 989a553c26d4cdd63dcd38cda9f2761e6121dadf Mon Sep 17 00:00:00 2001
+From: Emanuel Czirai <correabuscar+github_pwdrsts_accrelnotifs@gmail.com>
+Date: Tue, 28 May 2024 17:21:01 +0200
+Subject: [PATCH 07/14] remove unnecessary temp var
+
+as suggested here: https://github.com/gyscos/cursive/pull/778#discussion_r1617330671
+
+Co-authored-by: Alexandre Bury <alexandre.bury@gmail.com>
+---
+ cursive/src/backends/curses/n.rs | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index 0ed95449..a39e476b 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -426,12 +426,11 @@ impl backend::Backend for Backend {
+ 
+ #[inline(always)]
+ fn delete_nuls<'a>(text: &'a str) -> Cow<'a, str> {
+-    let text: Cow<'a, str> = if text.contains('\0') {
++    if text.contains('\0') {
+         Cow::Owned(text.replace('\0', ""))
+     } else {
+         Cow::Borrowed(text)
+-    };
+-    text
++    }
+ }
+ 
+ #[test]
+
+From cb6c2e7521b337911acfce09e8e5c234abc1f43b Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Tue, 28 May 2024 17:38:48 +0200
+Subject: [PATCH 08/14] leave inlining to the compiler
+
+as suggested here: https://github.com/gyscos/cursive/pull/778#pullrequestreview-2082943777
+---
+ cursive/src/backends/curses/n.rs | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index a39e476b..4297a001 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -424,7 +424,6 @@ impl backend::Backend for Backend {
+     }
+ }
+ 
+-#[inline(always)]
+ fn delete_nuls<'a>(text: &'a str) -> Cow<'a, str> {
+     if text.contains('\0') {
+         Cow::Owned(text.replace('\0', ""))
+
+From 076d13d677a94cd59e7e43e08b80d666e0653f65 Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Tue, 28 May 2024 18:30:08 +0200
+Subject: [PATCH 09/14] remove obsolete comments
+
+they don't apply anymore, as what was there before got changed
+---
+ cursive/src/backends/curses/n.rs | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index 4297a001..f9a774c2 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -112,10 +112,6 @@ impl Backend {
+             unsafe { libc::fopen(path.as_ptr(), mode.as_ptr()) }
+         };
+         ncurses::newterm(None, output, input).map_err(|_| io::Error::new(io::ErrorKind::Other, "could not call newterm"))?;
+-        // unwrap() is guaranteed not* to panic here  ^  unless the underlaying
+-        // ncurses-rs implementation changes API in the future and returns Err
+-        // for other reasons as well, which we do want to catch/panic due to.
+-        // *because no string is being passed as the first arg. to newterm
+ 
+         // Enable keypad (like arrows)
+         ncurses::keypad(ncurses::stdscr(), true);
+
+From 0c70b9cfd46a8c9e2307e0bfee6c42d6be111f18 Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Tue, 28 May 2024 18:32:46 +0200
+Subject: [PATCH 10/14] make 'text' be a Cow, not a &Cow
+
+as suggested here: https://github.com/gyscos/cursive/pull/778#discussion_r1617542882
+---
+ cursive/src/backends/curses/n.rs | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index f9a774c2..c9eda3d7 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -407,13 +407,13 @@ impl backend::Backend for Backend {
+ 
+     fn print_at_rep(&self, pos: Vec2, repetitions: usize, text: &str) {
+         // Remove '\0' from &str or else nothing would get printed
+-        let text = &delete_nuls(text);
++        let text = delete_nuls(text);
+         let len = text.len() as i32;
+         if repetitions > 0 {
+-            let _ = ncurses::mvaddnstr(pos.y as i32, pos.x as i32, text, len);
++            let _ = ncurses::mvaddnstr(pos.y as i32, pos.x as i32, text.as_ref(), len);
+             let mut dupes_left = repetitions - 1;
+             while dupes_left > 0 {
+-                let _ = ncurses::addnstr(text, len);
++                let _ = ncurses::addnstr(text.as_ref(), len);
+                 dupes_left -= 1;
+             }
+         }
+
+From 4c1d245c0a0867ba45fbce54eb7c0c364c962162 Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Tue, 28 May 2024 18:36:00 +0200
+Subject: [PATCH 11/14] preserve original error in the panic report
+
+otherwise, we'd not know why ncurses-rs newterm errored
+---
+ cursive/src/backends/curses/n.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index c9eda3d7..4cec1279 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -111,7 +111,7 @@ impl Backend {
+             let path = CString::new(output_path).unwrap();
+             unsafe { libc::fopen(path.as_ptr(), mode.as_ptr()) }
+         };
+-        ncurses::newterm(None, output, input).map_err(|_| io::Error::new(io::ErrorKind::Other, "could not call newterm"))?;
++        ncurses::newterm(None, output, input).map_err(|e| io::Error::new(io::ErrorKind::Other, format!("could not call newterm: {}",e)))?;
+ 
+         // Enable keypad (like arrows)
+         ncurses::keypad(ncurses::stdscr(), true);
+
+From 00297ae0dc9c09c92a04046a24bb25de4da0d5b4 Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Tue, 28 May 2024 19:00:27 +0200
+Subject: [PATCH 12/14] can elide this fn lifetime
+
+---
+ cursive/src/backends/curses/n.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index 4cec1279..884fb229 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -395,7 +395,7 @@ impl backend::Backend for Backend {
+         ncurses::refresh();
+     }
+ 
+-    fn print_at<'a>(&self, pos: Vec2, text: &'a str) {
++    fn print_at(&self, pos: Vec2, text: &str) {
+         // Remove '\0' from &str or else nothing would get printed
+         // As for why delete instead of replace with eg. space, see:
+         // https://github.com/gyscos/cursive/pull/778#discussion_r1613859129
+
+From 10c632b93edfa76c252a671b1a5c8fcf1ea1534a Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Tue, 28 May 2024 19:03:12 +0200
+Subject: [PATCH 13/14] use & instead of .as_ref()
+
+as suggested here: https://github.com/gyscos/cursive/pull/778#discussion_r1617634324
+---
+ cursive/src/backends/curses/n.rs | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index 884fb229..ed5fcf67 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -402,7 +402,7 @@ impl backend::Backend for Backend {
+         let text = delete_nuls(text);
+         let len = text.len() as i32;
+         // Ignore the value to avoid warning: unused `Result` that must be used
+-        let _ = ncurses::mvaddnstr(pos.y as i32, pos.x as i32, text.as_ref(), len);
++        let _ = ncurses::mvaddnstr(pos.y as i32, pos.x as i32, &text, len);
+     }
+ 
+     fn print_at_rep(&self, pos: Vec2, repetitions: usize, text: &str) {
+@@ -410,10 +410,10 @@ impl backend::Backend for Backend {
+         let text = delete_nuls(text);
+         let len = text.len() as i32;
+         if repetitions > 0 {
+-            let _ = ncurses::mvaddnstr(pos.y as i32, pos.x as i32, text.as_ref(), len);
++            let _ = ncurses::mvaddnstr(pos.y as i32, pos.x as i32, &text, len);
+             let mut dupes_left = repetitions - 1;
+             while dupes_left > 0 {
+-                let _ = ncurses::addnstr(text.as_ref(), len);
++                let _ = ncurses::addnstr(&text, len);
+                 dupes_left -= 1;
+             }
+         }
+
+From 983b1265b771e23fbeb8ef7ace563d180aa5e7ca Mon Sep 17 00:00:00 2001
+From: Emanuel Czirai <correabuscar+github_pwdrsts_accrelnotifs@gmail.com>
+Date: Tue, 28 May 2024 19:04:55 +0200
+Subject: [PATCH 14/14] directly include the variable name in the format!
+ expression
+
+as suggested here: https://github.com/gyscos/cursive/pull/778#discussion_r1617636632
+
+Co-authored-by: Alexandre Bury <alexandre.bury@gmail.com>
+---
+ cursive/src/backends/curses/n.rs | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index ed5fcf67..cccb6966 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -111,7 +111,9 @@ impl Backend {
+             let path = CString::new(output_path).unwrap();
+             unsafe { libc::fopen(path.as_ptr(), mode.as_ptr()) }
+         };
+-        ncurses::newterm(None, output, input).map_err(|e| io::Error::new(io::ErrorKind::Other, format!("could not call newterm: {}",e)))?;
++        ncurses::newterm(None, output, input).map_err(|e| {
++            io::Error::new(io::ErrorKind::Other, format!("could not call newterm: {e}"))
++        })?;
+ 
+         // Enable keypad (like arrows)
+         ncurses::keypad(ncurses::stdscr(), true);
