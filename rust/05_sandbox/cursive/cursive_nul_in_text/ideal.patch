@@ -1,0 +1,112 @@
+diff --git a/cursive-core/src/buffer.rs b/cursive-core/src/buffer.rs
+index fb772b9..e2e5849 100644
+--- a/cursive-core/src/buffer.rs
++++ b/cursive-core/src/buffer.rs
+@@ -183,10 +183,16 @@ impl PrintBuffer {
+         // TODO: Use some WithWidth(&str, usize) to not re-compute width a thousand times
+         for g in text.graphemes(true) {
+             let width = g.width();
++            //if (width == 0) || ("\0" == g) {
+             if width == 0 {
+                 continue;
+             }
+-            self.set_cell(pos, g, CellWidth::from_usize(width), style);
++            if "\0" == g {
++                debug_assert_eq!(1,width,"\\0 should've had a width of 1");
++                self.set_cell(pos, "\u{fffd}", CellWidth::from_usize(width), style);
++            } else {
++                self.set_cell(pos, g, CellWidth::from_usize(width), style);
++            }
+             pos.x += width;
+         }
+     }
+diff --git a/cursive-core/src/utils/lines/spans/tests.rs b/cursive-core/src/utils/lines/spans/tests.rs
+index 73d2aa2..fb7ea5a 100644
+--- a/cursive-core/src/utils/lines/spans/tests.rs
++++ b/cursive-core/src/utils/lines/spans/tests.rs
+@@ -16,6 +16,12 @@ fn input() -> StyledString {
+     text
+ }
+ 
++#[test]
++fn test_nuls_have_width_1() {
++    use unicode_width::UnicodeWidthStr;
++    assert_eq!("\0".width(), 1, "nul chars should have width 1 since unicode-width 0.1.13, seen here: https://github.com/unicode-rs/unicode-width/commit/4efb1803faa054f1bea3c0457275ad3c8610170b#diff-2ad10836ccce5ac2056d5679cc92449d9ff9094d4ff5c5803f65b5dd1d52ef19R224");
++}
++
+ #[test]
+ fn test_next_line_char() {
+     use unicode_width::UnicodeWidthStr;
+diff --git a/cursive/Cargo.toml b/cursive/Cargo.toml
+index 8e449fe..ce89c0d 100644
+--- a/cursive/Cargo.toml
++++ b/cursive/Cargo.toml
+@@ -20,25 +20,28 @@ crossbeam-channel = "0.5"
+ cfg-if = "1"
+ unicode-segmentation = "1"
+ unicode-width = "0.1"
++#unicode-width = "=0.1.13"
+ lazy_static = "1"
+ libc = "0.2"
+ maplit = { version = "1.0", optional = true }
+ log = "0.4"
+ ahash = "0.8"
+ 
+-[dependencies.bear-lib-terminal]
+-optional = true
+-version = "2"
++#[dependencies.bear-lib-terminal]
++#optional = true
++#version = "2"
+ 
+ [dependencies.ncurses]
+ features = ["wide"]
+ optional = true
+ version = "6"
++path = "../../ncurses-rs"
+ 
+ [dependencies.pancurses]
+ features = ["wide"]
+ optional = true
+ version = "0.17"
++path = "../../pancurses"
+ 
+ [dependencies.termion]
+ optional = true
+@@ -51,7 +54,7 @@ version = "0.27"
+ [features]
+ doc-cfg = ["cursive_core/doc-cfg"]  # Enable doc_cfg, a nightly-only doc feature.
+ builder = ["cursive_core/builder"]
+-blt-backend = ["bear-lib-terminal"]
++#blt-backend = ["bear-lib-terminal"]
+ default = ["ncurses-backend"]
+ ncurses-backend = ["ncurses", "maplit"]
+ pancurses-backend = ["pancurses", "maplit"]
+diff --git a/cursive/examples/select_test.rs b/cursive/examples/select_test.rs
+index 4848f18..9a97b7e 100644
+--- a/cursive/examples/select_test.rs
++++ b/cursive/examples/select_test.rs
+@@ -40,6 +40,7 @@ pub mod tests {
+             // (We include the file at compile-time to avoid runtime read errors.)
+             let content = include_str!("assets/cities.txt");
+             select.add_all_str(content.lines());
++            select.add_item_str("short \0nul\0 1str");
+ 
+             // Sets the callback for when "Enter" is pressed.
+             select.set_on_submit(show_next_window);
+@@ -114,6 +115,15 @@ pub mod tests {
+         assert_eq!(screen.find_occurences("Some random string").len(), 0);
+     }
+ 
++    #[test]
++    fn nuls_become_replacement_char() {
++        let mut s = BasicSetup::new();
++        s.hit_keystroke(Key::End);
++        let screen = s.last_screen().unwrap();
++        s.dump_debug();
++        assert_eq!(screen.find_occurences("short \u{fffd}nul\u{FFFD} 1str").len(), 1, "nuls aka \\0 in strings are supposed to be deleted");
++    }
++
+     #[test]
+     fn interacts() {
+         let mut s = BasicSetup::new();

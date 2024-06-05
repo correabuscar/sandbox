@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 cursive = { path ="/home/user/1tmp/ncurses_things/cursive/cursive" }
+#cursive = { path ="/tmp/cursive/cursive" }
