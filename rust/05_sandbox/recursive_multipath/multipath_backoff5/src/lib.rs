@@ -423,6 +423,7 @@ impl<const MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS: usize, T> NoHeapAllocThread
                 //let atomic_value: &AtomicU64 = &self.before[index];
                 //step1of3:
                 //doneTODO: use compare_exchange_weak here and replace the expected returns for Err I guess; as to why it's mainly for ARM, see from minute 50 in this https://www.youtube.com/watch?v=rMGWeSjctlY
+                //TODO: apparently i could use fences and Relaxed orderings instead of MAX_CONCURRENTLY_USING_THREADS_AKA_SPOTS number of compare_exchange with stronger ordering than Relaxed! https://marabos.nl/atomics/memory-ordering.html#fences
                 match self.before[index].compare_exchange_weak(
                     expected,
                     new_value,
