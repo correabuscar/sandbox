@@ -114,6 +114,61 @@ impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
 
         Message { buffer, len }
     }
+
+    pub const fn from_utf8_lossy_2(input: &[u8]) -> Message<1024> {
+        const REPLACEMENT: &[u8] = b"\xEF\xBF\xBD"; // UTF-8 for replacement character U+FFFD
+        let mut buffer = [0u8; 1024];
+        let mut len = 0;
+
+        let mut i = 0;
+        while i < input.len() && len < buffer.len() {
+            let result = std::str::from_utf8(&input[i..]);//TODO: use this? should be same but maybe better?
+            match result {
+               Ok(valid) => {
+                    let valid_bytes = valid.as_bytes();
+                    if len + valid_bytes.len() > buffer.len() {
+                        break;
+                    }
+                    let mut j = 0;
+                    while j < valid_bytes.len() {
+                        buffer[len] = valid_bytes[j];
+                        len += 1;
+                        j += 1;
+                    }
+                    break;
+                }
+               Err(e) => {
+                    let valid_up_to = e.valid_up_to();
+                    let invalid_sequence_length = match e.error_len() {
+                        Some(len) => len,
+                        None => 1,
+                    };
+
+                    let mut j = 0;
+                    while j < valid_up_to {
+                        buffer[len] = input[i + j];
+                        len += 1;
+                        j += 1;
+                    }//while
+
+                    let mut k = 0;
+                    while k < REPLACEMENT.len() {
+                        if len < buffer.len() {
+                            buffer[len] = REPLACEMENT[k];
+                            len += 1;
+                        } else {
+                            break;
+                        }
+                        k += 1;
+                    }//while
+
+                    i += valid_up_to + invalid_sequence_length;
+                }
+            }//match
+        }//while
+
+        Message { buffer, len }
+    }
 }
 
 pub struct Message<const BUFFER_SIZE: usize> {
@@ -176,7 +231,7 @@ const fn copy_to_buf(buf: &mut [u8], i: usize, bytes: &[u8]) -> usize {
 
 fn main() {
     const MSG_44: Message<100> = NoAllocFixedLenMessageOfPreallocatedSize::<44>::get_message();
-    let message_44: &str = &*MSG_44;
+    let message_44: &str = &MSG_44;
     println!("{}", message_44);
     assert_eq!(
         message_44,
@@ -185,7 +240,12 @@ fn main() {
 
     let invalid_utf8 = b"Valid\xE2\x9D\xA4 text \x80\x90Invalid \xE2\x9D\xA4UTF-8";
     let msg = NoAllocFixedLenMessageOfPreallocatedSize::<0>::from_utf8_lossy(invalid_utf8);
-    let msg_str: &str = &*msg;
+    let msg_2 = NoAllocFixedLenMessageOfPreallocatedSize::<0>::from_utf8_lossy_2(invalid_utf8);
+    let msg_str: &str = &msg;
+    let msg_str_2: &str = &msg_2;
     println!("{}", msg_str);
+    println!("{}", msg_str_2);
     assert_eq!(msg_str, "Valid❤ text ��Invalid ❤UTF-8");
+    assert_eq!(msg_str_2, "Valid❤ text ��Invalid ❤UTF-8");
+    assert_eq!(msg_str_2, msg_str);
 }
