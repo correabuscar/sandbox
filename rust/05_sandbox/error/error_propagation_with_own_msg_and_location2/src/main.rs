@@ -272,7 +272,7 @@ mod my_error_things {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             let full=self.variant_name_full();
             //let full=full.get_msg();
-            let err=&full.get_err_msg();//TODO: this is proper ugly
+            let err=&full.get_invalid_utf8_msg_for_self();//TODO: this is proper ugly
             let full_as_str: &str = full.get_msg_as_str().unwrap_or(
                 //TODO: use 'e'
                 err
@@ -398,12 +398,12 @@ mod static_noalloc_msg {
             let result = self.get_msg_as_str();
 //            .unwrap_or_else(|e| {
 //                //TODO: use 'e'
-//                &self.get_err_msg()
+//                &self.get_invalid_utf8_msg_for_self()
 //            });
             match result {
                 Ok(slice) => write!(f, "{}", slice),
                 Err(err) => {
-                    let s:&str= &self.get_err_msg();
+                    let s:&str= &self.get_invalid_utf8_msg_for_self();
                     write!(f, "<{} actual err: {}>", s, err)
                 }
             }//match
@@ -413,7 +413,7 @@ mod static_noalloc_msg {
     impl<const SIZE: usize> std::fmt::Debug for NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             //let slice=std::str::from_utf8(&self.msg[..self.len]).unwrap_or(concat!("<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",stringify!(SIZE),">>"));
-            let err:&str=&self.get_err_msg();
+            let err:&str=&self.get_invalid_utf8_msg_for_self();
             let slice: &str = self.get_msg_as_str().unwrap_or(
                 //TODO: show 'e' too?
                 //TODO: show the msg as lossy?
@@ -519,7 +519,7 @@ mod static_noalloc_msg {
             ErrMessage { buffer, len }
         }
 
-        pub const fn get_err_msg(&self) -> ErrMessage<{ err_msg_max_buffer_size() }> {
+        pub const fn get_invalid_utf8_msg_for_self(&self) -> ErrMessage<{ err_msg_max_buffer_size() }> {
             let mut buffer = [0u8; err_msg_max_buffer_size()];
             let mut len = 0;
 
@@ -540,8 +540,13 @@ mod static_noalloc_msg {
         pub fn get_msg_as_str(&self) -> Result<&str, std::str::Utf8Error> {
             //itisprocmacrosonoTODO: maybe use something like https://github.com/rodrimati1992/const_format_crates/  like "concatcp: Concatenates integers, bool, char, and &str constants into a &'static str constant." instead of concat!()
             //okTODO: use this /home/user/sandbox/rust/05_sandbox/strings/concat_strings_on_stack/concat_strings_and_a_num_const or better: /home/user/sandbox/rust/05_sandbox/strings/concat_strings_on_stack/concat_strings_and_a_num_const_at_compiletime
-            std::str::from_utf8(&self.msg[..self.msg_len])
-//                let foo=self.get_err_msg();
+            //eprintln!("{:?}", &self.msg[..self.msg_len]);
+            //let s =
+                std::str::from_utf8(&self.msg[..self.msg_len])
+                //;
+            //eprintln!("{}", s.unwrap());
+            //s
+//                let foo=self.get_invalid_utf8_msg_for_self();
 //                &foo
 //            }
 //                concat!(
@@ -663,7 +668,7 @@ fn some_fn() -> MyResult<()> {
     let _inst = r.try_borrow_mut().map_err(|err| {
         crate::my_error!(
             crate::my_error_things::MyError::AlreadyBorrowedOrRecursingError,
-            crate::format_into_buffer!("Custom borrow error message with error code {}", 404),
+            crate::format_into_buffer!("Custom ·\u{b7}borrow error message with error code {}", 404),
             source: err,
         )
     })?;/*XXX: but we can forget to use '?' at the end there!*/
