@@ -68,7 +68,7 @@ impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
 
         let mut i = 0;
         while i < input.len() && len < buffer.len() {
-            //let result = std::str::from_utf8(&input[i..]);//TODO: use this? should be same but maybe better?
+            //let result = std::str::from_utf8(&input[i..]);//doneTODO: use this? should be same but maybe better?
             let result = Self::validate_utf8(&input[i..]); // XXX: in 1.76.0 rust, this line won't compile: "E0015: cannot call non-const operator in constant functions calls in constant functions are limited to constant functions, tuple structs and tuple variants", but in nightly on playground it does! 1.81.0
             match result {
                 Ok(valid_up_to) => {
@@ -122,7 +122,7 @@ impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
 
         let mut i = 0;
         while i < input.len() && len < buffer.len() {
-            let result = std::str::from_utf8(&input[i..]);//TODO: use this? should be same but maybe better?
+            let result = std::str::from_utf8(&input[i..]);//doneTODO: use this? should be same but maybe better?
             match result {
                Ok(valid) => {
                     let valid_bytes = valid.as_bytes();
