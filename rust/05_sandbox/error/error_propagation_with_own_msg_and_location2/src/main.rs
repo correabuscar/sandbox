@@ -1,4 +1,6 @@
 #![feature(const_type_name)]
+#![feature(const_mut_refs)] // Enable mutable references in const functions
+
 //#![feature(const_trait_impl)]
 //#![feature(stmt_expr_attributes)]
 //#![deny(unused_must_use)] // yeah it works here, ofc! but it's too broad!
@@ -269,17 +271,22 @@ mod my_error_things {
     impl fmt::Debug for MyError {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             let full=self.variant_name_full();
-            let full=full.get_msg();
+            //let full=full.get_msg();
+            let err=&full.get_err_msg();//TODO: this is proper ugly
+            let full_as_str: &str = full.get_msg_as_str().unwrap_or(
+                //TODO: use 'e'
+                err
+            );
             match self {
                 MyError::AlreadyBorrowedOrRecursingError { source, location_of_instantiation, custom_message } => {
-                    f.debug_struct(full)
+                    f.debug_struct(full_as_str)
                         .field("source", source)
                         .field("location_of_instantiation", location_of_instantiation)
                         .field("custom_message", custom_message)
                         .finish()
                 },
                 MyError::TimeoutError { location_of_instantiation, duration, tid, custom_message } => {
-                    f.debug_struct(full)
+                    f.debug_struct(full_as_str)
                         .field("location_of_instantiation", location_of_instantiation)
                         .field("duration", duration)
                         .field("tid", tid)
@@ -387,21 +394,40 @@ mod static_noalloc_msg {
     impl<const SIZE: usize> std::fmt::Display for NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             //let slice=std::str::from_utf8(&self.msg[..self.len]).unwrap_or(concat!("<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",stringify!(SIZE),">>"));
-            let slice = self.get_msg();
-            write!(f, "{}", slice)
-        }
-    }
+            //let slice = self.get_msg();
+            let result = self.get_msg_as_str();
+//            .unwrap_or_else(|e| {
+//                //TODO: use 'e'
+//                &self.get_err_msg()
+//            });
+            match result {
+                Ok(slice) => write!(f, "{}", slice),
+                Err(err) => {
+                    let s:&str= &self.get_err_msg();
+                    write!(f, "<{} actual err: {}>", s, err)
+                }
+            }//match
+        }//fn
+    }//impl
 
     impl<const SIZE: usize> std::fmt::Debug for NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             //let slice=std::str::from_utf8(&self.msg[..self.len]).unwrap_or(concat!("<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",stringify!(SIZE),">>"));
-            let slice = self.get_msg();
+            let err:&str=&self.get_err_msg();
+            let slice: &str = self.get_msg_as_str().unwrap_or(
+                //TODO: show 'e' too?
+                //TODO: show the msg as lossy?
+                err
+            );
             //write!(f, "{}", slice)
-            //FIXME: use noalloc buffer for the struct name? to not hardcode it in &str, or macro_rules!
+            //uhmFIXME: use noalloc buffer for the struct name? to not hardcode it in &str, or macro_rules!
             //cantFIXME: stringify!(SIZE) was wrong anyway, lol!
-            f.debug_struct(concat!(stringify!(NoAllocFixedLenMessageOfPreallocatedSize),"::<",
-                    //stringify!(SIZE),
-                    ">"))
+            f.debug_struct(
+
+                &self.get_name_of_self())
+//                concat!(stringify!(NoAllocFixedLenMessageOfPreallocatedSize),"::<",
+//                    //stringify!(SIZE),
+//                    ">"))
                 .field("msg", &slice)
                 .field("msg_len", &self.msg_len)
                 .finish()
@@ -412,21 +438,123 @@ mod static_noalloc_msg {
 //        concat!( $( $e ),*)
 //        }
 //}
+
+    pub const fn err_msg_max_buffer_size() -> usize {
+        80 + 4 // Arbitrary size, should be enough for the err_message, if too low it fails compile time, so just increase it then, but 80+length of SIZE as &str is enough
+    }
+
+    pub struct ErrMessage<const BUFFER_SIZE: usize> {
+        buffer: [u8; BUFFER_SIZE],
+        len: usize,
+    }
+
+    //deref as in the "&" in "&instance"
+    impl<const BUFFER_SIZE: usize> std::ops::Deref for ErrMessage<BUFFER_SIZE> {
+        type Target = str;
+
+        fn deref(&self) -> &Self::Target {
+            // Safety: We assume that the buffer contains valid UTF-8 data up to `self.len`.
+            unsafe { std::str::from_utf8_unchecked(&self.buffer[..self.len]) }
+        }
+    }
+
+    // that buffer in arg there, needs: #![feature(const_mut_refs)] // Enable mutable references in const functions
+    const fn size_to_str(size: usize, buffer: &mut [u8], start: usize) -> usize {
+        const DIGITS_LEN: usize = 20; // Hoisted constant for maximum number of digits for a usize
+
+        let mut digits = [b'0'; DIGITS_LEN];
+        let mut num = size;
+        let mut index = DIGITS_LEN;
+
+        // Skip leading zeroes
+        while num > 0 {
+            index -= 1;
+            digits[index] = b'0' + (num % 10) as u8;
+            num /= 10;
+        }
+
+        // If the number is zero, just return a single zero
+        if index == DIGITS_LEN - 1 {
+            buffer[start] = b'0';
+            return 1;
+        }
+
+        // Copy the digits starting from the non-zero part into the buffer
+        let mut len = 0;
+        let mut i = index;
+        while i < DIGITS_LEN {
+            buffer[start + len] = digits[i];
+            len += 1;
+            i += 1;
+        }
+        len
+    }
+
+    const fn copy_to_buf(buf: &mut [u8], i: usize, bytes: &[u8]) -> usize {
+        let bytes_len = bytes.len();
+        let mut j = 0;
+
+        while j < bytes_len {
+            buf[i + j] = bytes[j]; // if out of bounds it means err_msg_max_buffer_size() is too low, like if u're using too big of a SIZE
+            j += 1;
+        }
+
+        i + bytes_len
+    }
+
     impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
-        pub fn get_msg(&self) -> &str {
+        pub const fn get_name_of_self(&self) -> ErrMessage<{ err_msg_max_buffer_size() }> {
+            let mut buffer = [0u8; err_msg_max_buffer_size()];
+            let mut len = 0;
+
+            const PART1: &[u8] = stringify!(NoAllocFixedLenMessageOfPreallocatedSize).as_bytes();
+            const PART2: &[u8] = b"::<";
+            const PART3: &[u8] = b">";
+
+            len = copy_to_buf(&mut buffer, len, PART1);
+            len = copy_to_buf(&mut buffer, len, PART2);
+            len += size_to_str(SIZE, &mut buffer, len);
+            len = copy_to_buf(&mut buffer, len, PART3);
+
+            ErrMessage { buffer, len }
+        }
+
+        pub const fn get_err_msg(&self) -> ErrMessage<{ err_msg_max_buffer_size() }> {
+            let mut buffer = [0u8; err_msg_max_buffer_size()];
+            let mut len = 0;
+
+            const PART1: &[u8] = b"<invalid UTF-8 in this instance of ";
+            const PART2: &[u8] = stringify!(NoAllocFixedLenMessageOfPreallocatedSize).as_bytes();
+            const PART3: &[u8] = b"::<";
+            const PART4: &[u8] = b">>";
+
+            len = copy_to_buf(&mut buffer, len, PART1);
+            len = copy_to_buf(&mut buffer, len, PART2);
+            len = copy_to_buf(&mut buffer, len, PART3);
+            len += size_to_str(SIZE, &mut buffer, len);
+            len = copy_to_buf(&mut buffer, len, PART4);
+
+            ErrMessage { buffer, len }
+        }
+
+        pub fn get_msg_as_str(&self) -> Result<&str, std::str::Utf8Error> {
             //itisprocmacrosonoTODO: maybe use something like https://github.com/rodrimati1992/const_format_crates/  like "concatcp: Concatenates integers, bool, char, and &str constants into a &'static str constant." instead of concat!()
-            //TODO: use this /home/user/sandbox/rust/05_sandbox/strings/concat_strings_on_stack/concat_strings_and_a_num_const
-            let slice = std::str::from_utf8(&self.msg[..self.msg_len]).unwrap_or(
-                concat!(
-                "<invalid UTF-8 in this instance of ",
-                stringify!(NoAllocFixedLenMessageOfPreallocatedSize),
-                "::<",
-                //stringify!(SIZE),//this is "SIZE" lol
-                //FIXME: can't put SIZE here without proc macros looks like
-                //SIZE, // expected a literal only literals (like `"foo"`, `-42` and `3.14`) can be passed to `concat!()`
-                ">>"
-            ));
-            slice
+            //okTODO: use this /home/user/sandbox/rust/05_sandbox/strings/concat_strings_on_stack/concat_strings_and_a_num_const or better: /home/user/sandbox/rust/05_sandbox/strings/concat_strings_on_stack/concat_strings_and_a_num_const_at_compiletime
+            std::str::from_utf8(&self.msg[..self.msg_len])
+//                let foo=self.get_err_msg();
+//                &foo
+//            }
+//                concat!(
+//                "<invalid UTF-8 in this instance of ",
+//                stringify!(NoAllocFixedLenMessageOfPreallocatedSize),
+//                "::<",
+//                //stringify!(SIZE),//this is "SIZE" lol
+//                //FIXME: can't put SIZE here without proc macros looks like
+//                //SIZE, // expected a literal only literals (like `"foo"`, `-42` and `3.14`) can be passed to `concat!()`
+//                ">>"
+//            )
+//            );
+//            slice
         }
 
         pub const fn new(msg: [u8; SIZE], msg_len: usize) -> Self {
