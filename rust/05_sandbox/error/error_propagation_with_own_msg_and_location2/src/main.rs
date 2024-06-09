@@ -1,6 +1,7 @@
 #![feature(const_type_name)]
 #![feature(const_mut_refs)] // Enable mutable references in const functions
-//#![feature(const_trait_impl)] // const impl
+#![feature(const_trait_impl)] // const impl
+#![feature(effects)]
 
 //#![feature(const_trait_impl)]
 //#![feature(stmt_expr_attributes)]
@@ -273,14 +274,14 @@ mod my_error_things {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             let full=self.variant_name_full();
             //let full=full.get_msg();
-            //let err=&full.get_invalid_utf8_msg_for_self();//TODO: this is proper ugly
-            //const ERR:&str = &crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_invalid_utf8_msg_for_self();
-            let err=&crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_invalid_utf8_msg_for_self();
-            let full_as_str: &str = full.get_msg_as_str().unwrap_or(//_else(|e| {
+            let err=&full.get_msg_as_lossy();//TODO: this is proper ugly but can't get it only when it errors, LOL!
+            //const ERR:&str = &crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy();
+            //let err=&crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy();
+            let full_as_str: &str = full.get_msg_as_str_maybe().unwrap_or(//_else(|e| {
                 //TODO: use 'e'
                 err
                     //ref to temp value:
-                //&crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_invalid_utf8_msg_for_self()
+                //&crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy()
             //}
             );
             match self {
@@ -401,15 +402,15 @@ mod static_noalloc_msg {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             //let slice=std::str::from_utf8(&self.msg[..self.len]).unwrap_or(concat!("<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",stringify!(SIZE),">>"));
             //let slice = self.get_msg();
-            let result = self.get_msg_as_str();
+            let result = self.get_msg_as_str_maybe();
 //            .unwrap_or_else(|e| {
 //                //TODO: use 'e'
-//                &self.get_invalid_utf8_msg_for_self()
+//                &self.get_msg_as_lossy()
 //            });
             match result {
                 Ok(slice) => write!(f, "{}", slice),
                 Err(err) => {
-                    let s:&str= &Self::get_invalid_utf8_msg_for_self();
+                    let s:&str= &self.get_msg_as_lossy();
                     write!(f, "<{} actual err: {}>", s, err)
                 }
             }//match
@@ -419,8 +420,8 @@ mod static_noalloc_msg {
     impl<const SIZE: usize> std::fmt::Debug for NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             //let slice=std::str::from_utf8(&self.msg[..self.len]).unwrap_or(concat!("<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",stringify!(SIZE),">>"));
-            let err:&str=&Self::get_invalid_utf8_msg_for_self();
-            let slice: &str = self.get_msg_as_str().unwrap_or(
+            let err:&str=&self.get_msg_as_lossy();
+            let slice: &str = self.get_msg_as_str_maybe().unwrap_or(
                 //TODO: show 'e' too?
                 //TODO: show the msg as lossy? can't it needs heap, unless... find another way to do it on stack?
                 err
@@ -446,7 +447,12 @@ mod static_noalloc_msg {
 //}
 
     pub const fn err_msg_max_buffer_size() -> usize {
-        80 + 4 // Arbitrary size, should be enough for the err_message, if too low it fails compile time, so just increase it then, but 80+length of SIZE as &str is enough
+        //FIXME: this needs to be 4096+whatever extras I added! well SIZE+extras actually
+        4096+80 + 4 // Arbitrary size, should be enough for the err_message, if too low it fails compile time, so just increase it then, but 80+length of SIZE as &str is enough
+    }
+
+    pub const fn self_name_max_buffer_size() -> usize {
+        2+42 + 4 // Arbitrary size, should be enough for the err_message, if too low it fails compile time, so just increase it then, but 42+length of SIZE as &str is enough
     }
 
     pub struct ErrMessage<const BUFFER_SIZE: usize> {
@@ -468,7 +474,13 @@ mod static_noalloc_msg {
                 concat!("<invalid UTF-8 in ", stringify!(ErrMessage), " instance>")
             })
         }
-    }
+    }//impl
+
+//    impl<const BUFFER_SIZE: usize> ErrMessage<BUFFER_SIZE> {
+//        const fn get_as_array(&self) -> &[u8; BUFFER_SIZE] {
+//            &self.buffer
+//        }
+//    }
 
     // that buffer in arg there, needs: #![feature(const_mut_refs)] // Enable mutable references in const functions
     const fn size_to_str(size: usize, buffer: &mut [u8], start: usize) -> usize {
@@ -502,22 +514,97 @@ mod static_noalloc_msg {
         len
     }
 
-    const fn copy_to_buf(buf: &mut [u8], i: usize, bytes: &[u8]) -> usize {
+    const fn copy_to_buf(buf: &mut [u8], start_at: usize, bytes: &[u8]) -> usize {
         let bytes_len = bytes.len();
+        //        XXX: can't properly err from this! because 'const fn'
+//        let have_space=buf.len()-start_at;
+//        if have_space < bytes_len {
+//            //panic!("foo");
+//            //panic!("You have {have_space} bytes in buffer but you need {bytes_len}, so {} more bytes.",bytes_len - have_space);
+//            //panic!("{}",format_args!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space));
+//            //panic!("{}",crate::format_into_buffer!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space));
+//            //let foo=crate::format_into_buffer!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space);
+//            //panic!("not enough space left");
+//        }
         let mut j = 0;
 
         while j < bytes_len {
-            buf[i + j] = bytes[j]; // if out of bounds it means err_msg_max_buffer_size() is too low, like if u're using too big of a SIZE
+            buf[start_at + j] = bytes[j]; // if out of bounds it means err_msg_max_buffer_size() is too low, like if u're using too big of a SIZE
             j += 1;
         }
 
-        i + bytes_len
+        start_at + bytes_len
     }
 
+    const fn copy_to_buf_2(buf: &mut [u8], start_at: usize, bytes: &[u8], bytes_len: usize) -> usize {
+        let mut j = 0;
+
+        while j < bytes_len {
+            buf[start_at + j] = bytes[j]; // if out of bounds it means err_msg_max_buffer_size() is too low, like if u're using too big of a SIZE
+            j += 1;
+        }
+
+        start_at + bytes_len
+    }
+
+    pub const fn from_utf8_lossy(input: &[u8]) -> ErrMessage<1024> {
+        const REPLACEMENT: &[u8] = b"\xEF\xBF\xBD"; // UTF-8 for replacement character U+FFFD
+        let mut buffer = [0u8; 1024];
+        let mut len = 0;
+
+        let mut i = 0;
+        while i < input.len() && len < buffer.len() {
+            let result = std::str::from_utf8(&input[i..]);
+            match result {
+               Ok(valid) => {
+                    let valid_bytes = valid.as_bytes();
+                    if len + valid_bytes.len() > buffer.len() {
+                        break;
+                    }
+                    let mut j = 0;
+                    while j < valid_bytes.len() {
+                        buffer[len] = valid_bytes[j];
+                        len += 1;
+                        j += 1;
+                    }
+                    break;
+                }
+               Err(e) => {
+                    let valid_up_to = e.valid_up_to();
+                    let invalid_sequence_length = match e.error_len() {
+                        Some(len) => len,
+                        None => 1,
+                    };
+
+                    let mut j = 0;
+                    while j < valid_up_to {
+                        buffer[len] = input[i + j];
+                        len += 1;
+                        j += 1;
+                    }//while
+
+                    let mut k = 0;
+                    while k < REPLACEMENT.len() {
+                        if len < buffer.len() {
+                            buffer[len] = REPLACEMENT[k];
+                            len += 1;
+                        } else {
+                            break;
+                        }
+                        k += 1;
+                    }//while
+
+                    i += valid_up_to + invalid_sequence_length;
+                }
+            }//match
+        }//while
+
+        ErrMessage { buffer, len }
+    }
 
     impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
-        pub const fn get_name_of_self() -> ErrMessage<{ err_msg_max_buffer_size() }> {
-            let mut buffer = [0u8; err_msg_max_buffer_size()];
+        pub const fn get_name_of_self() -> ErrMessage<{ self_name_max_buffer_size() }> {
+            let mut buffer = [0u8; self_name_max_buffer_size()];
             let mut len = 0;
 
             const PART1: &[u8] = stringify!(NoAllocFixedLenMessageOfPreallocatedSize).as_bytes();
@@ -532,25 +619,30 @@ mod static_noalloc_msg {
             ErrMessage { buffer, len }
         }
 
-        pub const fn get_invalid_utf8_msg_for_self() -> ErrMessage<{ err_msg_max_buffer_size() }> {
+        pub const fn get_msg_as_lossy(&self) -> ErrMessage<{ err_msg_max_buffer_size() }> {
             let mut buffer = [0u8; err_msg_max_buffer_size()];
             let mut len = 0;
 
             const PART1: &[u8] = b"<invalid UTF-8 in this instance of ";
             const PART2: &[u8] = stringify!(NoAllocFixedLenMessageOfPreallocatedSize).as_bytes();
             const PART3: &[u8] = b"::<";
-            const PART4: &[u8] = b">>";
+            const PART4: &[u8] = b"> but here it is lossy: \"";
+            const PART5: &[u8] = b"\">";
 
             len = copy_to_buf(&mut buffer, len, PART1);
             len = copy_to_buf(&mut buffer, len, PART2);
             len = copy_to_buf(&mut buffer, len, PART3);
             len += size_to_str(SIZE, &mut buffer, len);
             len = copy_to_buf(&mut buffer, len, PART4);
+            //FIXME: this is messy, and double copies; maybe make it place it in buf directly!
+            let foo=from_utf8_lossy(&self.msg[..self.msg_len]);
+            len = copy_to_buf_2(&mut buffer, len, &foo.buffer, foo.len);
+            len = copy_to_buf(&mut buffer, len, PART5);
 
             ErrMessage { buffer, len }
         }
 
-        pub fn get_msg_as_str(&self) -> Result<&str, std::str::Utf8Error> {
+        pub const fn get_msg_as_str_maybe(&self) -> Result<&str, std::str::Utf8Error> {
             //itisprocmacrosonoTODO: maybe use something like https://github.com/rodrimati1992/const_format_crates/  like "concatcp: Concatenates integers, bool, char, and &str constants into a &'static str constant." instead of concat!()
             //okTODO: use this /home/user/sandbox/rust/05_sandbox/strings/concat_strings_on_stack/concat_strings_and_a_num_const or better: /home/user/sandbox/rust/05_sandbox/strings/concat_strings_on_stack/concat_strings_and_a_num_const_at_compiletime
             //eprintln!("{:?}", &self.msg[..self.msg_len]);
@@ -559,7 +651,7 @@ mod static_noalloc_msg {
                 //;
             //eprintln!("{}", s.unwrap());
             //s
-//                let foo=self.get_invalid_utf8_msg_for_self();
+//                let foo=self.get_msg_as_lossy();
 //                &foo
 //            }
 //                concat!(
