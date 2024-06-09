@@ -6,8 +6,8 @@
 pub struct NoAllocFixedLenMessageOfPreallocatedSize<const SIZE: usize>;
 
 impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
-    pub const fn get_message() -> ([u8; Self::buffer_size()], usize) {
-        let mut buffer = [0u8; Self::buffer_size()];
+    pub const fn get_err_message() -> ([u8; Self::err_msg_buffer_size()], usize) {
+        let mut buffer = [0u8; Self::err_msg_buffer_size()];
         let mut len = 0;
 
         const PART1: &[u8] = b"<invalid UTF-8 in this instance of ";
@@ -24,8 +24,8 @@ impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         (buffer, len)
     }
 
-    pub const fn buffer_size() -> usize {
-        100 // Arbitrary size, should be enough for the message
+    pub const fn err_msg_buffer_size() -> usize {
+        80+4 // Arbitrary size, should be enough for the err_message, if too low it fails compile time, so just increase it then, but 80+length of SIZE as &str is enough
     }
 }
 
@@ -65,7 +65,7 @@ const fn copy_to_buf(buf: &mut [u8], i: usize, bytes: &[u8]) -> usize {
     let mut j = 0;
 
     while j < bytes_len {
-        buf[i + j] = bytes[j];
+        buf[i + j] = bytes[j]; // if out of bounds it means err_msg_buffer_size() is too low, like if u're using too big of a SIZE
         j += 1;
     }
 
@@ -73,14 +73,14 @@ const fn copy_to_buf(buf: &mut [u8], i: usize, bytes: &[u8]) -> usize {
 }
 
 fn main() {
-    const MSG_44: ([u8; 100], usize) = NoAllocFixedLenMessageOfPreallocatedSize::<44>::get_message();
-    let message_44 = std::str::from_utf8(&MSG_44.0[..MSG_44.1]).unwrap();
-    println!("{}", message_44);
-    assert_eq!(message_44, "<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<44>>");
+    const MSG_44: ([u8; NoAllocFixedLenMessageOfPreallocatedSize::<0>::err_msg_buffer_size()], usize) = NoAllocFixedLenMessageOfPreallocatedSize::<44>::get_err_message();
+    let err_message_44 = std::str::from_utf8(&MSG_44.0[..MSG_44.1]).unwrap();
+    println!("{}", err_message_44);
+    assert_eq!(err_message_44, "<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<44>>");
 
-    const MSG_4096: ([u8; 100], usize) = NoAllocFixedLenMessageOfPreallocatedSize::<4096>::get_message();
-    let message_4096 = std::str::from_utf8(&MSG_4096.0[..MSG_4096.1]).unwrap();
-    println!("{}", message_4096);
-    assert_eq!(message_4096, "<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<4096>>");
+    const MSG_4096: ([u8; NoAllocFixedLenMessageOfPreallocatedSize::<0>::err_msg_buffer_size()], usize) = NoAllocFixedLenMessageOfPreallocatedSize::<4096>::get_err_message();
+    let err_message_4096 = std::str::from_utf8(&MSG_4096.0[..MSG_4096.1]).unwrap();
+    println!("{}", err_message_4096);
+    assert_eq!(err_message_4096, "<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<4096>>");
 }
 
