@@ -275,7 +275,8 @@ mod my_error_things {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             let full=self.variant_name_full();
             //let full=full.get_msg();
-            let mut err_msg_buf=crate::static_noalloc_msg::ErrMessage{ buffer:[0u8; crate::static_noalloc_msg::err_msg_max_buffer_size(CUSTOM_ERROR_MSG_BUFFER_SIZE)], len:0 };
+            //let mut err_msg_buf=crate::static_noalloc_msg::ErrMessage{ buffer:[0u8; crate::static_noalloc_msg::err_msg_max_buffer_size(CUSTOM_ERROR_MSG_BUFFER_SIZE)], len:0 }; // field 'len' is private
+            let mut err_msg_buf=crate::static_noalloc_msg::ErrMessage::<{crate::static_noalloc_msg::err_msg_max_buffer_size(CUSTOM_ERROR_MSG_BUFFER_SIZE)}>::new(); //{ buffer:[0u8; crate::static_noalloc_msg::err_msg_max_buffer_size(CUSTOM_ERROR_MSG_BUFFER_SIZE)], len:0 }; // field 'len' is private
             //let err=&full.get_msg_as_lossy();//kindadoneTODO: this is proper ugly but can't get it only when it errors, LOL!
             //const ERR:&str = &crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy();
             //let err=&crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy();
@@ -402,11 +403,11 @@ mod static_noalloc_msg {
         msg_len: usize,
         //msg_slice:&'static str, //points into the 'msg' buffer - can't be done this way apparently, XXX: rust?!
     }
-    impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
-        const fn foo() -> usize {
-            return SIZE;
-        }
-    }
+//    impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
+//        const fn foo() -> usize {
+//            return SIZE;
+//        }
+//    }
     impl<const SIZE: usize> std::fmt::Display for NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { //where [(); err_msg_max_buffer_size(SIZE)]: {
             //let slice=std::str::from_utf8(&self.msg[..self.len]).unwrap_or(concat!("<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",stringify!(SIZE),">>"));
@@ -420,7 +421,7 @@ mod static_noalloc_msg {
                 Ok(slice) => write!(f, "{}", slice),
                 Err(err) => {
                     //const FOO:usize=SIZE; //can't use generic parameters from outer item: use of generic parameter from outer item
-                    let mut err_msg_buf=ErrMessage{ buffer:[0u8; err_msg_max_buffer_size(SIZE)], len:0 }; // unconstrained generic constant
+                    let mut err_msg_buf=ErrMessage{ buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
                     self.append_msg_as_lossy(&mut err_msg_buf);
                     let s:&str= &err_msg_buf;
                     write!(f, "<{} actual err: {}>", s, err)
@@ -432,12 +433,14 @@ mod static_noalloc_msg {
     impl<const SIZE: usize> std::fmt::Debug for NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             //let slice=std::str::from_utf8(&self.msg[..self.len]).unwrap_or(concat!("<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",stringify!(SIZE),">>"));
-            let err:&str=&self.get_msg_as_lossy();
-            let slice: &str = self.get_msg_as_str_maybe().unwrap_or(
+            let mut err_msg_buf=ErrMessage{ buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
+            let slice: &str = self.get_msg_as_str_maybe().unwrap_or_else(|_e| {
                 //TODO: show 'e' too?
-                //TODO: show the msg as lossy? can't it needs heap, unless... find another way to do it on stack?
+                //doneTODO: show the msg as lossy? can't it needs heap, unless... find another way to do it on stack?
+                self.append_msg_as_lossy(&mut err_msg_buf);
+                let err:&str=&err_msg_buf;
                 err
-            );
+            });
             //write!(f, "{}", slice)
             //uhmFIXME: use noalloc buffer for the struct name? to not hardcode it in &str, or macro_rules!
             //cantFIXME: stringify!(SIZE) was wrong anyway, lol!
@@ -489,6 +492,11 @@ mod static_noalloc_msg {
     }//impl
 
     impl<const BUFFER_SIZE: usize> ErrMessage<BUFFER_SIZE> {
+        pub const fn new() -> ErrMessage<BUFFER_SIZE> {
+        //
+            //ErrMessage{ buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 } //nvmFIXME: used temp const 4096; won't work must be BUFFER_SIZE sized array!
+            ErrMessage{ buffer:[0u8; BUFFER_SIZE], len:0 } //must be BUFFER_SIZE
+        }
         //        const fn get_as_array(&self) -> &[u8; BUFFER_SIZE] {
         //            &self.buffer
         //        }
