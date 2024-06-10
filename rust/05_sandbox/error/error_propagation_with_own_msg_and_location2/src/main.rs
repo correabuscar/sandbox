@@ -500,20 +500,22 @@ mod static_noalloc_msg {
         //        const fn get_as_array(&self) -> &[u8; BUFFER_SIZE] {
         //            &self.buffer
         //        }
-        const fn append(&mut self, input_bytes: &[u8]) {
+        pub const fn append(&mut self, input_bytes: &[u8]) {
             let bytes_len = input_bytes.len();
             //        XXX: can't properly err from this! because 'const fn'
             let start_at=self.len();
             let have_space=self.buffer.len()-start_at;
-            assert!(have_space >= bytes_len, "don't have space to append");
-            //        if have_space < bytes_len {
-            //            //panic!("foo");
-            //            //panic!("You have {have_space} bytes in buffer but you need {bytes_len}, so {} more bytes.",bytes_len - have_space);
-            //            //panic!("{}",format_args!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space));
-            //            //panic!("{}",crate::format_into_buffer!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space));
-            //            //let foo=crate::format_into_buffer!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space);
-            //            //panic!("not enough space left");
-            //        }
+            if have_space < bytes_len {
+                [()][bytes_len]; // XXX: report value of this
+                [()][have_space];
+                //            //panic!("foo");
+                //            //panic!("You have {have_space} bytes in buffer but you need {bytes_len}, so {} more bytes.",bytes_len - have_space);
+                //            //panic!("{}",format_args!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space));
+                //            //panic!("{}",crate::format_into_buffer!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space));
+                //            //let foo=crate::format_into_buffer!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space);
+                //            //panic!("not enough space left");
+                assert!(have_space >= bytes_len, "don't have space to append");
+            }
             let mut j = 0;
 
             while j < bytes_len {
@@ -535,6 +537,7 @@ mod static_noalloc_msg {
             let input_len=input.len();
             if len + input_len > BUFFER_SIZE {
                 //XXX: not bad to see the value of, but it only shows me the first one that fails, due to runtime panic on first!
+                [()][len+input_len]; //4203
                 [()][len]; //107
                 [()][input_len]; //4096
                 [()][BUFFER_SIZE]; //4180
@@ -547,13 +550,16 @@ mod static_noalloc_msg {
                 //try2: fail!
                 //struct ValueIsTooLarge<const N: usize>;
                 //let _ = ValueIsTooLarge::<len>; //won't work at runtime, and 'len' needs to be const
+                assert!(len + input_len <= BUFFER_SIZE, "won't fit");// can't format it in 'const fn', tried this: "it wouldn't fit, needs: {} but have {}.", len+input_len, BUFFER_SIZE);
             }
-            assert!(len + input_len <= BUFFER_SIZE, "won't fit");// can't format it in 'const fn', tried this: "it wouldn't fit, needs: {} but have {}.", len+input_len, BUFFER_SIZE);
             //assert_ne!(len + input_len, BUFFER_SIZE);// 'assert' works but 'assert_ne' no way!
 
             let mut i = 0;
             while i < input_len { //&& len < BUFFER_SIZE {
-                assert!(len < BUFFER_SIZE,"no more space left in dest buffer0");
+                if len>=BUFFER_SIZE {
+                    [()][len]; // XXX: show me the value
+                    assert!(len < BUFFER_SIZE,"no more space left in dest buffer0");
+                }
                 let result = std::str::from_utf8(&input[i..]);
                 match result {
                     Ok(valid) => {
@@ -564,7 +570,10 @@ mod static_noalloc_msg {
                         }
                         let mut j = 0;
                         while j < vb_len {
-                            assert!(len < BUFFER_SIZE,"no more space left in dest buffer1");
+                            if len>=BUFFER_SIZE {
+                                [()][len]; // XXX: show me the value
+                                assert!(len < BUFFER_SIZE,"no more space left in dest buffer1");
+                            }
                             self.buffer[len] = valid_bytes[j];
                             len += 1;
                             j += 1;
@@ -580,7 +589,10 @@ mod static_noalloc_msg {
 
                         let mut j = 0;
                         while j < valid_up_to {
-                            assert!(len < BUFFER_SIZE,"no more space left in dest buffer2");
+                            if len>=BUFFER_SIZE {
+                                [()][len]; // XXX: show me the value
+                                assert!(len < BUFFER_SIZE,"no more space left in dest buffer2");
+                            }
                             self.buffer[len] = input[i + j];
                             len += 1;
                             j += 1;
@@ -588,7 +600,10 @@ mod static_noalloc_msg {
 
                         let mut k = 0;
                         while k < REPL_LEN {
-                            assert!(len < BUFFER_SIZE, "can't insert replacement char due to not enough space in destination buffer");
+                            if len>=BUFFER_SIZE {
+                                [()][len]; // XXX: show me the value
+                                assert!(len < BUFFER_SIZE, "can't insert replacement char due to not enough space in destination buffer");
+                            }
                             //if len < BUFFER_SIZE {
                                 self.buffer[len] = REPLACEMENT[k];
                                 len += 1;
@@ -608,9 +623,19 @@ mod static_noalloc_msg {
         }
     }//impl
 
+        pub const fn log10(n: usize) -> usize {
+            let mut count = 0;
+            let mut tmp=n;
+            while tmp >= 10 {
+                tmp /= 10;
+                count += 1;
+            }
+            count + 1
+        }
+
     // that buffer in arg there, needs: #![feature(const_mut_refs)] // Enable mutable references in const functions
     const fn size_to_str(size: usize, buffer: &mut [u8], start: usize) -> usize {
-        const DIGITS_LEN: usize = 20; // Hoisted constant for maximum number of digits for a usize
+        const DIGITS_LEN: usize = log10(usize::MAX);//eg. 20; maximum number of digits for a usize
 
         let mut digits = [b'0'; DIGITS_LEN];
         let mut num = size;
