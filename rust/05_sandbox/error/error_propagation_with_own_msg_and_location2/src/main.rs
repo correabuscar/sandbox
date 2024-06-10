@@ -538,7 +538,7 @@ mod static_noalloc_msg {
         pub const fn append(&mut self, input_bytes: &[u8]) {
             let bytes_len = input_bytes.len();
             //        XXX: can't properly err from this! because 'const fn'
-            let start_at=self.len();
+            let start_at=self.len;
             let have_space=self.buffer.len()-start_at;
             if have_space < bytes_len {
                 [()][bytes_len]; // XXX: report value of this
