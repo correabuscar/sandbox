@@ -2,7 +2,7 @@
 #![feature(const_mut_refs)] // Enable mutable references in const functions
 #![feature(const_trait_impl)] // const impl
 #![feature(effects)]
-#![feature(generic_const_exprs)] // warning: the feature `generic_const_exprs` is incomplete and may not be safe to use and/or cause compiler crashes
+//#![feature(generic_const_exprs)] // warning: the feature `generic_const_exprs` is incomplete and may not be safe to use and/or cause compiler crashes
 
 //#![feature(const_trait_impl)]
 //#![feature(stmt_expr_attributes)]
@@ -283,8 +283,8 @@ mod my_error_things {
             let full_as_str: &str = full.get_msg_as_str_maybe().unwrap_or_else(|_e| {
                 //TODO: use 'e'
                 //err
-                full.append_msg_as_lossy(&mut err_msg_buf);
-                &err_msg_buf
+                full.append_msg_to_dest_as_lossy(&mut err_msg_buf);
+                err_msg_buf.as_str()
                     //ref to temp value:
                 //&crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy()
             }
@@ -422,8 +422,8 @@ mod static_noalloc_msg {
                 Err(err) => {
                     //const FOO:usize=SIZE; //can't use generic parameters from outer item: use of generic parameter from outer item
                     let mut err_msg_buf=ErrMessage{ buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
-                    self.append_msg_as_lossy(&mut err_msg_buf);
-                    let s:&str= &err_msg_buf;
+                    self.append_msg_to_dest_as_lossy(&mut err_msg_buf);
+                    let s:&str= err_msg_buf.as_str();
                     write!(f, "<{} actual err: {}>", s, err)
                 }
             }//match
@@ -437,8 +437,8 @@ mod static_noalloc_msg {
             let slice: &str = self.get_msg_as_str_maybe().unwrap_or_else(|_e| {
                 //TODO: show 'e' too?
                 //doneTODO: show the msg as lossy? can't it needs heap, unless... find another way to do it on stack?
-                self.append_msg_as_lossy(&mut err_msg_buf);
-                let err:&str=&err_msg_buf;
+                self.append_msg_to_dest_as_lossy(&mut err_msg_buf);
+                let err:&str=err_msg_buf.as_str();
                 err
             });
             //write!(f, "{}", slice)
@@ -446,7 +446,8 @@ mod static_noalloc_msg {
             //cantFIXME: stringify!(SIZE) was wrong anyway, lol!
             f.debug_struct(
 
-                &Self::get_name_of_self())
+                Self::get_name_of_self().as_str()
+                )
 //                concat!(stringify!(NoAllocFixedLenMessageOfPreallocatedSize),"::<",
 //                    //stringify!(SIZE),
 //                    ">"))
@@ -476,22 +477,31 @@ mod static_noalloc_msg {
     }
 
     //deref as in the "&" in "&instance", altho it should be the * in *instance
-    impl<const BUFFER_SIZE: usize> std::ops::Deref for ErrMessage<BUFFER_SIZE> {
-        type Target = str;
+    //XXX: don't impl Defer/deref due to the possibility of accidentally deref-ing when not intended!
+//    impl<const BUFFER_SIZE: usize> std::ops::Deref for ErrMessage<BUFFER_SIZE> {
+//        type Target = str;
+//
+//        fn deref(&self) -> &Self::Target {
+//            // Safety: We assume that the buffer contains valid UTF-8 data up to `self.len`.
+//            //unsafe { std::str::from_utf8_unchecked(&self.buffer[..self.len]) }
+//            //can't make it lossy because it needs String aka heap
+//            std::str::from_utf8(&self.buffer[..self.len]).unwrap_or_else(|_e| {
+//                //TODO: use 'e' but how?
+//                //XXX: shouldn't happen, unless I missed something; like everywhere this is used, source things are UTF-8
+//                concat!("<invalid UTF-8 in ", stringify!(ErrMessage), " instance>")
+//            })
+//        }
+//    }//impl
 
-        fn deref(&self) -> &Self::Target {
-            // Safety: We assume that the buffer contains valid UTF-8 data up to `self.len`.
-            //unsafe { std::str::from_utf8_unchecked(&self.buffer[..self.len]) }
-            //can't make it lossy because it needs String aka heap
+    impl<const BUFFER_SIZE: usize> ErrMessage<BUFFER_SIZE> {
+        //TODO: can this(or a newly named one) be made 'const fn' ?
+        pub fn as_str<'a>(&'a self) -> &'a str {
             std::str::from_utf8(&self.buffer[..self.len]).unwrap_or_else(|_e| {
                 //TODO: use 'e' but how?
                 //XXX: shouldn't happen, unless I missed something; like everywhere this is used, source things are UTF-8
                 concat!("<invalid UTF-8 in ", stringify!(ErrMessage), " instance>")
             })
         }
-    }//impl
-
-    impl<const BUFFER_SIZE: usize> ErrMessage<BUFFER_SIZE> {
         pub const fn new() -> ErrMessage<BUFFER_SIZE> {
         //
             //ErrMessage{ buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 } //nvmFIXME: used temp const 4096; won't work must be BUFFER_SIZE sized array!
@@ -541,7 +551,7 @@ mod static_noalloc_msg {
             let start_at=self.len;
             let have_space=self.buffer.len()-start_at;
             if have_space < bytes_len {
-                [()][bytes_len]; // XXX: report value of this
+                [()][bytes_len]; // XXX: reports the value of this
                 [()][have_space];
                 //            //panic!("foo");
                 //            //panic!("You have {have_space} bytes in buffer but you need {bytes_len}, so {} more bytes.",bytes_len - have_space);
@@ -814,7 +824,7 @@ mod static_noalloc_msg {
         }
 
         //pub const fn append_msg_as_lossy(&self, dest: &mut ErrMessage<{ err_msg_max_buffer_size(SIZE) }>) {
-        pub const fn append_msg_as_lossy<const ANY_SIZE:usize>(&self, dest: &mut ErrMessage<ANY_SIZE>) {
+        pub const fn append_msg_to_dest_as_lossy<const ANY_SIZE:usize>(&self, dest: &mut ErrMessage<ANY_SIZE>) {
             //let mut buffer = [0u8; err_msg_max_buffer_size()];
             //let mut len = 0;
             //let mut ret=ErrMessage { buffer:[0u8; err_msg_max_buffer_size()], len:0 };
