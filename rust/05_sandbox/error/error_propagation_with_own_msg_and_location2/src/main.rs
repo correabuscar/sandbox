@@ -350,7 +350,7 @@ mod my_error_things {
                 } => {
                     write!(
                     f,
-                    "{} at location: '{}', custom msg:'{}', generic msg: Already borrowed or recursing error, source error: '{}'",
+                    "{} at location: '{}', custom msg: '{}', generic msg: Already borrowed or recursing error, source error: '{}'",
                     self.variant_name_full(),
                     //std::any::type_name::<MyError>(),//::<Self::AlreadyBorrowedOrRecursingError>(),//self,
                     //TODO: how to show the variant itself with the type prefixing it too, without duplicating its name inside the string and hopefully without procedural macros?
@@ -414,14 +414,14 @@ mod static_noalloc_msg {
             //let slice = self.get_msg();
             let result = self.get_msg_as_str_maybe();
 //            .unwrap_or_else(|e| {
-//                //TODO: use 'e'
+//                //doneTODO: use 'e'
 //                &self.get_msg_as_lossy()
 //            });
             match result {
                 Ok(slice) => write!(f, "{}", slice),
                 Err(err) => {
                     //const FOO:usize=SIZE; //can't use generic parameters from outer item: use of generic parameter from outer item
-                    let mut err_msg_buf=ErrMessage{ buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
+                    let mut err_msg_buf=ErrMessage::<4096>::new();//ErrMessage{ the_buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
                     self.append_msg_to_dest_as_lossy(&mut err_msg_buf);
                     let s:&str= err_msg_buf.as_str();
                     write!(f, "<{} actual err: {}>", s, err)
@@ -433,7 +433,7 @@ mod static_noalloc_msg {
     impl<const SIZE: usize> std::fmt::Debug for NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             //let slice=std::str::from_utf8(&self.msg[..self.len]).unwrap_or(concat!("<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",stringify!(SIZE),">>"));
-            let mut err_msg_buf=ErrMessage{ buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
+            let mut err_msg_buf=ErrMessage::<4096>::new();//ErrMessage{ the_buffer:[0u8; err_msg_max_buffer_size(4096)], the_buf_len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
             let slice: &str = self.get_msg_as_str_maybe().unwrap_or_else(|_e| {
                 //TODO: show 'e' too?
                 //doneTODO: show the msg as lossy? can't it needs heap, unless... find another way to do it on stack?
@@ -472,8 +472,8 @@ mod static_noalloc_msg {
     }
 
     pub struct ErrMessage<const BUFFER_SIZE: usize> {
-        buffer: [u8; BUFFER_SIZE],
-        len: usize,
+        the_buffer: [u8; BUFFER_SIZE],
+        the_buf_len: usize,
     }
 
     //deref as in the "&" in "&instance", altho it should be the * in *instance
@@ -496,7 +496,7 @@ mod static_noalloc_msg {
     impl<const BUFFER_SIZE: usize> ErrMessage<BUFFER_SIZE> {
         //TODO: can this(or a newly named one) be made 'const fn' ?
         pub fn as_str<'a>(&'a self) -> &'a str {
-            std::str::from_utf8(&self.buffer[..self.len]).unwrap_or_else(|_e| {
+            std::str::from_utf8(&self.the_buffer[..self.the_buf_len]).unwrap_or_else(|_e| {
                 //TODO: use 'e' but how?
                 //XXX: shouldn't happen, unless I missed something; like everywhere this is used, source things are UTF-8
                 concat!("<invalid UTF-8 in ", stringify!(ErrMessage), " instance>")
@@ -505,7 +505,7 @@ mod static_noalloc_msg {
         pub const fn new() -> ErrMessage<BUFFER_SIZE> {
         //
             //ErrMessage{ buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 } //nvmFIXME: used temp const 4096; won't work must be BUFFER_SIZE sized array!
-            ErrMessage{ buffer:[0u8; BUFFER_SIZE], len:0 } //must be BUFFER_SIZE
+            ErrMessage{ the_buffer:[0u8; BUFFER_SIZE], the_buf_len:0 } //must be BUFFER_SIZE
         }
         //        const fn get_as_array(&self) -> &[u8; BUFFER_SIZE] {
         //            &self.buffer
@@ -518,7 +518,7 @@ mod static_noalloc_msg {
             let mut digits = [b'0'; DIGITS_LEN];
             let mut num = input_size;
             let mut index = DIGITS_LEN;
-            let start=self.len;
+            let start=self.the_buf_len;
 
             // Skip leading zeroes
             while num > 0 {
@@ -529,8 +529,8 @@ mod static_noalloc_msg {
 
             // If the number is zero, just return a single zero
             if index == DIGITS_LEN - 1 {
-                self.buffer[start] = b'0';
-                self.len=1;
+                self.the_buffer[start] = b'0';
+                self.the_buf_len+=1;
                 return;
             }
 
@@ -538,18 +538,18 @@ mod static_noalloc_msg {
             let mut len = 0;
             let mut i = index;
             while i < DIGITS_LEN {
-                self.buffer[start + len] = digits[i];//if this fails with index outta bounds, u don't have enough space in buffer!
+                self.the_buffer[start + len] = digits[i];//if this fails with index outta bounds, u don't have enough space in buffer!
                 len += 1;
                 i += 1;
             }
-            self.len=len;
+            self.the_buf_len+=len;
         }//fn
 
         pub const fn append(&mut self, input_bytes: &[u8]) {
             let bytes_len = input_bytes.len();
             //        XXX: can't properly err from this! because 'const fn'
-            let start_at=self.len;
-            let have_space=self.buffer.len()-start_at;
+            let start_at=self.the_buf_len;
+            let have_space=self.the_buffer.len()-start_at;
             if have_space < bytes_len {
                 [()][bytes_len]; // XXX: reports the value of this
                 [()][have_space];
@@ -564,11 +564,11 @@ mod static_noalloc_msg {
             let mut j = 0;
 
             while j < bytes_len {
-                self.buffer[start_at + j] = input_bytes[j]; // if out of bounds it means err_msg_max_buffer_size() is too low, like if u're using too big of a SIZE
+                self.the_buffer[start_at + j] = input_bytes[j]; // if out of bounds it means err_msg_max_buffer_size() is too low, like if u're using too big of a SIZE
                 j += 1;
             }
 
-            self.len=start_at + bytes_len;
+            self.the_buf_len=start_at + bytes_len;
         }//fn
 
         pub const fn append_from_utf8_lossy(&mut self, input: &[u8]) {
@@ -577,7 +577,7 @@ mod static_noalloc_msg {
             const REPL_LEN:usize=REPLACEMENT.len();
 
             //let mut buffer = [0u8; 1024];
-            let start_at_in_buffer:usize = self.len;
+            let start_at_in_buffer:usize = self.the_buf_len;
             let mut len:usize = start_at_in_buffer;
             let input_len=input.len();
             if len + input_len > BUFFER_SIZE {
@@ -610,8 +610,13 @@ mod static_noalloc_msg {
                     Ok(valid) => {
                         let valid_bytes = valid.as_bytes();
                         let vb_len=valid_bytes.len();
-                        if len + vb_len > BUFFER_SIZE {
-                            break;
+//                        if len + vb_len > BUFFER_SIZE {
+//                            break;
+//                        }
+                        if len + vb_len >= BUFFER_SIZE {
+                            [()][len]; // XXX: show me the value
+                            [()][vb_len]; // XXX: show me the value
+                            assert!(len + vb_len < BUFFER_SIZE, "shouldn't go past last index");
                         }
                         let mut j = 0;
                         while j < vb_len {
@@ -619,7 +624,7 @@ mod static_noalloc_msg {
                                 [()][len]; // XXX: show me the value
                                 assert!(len < BUFFER_SIZE,"no more space left in dest buffer1");
                             }
-                            self.buffer[len] = valid_bytes[j];
+                            self.the_buffer[len] = valid_bytes[j];
                             len += 1;
                             j += 1;
                         }
@@ -638,7 +643,7 @@ mod static_noalloc_msg {
                                 [()][len]; // XXX: show me the value
                                 assert!(len < BUFFER_SIZE,"no more space left in dest buffer2");
                             }
-                            self.buffer[len] = input[i + j];
+                            self.the_buffer[len] = input[i + j];
                             len += 1;
                             j += 1;
                         }//while
@@ -650,7 +655,7 @@ mod static_noalloc_msg {
                                 assert!(len < BUFFER_SIZE, "can't insert replacement char due to not enough space in destination buffer");
                             }
                             //if len < BUFFER_SIZE {
-                                self.buffer[len] = REPLACEMENT[k];
+                                self.the_buffer[len] = REPLACEMENT[k];
                                 len += 1;
                             //} else {
                             //    break;
@@ -663,7 +668,7 @@ mod static_noalloc_msg {
                 }//match
             }//while
 
-            self.len=len;
+            self.the_buf_len=len;
             //ErrMessage { buffer, len }
         }//fn
     }//impl
@@ -795,7 +800,7 @@ mod static_noalloc_msg {
             }//match
         }//while
 
-        ErrMessage { buffer, len }
+        ErrMessage { the_buffer:buffer, the_buf_len:len }
     }
 
 
@@ -803,8 +808,8 @@ mod static_noalloc_msg {
         pub const fn get_name_of_self() -> ErrMessage<{ self_name_max_buffer_size() }> {
             //let mut buffer = [0u8; self_name_max_buffer_size()];
             //let mut len = 0;
-            let mut ret=ErrMessage { buffer:[0u8; self_name_max_buffer_size()],
-                len:0 };
+            let mut ret=ErrMessage { the_buffer:[0u8; self_name_max_buffer_size()],
+                the_buf_len:0 };
 
             const PART1: &[u8] = stringify!(NoAllocFixedLenMessageOfPreallocatedSize).as_bytes();
             const PART2: &[u8] = b"::<";
