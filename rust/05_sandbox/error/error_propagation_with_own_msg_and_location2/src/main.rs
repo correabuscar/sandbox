@@ -480,14 +480,54 @@ mod static_noalloc_msg {
         //        const fn get_as_array(&self) -> &[u8; BUFFER_SIZE] {
         //            &self.buffer
         //        }
-        pub const fn from_utf8_lossy_to_buf(&mut self, input: &[u8], start_at_in_buffer:usize) {
+        const fn append(&mut self, input_bytes: &[u8]) {
+            let bytes_len = input_bytes.len();
+            //        XXX: can't properly err from this! because 'const fn'
+            let start_at=self.len();
+            let have_space=self.buffer.len()-start_at;
+            assert!(have_space >= bytes_len, "don't have space to append");
+            //        if have_space < bytes_len {
+            //            //panic!("foo");
+            //            //panic!("You have {have_space} bytes in buffer but you need {bytes_len}, so {} more bytes.",bytes_len - have_space);
+            //            //panic!("{}",format_args!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space));
+            //            //panic!("{}",crate::format_into_buffer!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space));
+            //            //let foo=crate::format_into_buffer!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space);
+            //            //panic!("not enough space left");
+            //        }
+            let mut j = 0;
+
+            while j < bytes_len {
+                self.buffer[start_at + j] = input_bytes[j]; // if out of bounds it means err_msg_max_buffer_size() is too low, like if u're using too big of a SIZE
+                j += 1;
+            }
+
+            self.len=start_at + bytes_len;
+        }//fn
+
+        pub const fn append_from_utf8_lossy(&mut self, input: &[u8]) {
 
             const REPLACEMENT: &[u8] = b"\xEF\xBF\xBD"; // UTF-8 for replacement character U+FFFD
             const REPL_LEN:usize=REPLACEMENT.len();
 
             //let mut buffer = [0u8; 1024];
-            let mut len = start_at_in_buffer;
+            let start_at_in_buffer:usize = self.len;
+            let mut len:usize = start_at_in_buffer;
             let input_len=input.len();
+            if len + input_len > BUFFER_SIZE {
+                //XXX: not bad to see the value of, but it only shows me the first one that fails, due to runtime panic on first!
+                [()][len]; //107
+                [()][input_len]; //4096
+                [()][BUFFER_SIZE]; //4180
+
+                //try1:
+                //let _=std::panic::catch_unwind(||
+                    //[()][len]; //);
+                //let _ = [1][len] + [2][input_len] + [3][BUFFER_SIZE];
+
+                //try2: fail!
+                //struct ValueIsTooLarge<const N: usize>;
+                //let _ = ValueIsTooLarge::<len>; //won't work at runtime, and 'len' needs to be const
+            }
             assert!(len + input_len <= BUFFER_SIZE, "won't fit");// can't format it in 'const fn', tried this: "it wouldn't fit, needs: {} but have {}.", len+input_len, BUFFER_SIZE);
             //assert_ne!(len + input_len, BUFFER_SIZE);// 'assert' works but 'assert_ne' no way!
 
@@ -671,24 +711,31 @@ mod static_noalloc_msg {
 
     impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         pub const fn get_name_of_self() -> ErrMessage<{ self_name_max_buffer_size() }> {
-            let mut buffer = [0u8; self_name_max_buffer_size()];
-            let mut len = 0;
+            //let mut buffer = [0u8; self_name_max_buffer_size()];
+            //let mut len = 0;
+            let mut ret=ErrMessage { buffer:[0u8; self_name_max_buffer_size()],
+                len:0 };
 
             const PART1: &[u8] = stringify!(NoAllocFixedLenMessageOfPreallocatedSize).as_bytes();
             const PART2: &[u8] = b"::<";
             const PART3: &[u8] = b">";
 
-            len = copy_to_buf(&mut buffer, len, PART1);
-            len = copy_to_buf(&mut buffer, len, PART2);
-            len += size_to_str(SIZE, &mut buffer, len);
-            len = copy_to_buf(&mut buffer, len, PART3);
+            //len = copy_to_buf(&mut buffer, len, PART1);
+            ret.append(PART1);
+            //len = copy_to_buf(&mut buffer, len, PART2);
+            ret.append(PART2);
+            //len += size_to_str(SIZE, &mut buffer, len);
+            ret.len += size_to_str(SIZE, &mut ret.buffer, ret.len);
+            //len = copy_to_buf(&mut buffer, len, PART3);
+            ret.append(PART3);
 
-            ErrMessage { buffer, len }
+            ret
         }
 
         pub const fn get_msg_as_lossy(&self) -> ErrMessage<{ err_msg_max_buffer_size() }> {
-            let mut buffer = [0u8; err_msg_max_buffer_size()];
-            let mut len = 0;
+            //let mut buffer = [0u8; err_msg_max_buffer_size()];
+            //let mut len = 0;
+            let mut ret=ErrMessage { buffer:[0u8; err_msg_max_buffer_size()], len:0 };
 
             const PART1: &[u8] = b"<invalid UTF-8 in this instance of ";
             const PART2: &[u8] = stringify!(NoAllocFixedLenMessageOfPreallocatedSize).as_bytes();
@@ -696,18 +743,23 @@ mod static_noalloc_msg {
             const PART4: &[u8] = b"> but here it is lossy: \"";
             const PART5: &[u8] = b"\">";
 
-            len = copy_to_buf(&mut buffer, len, PART1);
-            len = copy_to_buf(&mut buffer, len, PART2);
-            len = copy_to_buf(&mut buffer, len, PART3);
-            len += size_to_str(SIZE, &mut buffer, len);
-            len = copy_to_buf(&mut buffer, len, PART4);
+            //len = copy_to_buf(&mut buffer, len, PART1);
+            ret.append(PART1);
+            //len = copy_to_buf(&mut buffer, len, PART2);
+            ret.append(PART2);
+            //len = copy_to_buf(&mut buffer, len, PART3);
+            ret.append(PART3);
+            //len += size_to_str(SIZE, &mut buffer, len);
+            ret.len += size_to_str(SIZE, &mut ret.buffer, ret.len);
+            //len = copy_to_buf(&mut buffer, len, PART4);
+            ret.append(PART4);
             //okFIXME: this is messy, and double copies; maybe make it place it in buf directly!
             //let foo=from_utf8_lossy(&self.msg[..self.msg_len]);
-            let mut ret=ErrMessage { buffer, len };
             //ret.from_utf8_lossy_to_buf(&self.msg[..self.msg_len], ret.len);
-            ret.from_utf8_lossy_to_buf(&self.msg, ret.len);
+            ret.append_from_utf8_lossy(&self.msg[..self.msg_len]);
             //len = copy_to_buf_2(&mut buffer, len, &foo.buffer, foo.len);
-            ret.len = copy_to_buf(&mut ret.buffer, ret.len, PART5);
+            //ret.len = copy_to_buf(&mut ret.buffer, ret.len, PART5);
+            ret.append(PART5);
             ret
         }
 
