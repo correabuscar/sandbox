@@ -402,6 +402,11 @@ mod static_noalloc_msg {
         msg_len: usize,
         //msg_slice:&'static str, //points into the 'msg' buffer - can't be done this way apparently, XXX: rust?!
     }
+    impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
+        const fn foo() -> usize {
+            return SIZE;
+        }
+    }
     impl<const SIZE: usize> std::fmt::Display for NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { //where [(); err_msg_max_buffer_size(SIZE)]: {
             //let slice=std::str::from_utf8(&self.msg[..self.len]).unwrap_or(concat!("<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",stringify!(SIZE),">>"));
@@ -446,7 +451,7 @@ mod static_noalloc_msg {
                 .field("msg_len", &self.msg_len)
                 .finish()
         }
-    }
+    }//impl
 //macro_rules! foo {
 //    ($($e:tt),*) => {
 //        concat!( $( $e ),*)
@@ -739,7 +744,8 @@ mod static_noalloc_msg {
             ret
         }
 
-        pub const fn append_msg_as_lossy(&self, dest: &mut ErrMessage<{ err_msg_max_buffer_size(SIZE) }>) {
+        //pub const fn append_msg_as_lossy(&self, dest: &mut ErrMessage<{ err_msg_max_buffer_size(SIZE) }>) {
+        pub const fn append_msg_as_lossy<const ANY_SIZE:usize>(&self, dest: &mut ErrMessage<ANY_SIZE>) {
             //let mut buffer = [0u8; err_msg_max_buffer_size()];
             //let mut len = 0;
             //let mut ret=ErrMessage { buffer:[0u8; err_msg_max_buffer_size()], len:0 };
