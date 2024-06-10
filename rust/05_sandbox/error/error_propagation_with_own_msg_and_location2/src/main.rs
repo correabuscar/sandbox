@@ -500,6 +500,41 @@ mod static_noalloc_msg {
         //        const fn get_as_array(&self) -> &[u8; BUFFER_SIZE] {
         //            &self.buffer
         //        }
+        ///
+        // that buffer param there, needs: #![feature(const_mut_refs)] // Enable mutable references in const functions
+        pub const fn append_size_as_str(&mut self, input_size: usize) {
+            const DIGITS_LEN: usize = log10(usize::MAX);//eg. 20; maximum number of digits for a usize
+
+            let mut digits = [b'0'; DIGITS_LEN];
+            let mut num = input_size;
+            let mut index = DIGITS_LEN;
+            let start=self.len;
+
+            // Skip leading zeroes
+            while num > 0 {
+                index -= 1;
+                digits[index] = b'0' + (num % 10) as u8;
+                num /= 10;
+            }
+
+            // If the number is zero, just return a single zero
+            if index == DIGITS_LEN - 1 {
+                self.buffer[start] = b'0';
+                self.len=1;
+                return;
+            }
+
+            // Copy the digits starting from the non-zero part into the buffer
+            let mut len = 0;
+            let mut i = index;
+            while i < DIGITS_LEN {
+                self.buffer[start + len] = digits[i];//if this fails with index outta bounds, u don't have enough space in buffer!
+                len += 1;
+                i += 1;
+            }
+            self.len=len;
+        }//fn
+
         pub const fn append(&mut self, input_bytes: &[u8]) {
             let bytes_len = input_bytes.len();
             //        XXX: can't properly err from this! because 'const fn'
@@ -620,20 +655,20 @@ mod static_noalloc_msg {
 
             self.len=len;
             //ErrMessage { buffer, len }
-        }
+        }//fn
     }//impl
 
-        pub const fn log10(n: usize) -> usize {
-            let mut count = 0;
-            let mut tmp=n;
-            while tmp >= 10 {
-                tmp /= 10;
-                count += 1;
-            }
-            count + 1
+    pub const fn log10(n: usize) -> usize {
+        let mut count = 0;
+        let mut tmp=n;
+        while tmp >= 10 {
+            tmp /= 10;
+            count += 1;
         }
+        count + 1
+    }
 
-    // that buffer in arg there, needs: #![feature(const_mut_refs)] // Enable mutable references in const functions
+    // that buffer param there, needs: #![feature(const_mut_refs)] // Enable mutable references in const functions
     const fn size_to_str(size: usize, buffer: &mut [u8], start: usize) -> usize {
         const DIGITS_LEN: usize = log10(usize::MAX);//eg. 20; maximum number of digits for a usize
 
@@ -658,7 +693,7 @@ mod static_noalloc_msg {
         let mut len = 0;
         let mut i = index;
         while i < DIGITS_LEN {
-            buffer[start + len] = digits[i];
+            buffer[start + len] = digits[i];//if this fails with index outta bounds, u don't have enough space in buffer!
             len += 1;
             i += 1;
         }
@@ -770,7 +805,8 @@ mod static_noalloc_msg {
             //len = copy_to_buf(&mut buffer, len, PART2);
             ret.append(PART2);
             //len += size_to_str(SIZE, &mut buffer, len);
-            ret.len += size_to_str(SIZE, &mut ret.buffer, ret.len);
+            //ret.len += size_to_str(SIZE, &mut ret.buffer, ret.len);
+            ret.append_size_as_str(SIZE);
             //len = copy_to_buf(&mut buffer, len, PART3);
             ret.append(PART3);
 
@@ -788,7 +824,7 @@ mod static_noalloc_msg {
             //assert!(PART2.len() == 40);
             const PART3: &[u8] = b"::<";
             assert!(PART3.len() == 3);//just to show that they've a size that matches the assignment.
-            const PART4: &[u8] = b"> but here it is lossy: \"";
+            const PART4: &[u8] = b"> but here it is lossily: \"";
             const PART5: &[u8] = b"\">";
             assert!(PART5.len() == 2);
 
@@ -799,7 +835,8 @@ mod static_noalloc_msg {
             //len = copy_to_buf(&mut buffer, len, PART3);
             dest.append(PART3);
             //len += size_to_str(SIZE, &mut buffer, len);
-            dest.len += size_to_str(SIZE, &mut dest.buffer, dest.len);
+            //dest.len += size_to_str(SIZE, &mut dest.buffer, dest.len);
+            dest.append_size_as_str(SIZE);
             //len = copy_to_buf(&mut buffer, len, PART4);
             dest.append(PART4);
             //okFIXME: this is messy, and double copies; maybe make it place it in buf directly!
