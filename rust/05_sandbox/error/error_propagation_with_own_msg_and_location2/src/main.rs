@@ -470,17 +470,83 @@ mod static_noalloc_msg {
             //can't make it lossy because it needs String aka heap
             std::str::from_utf8(&self.buffer[..self.len]).unwrap_or_else(|_e| {
                 //TODO: use 'e' but how?
-                //XXX: shouldn't happen, unless I missed something; like everywhere this is used source things are UTF-8
+                //XXX: shouldn't happen, unless I missed something; like everywhere this is used, source things are UTF-8
                 concat!("<invalid UTF-8 in ", stringify!(ErrMessage), " instance>")
             })
         }
     }//impl
 
-//    impl<const BUFFER_SIZE: usize> ErrMessage<BUFFER_SIZE> {
-//        const fn get_as_array(&self) -> &[u8; BUFFER_SIZE] {
-//            &self.buffer
-//        }
-//    }
+    impl<const BUFFER_SIZE: usize> ErrMessage<BUFFER_SIZE> {
+        //        const fn get_as_array(&self) -> &[u8; BUFFER_SIZE] {
+        //            &self.buffer
+        //        }
+        pub const fn from_utf8_lossy_to_buf(&mut self, input: &[u8], start_at_in_buffer:usize) {
+
+            const REPLACEMENT: &[u8] = b"\xEF\xBF\xBD"; // UTF-8 for replacement character U+FFFD
+            const REPL_LEN:usize=REPLACEMENT.len();
+
+            //let mut buffer = [0u8; 1024];
+            let mut len = start_at_in_buffer;
+            let input_len=input.len();
+            assert!(len + input_len <= BUFFER_SIZE, "won't fit");// can't format it in 'const fn', tried this: "it wouldn't fit, needs: {} but have {}.", len+input_len, BUFFER_SIZE);
+            //assert_ne!(len + input_len, BUFFER_SIZE);// 'assert' works but 'assert_ne' no way!
+
+            let mut i = 0;
+            while i < input_len { //&& len < BUFFER_SIZE {
+                assert!(len < BUFFER_SIZE,"no more space left in dest buffer0");
+                let result = std::str::from_utf8(&input[i..]);
+                match result {
+                    Ok(valid) => {
+                        let valid_bytes = valid.as_bytes();
+                        let vb_len=valid_bytes.len();
+                        if len + vb_len > BUFFER_SIZE {
+                            break;
+                        }
+                        let mut j = 0;
+                        while j < vb_len {
+                            assert!(len < BUFFER_SIZE,"no more space left in dest buffer1");
+                            self.buffer[len] = valid_bytes[j];
+                            len += 1;
+                            j += 1;
+                        }
+                        break;
+                    }
+                    Err(e) => {
+                        let valid_up_to = e.valid_up_to();
+                        let invalid_sequence_length = match e.error_len() {
+                            Some(len) => len,
+                            None => 1,
+                        };
+
+                        let mut j = 0;
+                        while j < valid_up_to {
+                            assert!(len < BUFFER_SIZE,"no more space left in dest buffer2");
+                            self.buffer[len] = input[i + j];
+                            len += 1;
+                            j += 1;
+                        }//while
+
+                        let mut k = 0;
+                        while k < REPL_LEN {
+                            assert!(len < BUFFER_SIZE, "can't insert replacement char due to not enough space in destination buffer");
+                            //if len < BUFFER_SIZE {
+                                self.buffer[len] = REPLACEMENT[k];
+                                len += 1;
+                            //} else {
+                            //    break;
+                            //}
+                            k += 1;
+                        }//while
+
+                        i += valid_up_to + invalid_sequence_length;
+                    }
+                }//match
+            }//while
+
+            self.len=len;
+            //ErrMessage { buffer, len }
+        }
+    }//impl
 
     // that buffer in arg there, needs: #![feature(const_mut_refs)] // Enable mutable references in const functions
     const fn size_to_str(size: usize, buffer: &mut [u8], start: usize) -> usize {
@@ -602,6 +668,7 @@ mod static_noalloc_msg {
         ErrMessage { buffer, len }
     }
 
+
     impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         pub const fn get_name_of_self() -> ErrMessage<{ self_name_max_buffer_size() }> {
             let mut buffer = [0u8; self_name_max_buffer_size()];
@@ -634,12 +701,14 @@ mod static_noalloc_msg {
             len = copy_to_buf(&mut buffer, len, PART3);
             len += size_to_str(SIZE, &mut buffer, len);
             len = copy_to_buf(&mut buffer, len, PART4);
-            //FIXME: this is messy, and double copies; maybe make it place it in buf directly!
-            let foo=from_utf8_lossy(&self.msg[..self.msg_len]);
-            len = copy_to_buf_2(&mut buffer, len, &foo.buffer, foo.len);
-            len = copy_to_buf(&mut buffer, len, PART5);
-
-            ErrMessage { buffer, len }
+            //okFIXME: this is messy, and double copies; maybe make it place it in buf directly!
+            //let foo=from_utf8_lossy(&self.msg[..self.msg_len]);
+            let mut ret=ErrMessage { buffer, len };
+            //ret.from_utf8_lossy_to_buf(&self.msg[..self.msg_len], ret.len);
+            ret.from_utf8_lossy_to_buf(&self.msg, ret.len);
+            //len = copy_to_buf_2(&mut buffer, len, &foo.buffer, foo.len);
+            ret.len = copy_to_buf(&mut ret.buffer, ret.len, PART5);
+            ret
         }
 
         pub const fn get_msg_as_str_maybe(&self) -> Result<&str, std::str::Utf8Error> {
