@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -e
-#cargo clean
-echo "$(date)"
+cargo clean
+date
 cargo run &> /tmp/foo.log || cat /tmp/foo.log

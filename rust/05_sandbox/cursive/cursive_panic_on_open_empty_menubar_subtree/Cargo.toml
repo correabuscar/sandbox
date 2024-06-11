@@ -1,0 +1,8 @@
+[package]
+name = "cursive_panic_on_open_empty_menubar_subtree"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cursive = { path ="/home/user/1tmp/ncurses_things/cursive/cursive" }
+#cursive = { path ="/tmp/cursive/cursive" }
