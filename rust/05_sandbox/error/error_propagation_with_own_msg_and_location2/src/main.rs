@@ -454,7 +454,7 @@ mod static_noalloc_msg {
                 Ok(slice) => write!(f, "{}", slice),
                 Err(err) => {
                     //const FOO:usize=SIZE; //can't use generic parameters from outer item: use of generic parameter from outer item
-                    let mut err_msg_buf = ErrMessage::<4096>::new(); //ErrMessage{ the_buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
+                    let mut err_msg_buf = ErrMessage::< { err_msg_max_buffer_size(4096) } >::new(); //ErrMessage{ the_buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
                     self.append_msg_to_dest_as_lossy(&mut err_msg_buf);
                     let s: &str = err_msg_buf.as_str();
                     write!(f, "<{} actual err: {}>", s, err)
@@ -466,7 +466,7 @@ mod static_noalloc_msg {
     impl<const SIZE: usize> std::fmt::Debug for NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             //let slice=std::str::from_utf8(&self.msg[..self.len]).unwrap_or(concat!("<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",stringify!(SIZE),">>"));
-            let mut err_msg_buf = ErrMessage::<4096>::new(); //ErrMessage{ the_buffer:[0u8; err_msg_max_buffer_size(4096)], the_buf_len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
+            let mut err_msg_buf = ErrMessage::< { err_msg_max_buffer_size(4096) } >::new(); //ErrMessage{ the_buffer:[0u8; err_msg_max_buffer_size(4096)], the_buf_len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
             let slice: &str = self.get_msg_as_str_maybe().unwrap_or_else(|_e| {
                 //TODO: show 'e' too?
                 //doneTODO: show the msg as lossy? can't it needs heap, unless... find another way to do it on stack?
@@ -524,13 +524,24 @@ mod static_noalloc_msg {
     //    }//impl
 
     impl<const BUFFER_SIZE: usize> ErrMessage<BUFFER_SIZE> {
-        //TODO: can this(or a newly named one) be made 'const fn' ?
-        pub fn as_str<'a>(&'a self) -> &'a str {
-            std::str::from_utf8(&self.the_buffer[..self.the_buf_len]).unwrap_or_else(|_e| {
+        //yeTODO: can this(or a newly named one) be made 'const fn' ?
+        pub const fn as_str<'a>(&'a self) -> &'a str {
+            //XXX: E0015: cannot call non-const fn ... it's official .unwrap_or*() are crap shortcuts ;p
+            //std::str::from_utf8(&self.the_buffer[..self.the_buf_len]).unwrap_or(
+            //    concat!("<invalid UTF-8 in ", stringify!(ErrMessage), " instance>")
+            //);
+            let res=
+            std::str::from_utf8(&self.the_buffer[..self.the_buf_len]);
+            match res {
+                Err(_e) => {
+            //.unwrap_or_else(|_e| {
                 //TODO: use 'e' but how?
                 //XXX: shouldn't happen, unless I missed something; like everywhere this is used, source things are UTF-8
                 concat!("<invalid UTF-8 in ", stringify!(ErrMessage), " instance>")
-            })
+                },
+                Ok(s) => s,
+            //})
+            } //match
         }
         pub const fn new() -> ErrMessage<BUFFER_SIZE> {
             //
