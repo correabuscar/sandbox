@@ -235,7 +235,7 @@ mod my_error_things {
             let variant_name=self.variant_name_as_str();//made by enum_str! macro
             //self.as_str();
             //let fixed=crate::format_into_buffer!("{}::{}", type_name, variant_name).get_msg();/* E0716: temporary value dropped while borrowed consider using a `let` binding to create a longer lived value */
-            let fixed: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE>=crate::format_into_buffer!("{}::{}", type_name, variant_name);
+            let fixed: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE>=crate::format_into_buffer!(1000,"{}::{}", type_name, variant_name);
             //let fixed=fixed.get_msg();
             return fixed;
         }
@@ -353,7 +353,7 @@ mod my_error_things {
                     "{} at location: '{}', custom msg: '{}', generic msg: Already borrowed or recursing error, source error: '{}'",
                     self.variant_name_full(),
                     //std::any::type_name::<MyError>(),//::<Self::AlreadyBorrowedOrRecursingError>(),//self,
-                    //TODO: how to show the variant itself with the type prefixing it too, without duplicating its name inside the string and hopefully without procedural macros?
+                    //doneTODO: how to show the variant itself with the type prefixing it too, without duplicating its name inside the string and hopefully without procedural macros?
                     //String::from_utf8_lossy(&custom_message[..*custom_message_len]),
                     location_of_instantiation,
                     custom_message,
@@ -924,16 +924,27 @@ mod static_noalloc_msg {
         }
     } // impl
 
+
     /// format the args (like println!()) into the returned pre-allocated buffer
     //#[deny(unused_must_use)] // no effect!
     #[macro_export]
     macro_rules! format_into_buffer {
-    ($fmt:expr, $($arg:tt)*) => {
+    ($buffer_size_const:expr, $fmt:expr, $($arg:tt)*) => {
         //#[must_use] // unused_attributes: `#[must_use]` has no effect when applied to an expression `#[warn(unused_attributes)]` on by default
         //#[deny(unused_must_use)] //no effect here
         {
-            //TODO: don't hardcode this const here CUSTOM_ERROR_MSG_BUFFER_SIZE, allow it to be first arg? but also make a version of this macro with hardcoded arg for the MyError type in its module
-        let mut buffer = [0u8; $crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE];//allocated at call site aka destination, due to being itself returned/owned, instead of a ref to it which wouldn't work unless it's a static but then every thread will share same one, even tho it's different for each macro call site!
+            //kindadoneTODO: don't hardcode this const here CUSTOM_ERROR_MSG_BUFFER_SIZE, allow it to be first arg? but also make a version of this macro with hardcoded arg for the MyError type in its module
+            const fn check_usize(val: usize) -> usize {
+                //FIXME: detect values over CUSTOM_ERROR_MSG_BUFFER_SIZE and warn or compile error or something!
+                val
+            }
+            check_usize($buffer_size_const);
+
+            const fn const_min(a: usize, b: usize) -> usize {
+                if a <= b { a } else { b }
+            }
+        const LESSER_ONE:usize=const_min($buffer_size_const, $crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE);
+        let mut buffer = [0u8; LESSER_ONE];//allocated at call site aka destination, due to being itself returned/owned, instead of a ref to it which wouldn't work unless it's a static but then every thread will share same one, even tho it's different for each macro call site!
         let mut cursor = std::io::Cursor::new(&mut buffer[..]);
         //use std::io::Write;
         //let res=write!(cursor, $fmt, $($arg)*);
@@ -954,12 +965,14 @@ So, in summary, `format_args!` itself does not allocate memory on the heap. Howe
 
         let len = cursor.position() as usize;
         //let ret_slice:&'static str=std::str::from_utf8(&buffer[..len]).unwrap_or("<invalid UTF-8>");
-        let ret_type=$crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::< { $crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE } >::new(buffer, len);
+        let ret_type=$crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::< { LESSER_ONE } >::new(buffer, len);
         if res.is_err() {
             eprintln!("Failed to write to buffer of size '{}' due to error '{}' (was it due to buffer too small? '{}'), wrote '{}' bytes so far, as '{:?}' or as rust UTF-8 string: '{}'",
-            $crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,
+            //$crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,
+            LESSER_ONE,
             res.err().unwrap(),
-            len==$crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,
+            //len==$crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,
+            LESSER_ONE,
             len,
             buffer,
                 //String::from_utf8_lossy(&buffer[..len]) //XXX:this is on heap!
@@ -972,6 +985,7 @@ So, in summary, `format_args!` itself does not allocate memory on the heap. Howe
         #[must_use] // can't apply it to the expression 'ret_type'
         #[inline(always)]
         fn ensure_used<T>(t: T) -> T { t }
+        //fn ensure_used<T>(t: T) -> T { t }
         //#[deny(unused_must_use)] //XXX: has no effect here! but rather, only at call sites!(which this may seem like one, but doesn't count if it's in macro, it has to be at macro call site!)
         ensure_used(ret_type) /*XXX: if u see this, it's an error at macro invocation site, not inside the macro! you've to use the return of the macro!*/
         //it errors here: ^ unused_must_use: use `let _ = ...` to ignore the resulting value: `let _ = `, `;`
@@ -995,7 +1009,7 @@ fn some_fn() -> MyResult<()> {
     let _inst = r.try_borrow_mut().map_err(|err| {
         crate::my_error!(
             crate::my_error_things::MyError::AlreadyBorrowedOrRecursingError,
-            crate::format_into_buffer!("Custom ·\u{b7}borrow error message with error code {}", 404),
+            crate::format_into_buffer!(4096,"Custom ·\u{b7}borrow error message with error code {}", 404),
             source: err,
         )
     })?;/*XXX: but we can forget to use '?' at the end there!*/
@@ -1023,7 +1037,7 @@ fn main() -> Result<(), my_error_things::MyError> {
     //format_into_buffer!("Custom borrow error message with error code {}", 404); /*XXX: this gets an unused warning! */
     let borrow_error = my_error!(
         my_error_things::MyError::AlreadyBorrowedOrRecursingError,
-        format_into_buffer!("Custom borrow error message with error code {}", 404),
+        format_into_buffer!(100,"Custom borrow error message with error code {}", 404),
         source: inst.err().unwrap()
     );
 
@@ -1031,7 +1045,7 @@ fn main() -> Result<(), my_error_things::MyError> {
     let tid = 6;
     let timeout_error = my_error!(
         my_error_things::MyError::TimeoutError,
-        format_into_buffer!("Timeout occurred for thread {} after {:?}", tid, dur),
+        format_into_buffer!(100,"Timeout occurred for thread {} after {:?}", tid, dur),
         duration: dur,
         tid: tid,
     );
