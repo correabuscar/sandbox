@@ -9,12 +9,12 @@
 //#![deny(unused_must_use)] // yeah it works here, ofc! but it's too broad!
 
 mod some_macro {
-/// matches any variants that are: unit, tuple or struct like, with/without discriminant (ie. Ok=200)
-/// though you'd have to add eg. #[repr(u8)] //else, error[E0732]: `#[repr(inttype)]` must be specified
-/// empty enums are not supported, like pub enum Foo{}, on purpose!
-/// see: https://doc.rust-lang.org/reference/items/enumerations.html
-#[macro_export]
-macro_rules! enum_str {
+    /// matches any variants that are: unit, tuple or struct like, with/without discriminant (ie. Ok=200)
+    /// though you'd have to add eg. #[repr(u8)] //else, error[E0732]: `#[repr(inttype)]` must be specified
+    /// empty enums are not supported, like pub enum Foo{}, on purpose!
+    /// see: https://doc.rust-lang.org/reference/items/enumerations.html
+    #[macro_export]
+    macro_rules! enum_str {
     (
         //matches attributes like #[allow(dead_code)], if any!
         //or the more likely-used one: #[repr(u8)]
@@ -151,13 +151,13 @@ macro_rules! enum_str {
             }//impl
     };//arm
 } //macro
-
 }
 
 mod my_error_things {
 
     //const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 6;
-    pub const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 4096; //one kernel page?!
+    pub const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 4096; // one kernel page?!
+                                                          //^ must be pub due to being used in a macro!
 
     use std::cell::BorrowMutError;
     use std::fmt;
@@ -172,13 +172,7 @@ mod my_error_things {
 
     impl fmt::Display for LocationInSource {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            write!(
-                f,
-                "{}:{}:{}",
-                self.file,
-                self.line,
-                self.column
-            )
+            write!(f, "{}:{}:{}", self.file, self.line, self.column)
         }
     }
 
@@ -217,14 +211,18 @@ mod my_error_things {
                     >,
             },
         } // enum
-    }//macro
+    } //macro
 
     impl MyError {
         //TODO: the size of the returned here shouldn't need to be same as CUSTOM_ERROR_MSG_BUFFER_SIZE it can be different/less!
-        pub fn variant_name_full(&self) -> crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE> {
+        pub fn variant_name_full(
+            &self,
+        ) -> crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<
+            CUSTOM_ERROR_MSG_BUFFER_SIZE,
+        > {
             //let type_name = std::any::type_name::<Self>();/* error_propagation_with_own_msg_and_location::my_error_things::MyError */
             //let type_name= std::any::type_name_of_val(self); /* same ^ */
-            let type_name=self.type_name_without_crate();
+            let type_name = self.type_name_without_crate();
             //let i:i32=type_name;//&str
             //let type_name_len = type_name.len().min(type_name_buffer.len() - 1);
             //let type_name_slice = &type_name.as_bytes()[..type_name_len];
@@ -233,10 +231,17 @@ mod my_error_things {
             //    std::intrinsics::variant_name(std::mem::discriminant(self))
             //};
             //let variant_name= std::any::type_name_of_val(self);
-            let variant_name=self.variant_name_as_str();//made by enum_str! macro
-            //self.as_str();
-            //let fixed=crate::format_into_buffer!("{}::{}", type_name, variant_name).get_msg();/* E0716: temporary value dropped while borrowed consider using a `let` binding to create a longer lived value */
-            let fixed: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE>=crate::format_into_buffer!(CUSTOM_ERROR_MSG_BUFFER_SIZE,"{}::{}", type_name, variant_name);
+            let variant_name = self.variant_name_as_str(); //made by enum_str! macro
+                                                           //self.as_str();
+                                                           //let fixed=crate::format_into_buffer!("{}::{}", type_name, variant_name).get_msg();/* E0716: temporary value dropped while borrowed consider using a `let` binding to create a longer lived value */
+            let fixed: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<
+                CUSTOM_ERROR_MSG_BUFFER_SIZE,
+            > = crate::format_into_buffer!(
+                CUSTOM_ERROR_MSG_BUFFER_SIZE,
+                "{}::{}",
+                type_name,
+                variant_name
+            );
             //let fixed=fixed.get_msg();
             return fixed;
         }
@@ -244,7 +249,7 @@ mod my_error_things {
         #[inline(always)]
         pub const fn type_name_full(&self) -> &str {
             //both need this: #![feature(const_type_name)]
-            std::any::type_name::<Self>()/* error_propagation_with_own_msg_and_location::my_error_things::MyError */
+            std::any::type_name::<Self>() /* error_propagation_with_own_msg_and_location::my_error_things::MyError */
             //std::any::type_name_of_val(self) /* same ^ */
         }
 
@@ -253,8 +258,8 @@ mod my_error_things {
             //"The type name returned by std::any::type_name::<Self>() is a string literal, which is stored in the program's data segment and does not require heap allocation.
             //Substring slicing: The &[start..end] syntax for creating string slices operates on existing memory without allocating new memory. It simply points to a portion of the original string's memory." - chatgpt 3.5
             //ok so no heap allocations and can return substring aka slice because that's in data segment.
-            let full_type_name=self.type_name_full();//std::any::type_name::<Self>(); /* error_propagation_with_own_msg_and_location::my_error_things::MyError */
-            //std::any::type_name_of_val(self) /* same ^ */
+            let full_type_name = self.type_name_full(); //std::any::type_name::<Self>(); /* error_propagation_with_own_msg_and_location::my_error_things::MyError */
+                                                        //std::any::type_name_of_val(self) /* same ^ */
             if let Some(last_double_colon) = full_type_name.rfind("::") {
                 &full_type_name[(last_double_colon + 2)..] // Skip the last '::'
             } else {
@@ -263,7 +268,7 @@ mod my_error_things {
         }
 
         pub fn type_name_without_crate(&self) -> &str {
-            let full_type_name=self.type_name_full();//std::any::type_name::<Self>(); /* error_propagation_with_own_msg_and_location::my_error_things::MyError */
+            let full_type_name = self.type_name_full(); //std::any::type_name::<Self>(); /* error_propagation_with_own_msg_and_location::my_error_things::MyError */
             if let Some(first_double_colon) = full_type_name.find("::") {
                 &full_type_name[(first_double_colon + 2)..] // Skip the crate prefix
             } else {
@@ -274,70 +279,80 @@ mod my_error_things {
 
     impl fmt::Debug for MyError {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            let full=self.variant_name_full();
+            let full = self.variant_name_full();
             //let full=full.get_msg();
             //let mut err_msg_buf=crate::static_noalloc_msg::ErrMessage{ buffer:[0u8; crate::static_noalloc_msg::err_msg_max_buffer_size(CUSTOM_ERROR_MSG_BUFFER_SIZE)], len:0 }; // field 'len' is private
-            let mut err_msg_buf=crate::static_noalloc_msg::ErrMessage::<{crate::static_noalloc_msg::err_msg_max_buffer_size(CUSTOM_ERROR_MSG_BUFFER_SIZE)}>::new(); //{ buffer:[0u8; crate::static_noalloc_msg::err_msg_max_buffer_size(CUSTOM_ERROR_MSG_BUFFER_SIZE)], len:0 }; // field 'len' is private
-            //let err=&full.get_msg_as_lossy();//kindadoneTODO: this is proper ugly but can't get it only when it errors, LOL!
-            //const ERR:&str = &crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy();
-            //let err=&crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy();
+            let mut err_msg_buf = crate::static_noalloc_msg::ErrMessage::<
+                {
+                    crate::static_noalloc_msg::err_msg_max_buffer_size(CUSTOM_ERROR_MSG_BUFFER_SIZE)
+                },
+            >::new(); //{ buffer:[0u8; crate::static_noalloc_msg::err_msg_max_buffer_size(CUSTOM_ERROR_MSG_BUFFER_SIZE)], len:0 }; // field 'len' is private
+                      //let err=&full.get_msg_as_lossy();//kindadoneTODO: this is proper ugly but can't get it only when it errors, LOL!
+                      //const ERR:&str = &crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy();
+                      //let err=&crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy();
             let full_as_str: &str = full.get_msg_as_str_maybe().unwrap_or_else(|_e| {
                 //TODO: use 'e'
                 //err
                 full.append_msg_to_dest_as_lossy(&mut err_msg_buf);
                 err_msg_buf.as_str()
-                    //ref to temp value:
+                //ref to temp value:
                 //&crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy()
-            }
-            );
+            });
             match self {
-                MyError::AlreadyBorrowedOrRecursingError { source, location_of_instantiation, custom_message } => {
-                    f.debug_struct(full_as_str)
-                        .field("source", source)
-                        .field("location_of_instantiation", location_of_instantiation)
-                        .field("custom_message", custom_message)
-                        .finish()
-                },
-                MyError::TimeoutError { location_of_instantiation, duration, tid, custom_message } => {
-                    f.debug_struct(full_as_str)
-                        .field("location_of_instantiation", location_of_instantiation)
-                        .field("duration", duration)
-                        .field("tid", tid)
-                        .field("custom_message", custom_message)
-                        .finish()
-                },
+                MyError::AlreadyBorrowedOrRecursingError {
+                    source,
+                    location_of_instantiation,
+                    custom_message,
+                } => f
+                    .debug_struct(full_as_str)
+                    .field("source", source)
+                    .field("location_of_instantiation", location_of_instantiation)
+                    .field("custom_message", custom_message)
+                    .finish(),
+                MyError::TimeoutError {
+                    location_of_instantiation,
+                    duration,
+                    tid,
+                    custom_message,
+                } => f
+                    .debug_struct(full_as_str)
+                    .field("location_of_instantiation", location_of_instantiation)
+                    .field("duration", duration)
+                    .field("tid", tid)
+                    .field("custom_message", custom_message)
+                    .finish(),
             }
         }
     } // impl
 
-//    // Implement the Error trait
-//    impl std::error::Error for MyError {
-//        //FIXME: this seems to do some heappage, maybe don't impl. at all?!
-//        fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-//            match self {
-//                MyError::AlreadyBorrowedOrRecursingError { source, .. } => Some(source),
-//                MyError::TimeoutError { .. } => None,
-//            }
-//        }
-//    }
+    //    // Implement the Error trait
+    //    impl std::error::Error for MyError {
+    //        //FIXME: this seems to do some heappage, maybe don't impl. at all?!
+    //        fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+    //            match self {
+    //                MyError::AlreadyBorrowedOrRecursingError { source, .. } => Some(source),
+    //                MyError::TimeoutError { .. } => None,
+    //            }
+    //        }
+    //    }
 
-//    // Implement conversion from BorrowMutError to MyError
-//    impl From<std::cell::BorrowMutError> for MyError {
-//        fn from(err: std::cell::BorrowMutError) -> Self {
-////            MyError::AlreadyBorrowedOrRecursingError(
-////                format!("BorrowMutError: {}", err)
-////                )
-//            //FIXME: since using the macro inside this function, i don't see file:line:column of the caller, thus this is bad(NOTE: coulda maybe used #[track_caller] here and     println!("{}", std::panic::Location::caller()); https://doc.rust-lang.org/reference/attributes/codegen.html#the-track_caller-attribute ), so:
-//            //XXX: due to ^ let's not use '?' but map_err() instead, and the '?' after it;
-//            //XXX: thus not implementing From trait for our error type will prevent using '?' and "tell" us to use map_err()
-//            let borrow_error = crate::my_error!(
-//                crate::my_error_things::MyError::AlreadyBorrowedOrRecursingError,
-//                crate::format_into_buffer!("Custom borrow error message with error code {}", 404),
-//                source: err,
-//            );
-//            borrow_error
-//        }
-//    }
+    //    // Implement conversion from BorrowMutError to MyError
+    //    impl From<std::cell::BorrowMutError> for MyError {
+    //        fn from(err: std::cell::BorrowMutError) -> Self {
+    ////            MyError::AlreadyBorrowedOrRecursingError(
+    ////                format!("BorrowMutError: {}", err)
+    ////                )
+    //            //FIXME: since using the macro inside this function, i don't see file:line:column of the caller, thus this is bad(NOTE: coulda maybe used #[track_caller] here and     println!("{}", std::panic::Location::caller()); https://doc.rust-lang.org/reference/attributes/codegen.html#the-track_caller-attribute ), so:
+    //            //XXX: due to ^ let's not use '?' but map_err() instead, and the '?' after it;
+    //            //XXX: thus not implementing From trait for our error type will prevent using '?' and "tell" us to use map_err()
+    //            let borrow_error = crate::my_error!(
+    //                crate::my_error_things::MyError::AlreadyBorrowedOrRecursingError,
+    //                crate::format_into_buffer!("Custom borrow error message with error code {}", 404),
+    //                source: err,
+    //            );
+    //            borrow_error
+    //        }
+    //    }
 
     impl fmt::Display for MyError {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -415,72 +430,70 @@ mod static_noalloc_msg {
         msg_len: usize,
         //msg_slice:&'static str, //points into the 'msg' buffer - can't be done this way apparently, XXX: rust?!
     }
-//    impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
-//        const fn foo() -> usize {
-//            return SIZE;
-//        }
-//    }
+    //    impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
+    //        const fn foo() -> usize {
+    //            return SIZE;
+    //        }
+    //    }
     impl<const SIZE: usize> std::fmt::Display for NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { //where [(); err_msg_max_buffer_size(SIZE)]: {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            //where [(); err_msg_max_buffer_size(SIZE)]: {
             //let slice=std::str::from_utf8(&self.msg[..self.len]).unwrap_or(concat!("<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",stringify!(SIZE),">>"));
             //let slice = self.get_msg();
             let result = self.get_msg_as_str_maybe();
-//            .unwrap_or_else(|e| {
-//                //doneTODO: use 'e'
-//                &self.get_msg_as_lossy()
-//            });
+            //            .unwrap_or_else(|e| {
+            //                //doneTODO: use 'e'
+            //                &self.get_msg_as_lossy()
+            //            });
             match result {
                 Ok(slice) => write!(f, "{}", slice),
                 Err(err) => {
                     //const FOO:usize=SIZE; //can't use generic parameters from outer item: use of generic parameter from outer item
-                    let mut err_msg_buf=ErrMessage::<4096>::new();//ErrMessage{ the_buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
+                    let mut err_msg_buf = ErrMessage::<4096>::new(); //ErrMessage{ the_buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
                     self.append_msg_to_dest_as_lossy(&mut err_msg_buf);
-                    let s:&str= err_msg_buf.as_str();
+                    let s: &str = err_msg_buf.as_str();
                     write!(f, "<{} actual err: {}>", s, err)
                 }
-            }//match
-        }//fn
-    }//impl
+            } //match
+        } //fn
+    } //impl
 
     impl<const SIZE: usize> std::fmt::Debug for NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             //let slice=std::str::from_utf8(&self.msg[..self.len]).unwrap_or(concat!("<invalid UTF-8 in this instance of NoAllocFixedLenMessageOfPreallocatedSize::<",stringify!(SIZE),">>"));
-            let mut err_msg_buf=ErrMessage::<4096>::new();//ErrMessage{ the_buffer:[0u8; err_msg_max_buffer_size(4096)], the_buf_len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
+            let mut err_msg_buf = ErrMessage::<4096>::new(); //ErrMessage{ the_buffer:[0u8; err_msg_max_buffer_size(4096)], the_buf_len:0 }; // unconstrained generic constant FIXME: temp used fixed value 4096 there! so it compiles!
             let slice: &str = self.get_msg_as_str_maybe().unwrap_or_else(|_e| {
                 //TODO: show 'e' too?
                 //doneTODO: show the msg as lossy? can't it needs heap, unless... find another way to do it on stack?
                 self.append_msg_to_dest_as_lossy(&mut err_msg_buf);
-                let err:&str=err_msg_buf.as_str();
+                let err: &str = err_msg_buf.as_str();
                 err
             });
             //write!(f, "{}", slice)
             //uhmFIXME: use noalloc buffer for the struct name? to not hardcode it in &str, or macro_rules!
             //cantFIXME: stringify!(SIZE) was wrong anyway, lol!
-            f.debug_struct(
-
-                Self::get_name_of_self().as_str()
-                )
-//                concat!(stringify!(NoAllocFixedLenMessageOfPreallocatedSize),"::<",
-//                    //stringify!(SIZE),
-//                    ">"))
+            f.debug_struct(Self::get_name_of_self().as_str())
+                //                concat!(stringify!(NoAllocFixedLenMessageOfPreallocatedSize),"::<",
+                //                    //stringify!(SIZE),
+                //                    ">"))
                 .field("msg", &slice)
                 .field("msg_len", &self.msg_len)
                 .finish()
         }
-    }//impl
-//macro_rules! foo {
-//    ($($e:tt),*) => {
-//        concat!( $( $e ),*)
-//        }
-//}
+    } //impl
+      //macro_rules! foo {
+      //    ($($e:tt),*) => {
+      //        concat!( $( $e ),*)
+      //        }
+      //}
 
-    pub const fn err_msg_max_buffer_size(msg_size:usize) -> usize {
+    pub const fn err_msg_max_buffer_size(msg_size: usize) -> usize {
         //doneFIXME: this needs to be 4096+whatever extras I added! well SIZE+extras actually
-        msg_size+80 + 4 // Arbitrary size, should be enough for the err_message, if too low it fails compile time, so just increase it then, but 80+length of SIZE as &str is enough
+        msg_size + 80 + 4 // Arbitrary size, should be enough for the err_message, if too low it fails compile time, so just increase it then, but 80+length of SIZE as &str is enough
     }
 
     pub const fn self_name_max_buffer_size() -> usize {
-        2+42 + 4 // Arbitrary size, should be enough for the err_message, if too low it fails compile time, so just increase it then, but 42+length of SIZE as &str is enough
+        2 + 42 + 4 // Arbitrary size, should be enough for the err_message, if too low it fails compile time, so just increase it then, but 42+length of SIZE as &str is enough
     }
 
     pub struct ErrMessage<const BUFFER_SIZE: usize> {
@@ -490,20 +503,20 @@ mod static_noalloc_msg {
 
     //deref as in the "&" in "&instance", altho it should be the * in *instance
     //XXX: don't impl Defer/deref due to the possibility of accidentally deref-ing when not intended!
-//    impl<const BUFFER_SIZE: usize> std::ops::Deref for ErrMessage<BUFFER_SIZE> {
-//        type Target = str;
-//
-//        fn deref(&self) -> &Self::Target {
-//            // Safety: We assume that the buffer contains valid UTF-8 data up to `self.len`.
-//            //unsafe { std::str::from_utf8_unchecked(&self.buffer[..self.len]) }
-//            //can't make it lossy because it needs String aka heap
-//            std::str::from_utf8(&self.buffer[..self.len]).unwrap_or_else(|_e| {
-//                //TODO: use 'e' but how?
-//                //XXX: shouldn't happen, unless I missed something; like everywhere this is used, source things are UTF-8
-//                concat!("<invalid UTF-8 in ", stringify!(ErrMessage), " instance>")
-//            })
-//        }
-//    }//impl
+    //    impl<const BUFFER_SIZE: usize> std::ops::Deref for ErrMessage<BUFFER_SIZE> {
+    //        type Target = str;
+    //
+    //        fn deref(&self) -> &Self::Target {
+    //            // Safety: We assume that the buffer contains valid UTF-8 data up to `self.len`.
+    //            //unsafe { std::str::from_utf8_unchecked(&self.buffer[..self.len]) }
+    //            //can't make it lossy because it needs String aka heap
+    //            std::str::from_utf8(&self.buffer[..self.len]).unwrap_or_else(|_e| {
+    //                //TODO: use 'e' but how?
+    //                //XXX: shouldn't happen, unless I missed something; like everywhere this is used, source things are UTF-8
+    //                concat!("<invalid UTF-8 in ", stringify!(ErrMessage), " instance>")
+    //            })
+    //        }
+    //    }//impl
 
     impl<const BUFFER_SIZE: usize> ErrMessage<BUFFER_SIZE> {
         //TODO: can this(or a newly named one) be made 'const fn' ?
@@ -515,9 +528,12 @@ mod static_noalloc_msg {
             })
         }
         pub const fn new() -> ErrMessage<BUFFER_SIZE> {
-        //
+            //
             //ErrMessage{ buffer:[0u8; err_msg_max_buffer_size(4096)], len:0 } //nvmFIXME: used temp const 4096; won't work must be BUFFER_SIZE sized array!
-            ErrMessage{ the_buffer:[0u8; BUFFER_SIZE], the_buf_len:0 } //must be BUFFER_SIZE
+            ErrMessage {
+                the_buffer: [0u8; BUFFER_SIZE],
+                the_buf_len: 0,
+            } //must be BUFFER_SIZE
         }
         //        const fn get_as_array(&self) -> &[u8; BUFFER_SIZE] {
         //            &self.buffer
@@ -525,12 +541,12 @@ mod static_noalloc_msg {
         ///
         // that buffer param there, needs: #![feature(const_mut_refs)] // Enable mutable references in const functions
         pub const fn append_size_as_str(&mut self, input_size: usize) {
-            const DIGITS_LEN: usize = log10(usize::MAX);//eg. 20; maximum number of digits for a usize
+            const DIGITS_LEN: usize = log10(usize::MAX); //eg. 20; maximum number of digits for a usize
 
             let mut digits = [b'0'; DIGITS_LEN];
             let mut num = input_size;
             let mut index = DIGITS_LEN;
-            let start=self.the_buf_len;
+            let start = self.the_buf_len;
 
             // Skip leading zeroes
             while num > 0 {
@@ -542,7 +558,7 @@ mod static_noalloc_msg {
             // If the number is zero, just return a single zero
             if index == DIGITS_LEN - 1 {
                 self.the_buffer[start] = b'0';
-                self.the_buf_len+=1;
+                self.the_buf_len += 1;
                 return;
             }
 
@@ -550,18 +566,18 @@ mod static_noalloc_msg {
             let mut len = 0;
             let mut i = index;
             while i < DIGITS_LEN {
-                self.the_buffer[start + len] = digits[i];//if this fails with index outta bounds, u don't have enough space in buffer!
+                self.the_buffer[start + len] = digits[i]; //if this fails with index outta bounds, u don't have enough space in buffer!
                 len += 1;
                 i += 1;
             }
-            self.the_buf_len+=len;
-        }//fn
+            self.the_buf_len += len;
+        } //fn
 
         pub const fn append(&mut self, input_bytes: &[u8]) {
             let bytes_len = input_bytes.len();
             //        XXX: can't properly err from this! because 'const fn'
-            let start_at=self.the_buf_len;
-            let have_space=self.the_buffer.len()-start_at;
+            let start_at = self.the_buf_len;
+            let have_space = self.the_buffer.len() - start_at;
             if have_space < bytes_len {
                 [()][bytes_len]; // XXX: reports the value of this
                 [()][have_space];
@@ -580,51 +596,51 @@ mod static_noalloc_msg {
                 j += 1;
             }
 
-            self.the_buf_len=start_at + bytes_len;
-        }//fn
+            self.the_buf_len = start_at + bytes_len;
+        } //fn
 
         pub const fn append_from_utf8_lossy(&mut self, input: &[u8]) {
-
             const REPLACEMENT: &[u8] = b"\xEF\xBF\xBD"; // UTF-8 for replacement character U+FFFD
-            const REPL_LEN:usize=REPLACEMENT.len();
+            const REPL_LEN: usize = REPLACEMENT.len();
 
             //let mut buffer = [0u8; 1024];
-            let start_at_in_buffer:usize = self.the_buf_len;
-            let mut len:usize = start_at_in_buffer;
-            let input_len=input.len();
+            let start_at_in_buffer: usize = self.the_buf_len;
+            let mut len: usize = start_at_in_buffer;
+            let input_len = input.len();
             if len + input_len > BUFFER_SIZE {
                 //XXX: not bad to see the value of, but it only shows me the first one that fails, due to runtime panic on first!
-                [()][len+input_len]; //4203
+                [()][len + input_len]; //4203
                 [()][len]; //107
                 [()][input_len]; //4096
                 [()][BUFFER_SIZE]; //4180
 
                 //try1:
                 //let _=std::panic::catch_unwind(||
-                    //[()][len]; //);
+                //[()][len]; //);
                 //let _ = [1][len] + [2][input_len] + [3][BUFFER_SIZE];
 
                 //try2: fail!
                 //struct ValueIsTooLarge<const N: usize>;
                 //let _ = ValueIsTooLarge::<len>; //won't work at runtime, and 'len' needs to be const
-                assert!(len + input_len <= BUFFER_SIZE, "won't fit");// can't format it in 'const fn', tried this: "it wouldn't fit, needs: {} but have {}.", len+input_len, BUFFER_SIZE);
+                assert!(len + input_len <= BUFFER_SIZE, "won't fit"); // can't format it in 'const fn', tried this: "it wouldn't fit, needs: {} but have {}.", len+input_len, BUFFER_SIZE);
             }
             //assert_ne!(len + input_len, BUFFER_SIZE);// 'assert' works but 'assert_ne' no way!
 
             let mut i = 0;
-            while i < input_len { //&& len < BUFFER_SIZE {
-                if len>=BUFFER_SIZE {
+            while i < input_len {
+                //&& len < BUFFER_SIZE {
+                if len >= BUFFER_SIZE {
                     [()][len]; // XXX: show me the value
-                    assert!(len < BUFFER_SIZE,"no more space left in dest buffer0");
+                    assert!(len < BUFFER_SIZE, "no more space left in dest buffer0");
                 }
                 let result = std::str::from_utf8(&input[i..]);
                 match result {
                     Ok(valid) => {
                         let valid_bytes = valid.as_bytes();
-                        let vb_len=valid_bytes.len();
-//                        if len + vb_len > BUFFER_SIZE {
-//                            break;
-//                        }
+                        let vb_len = valid_bytes.len();
+                        //                        if len + vb_len > BUFFER_SIZE {
+                        //                            break;
+                        //                        }
                         if len + vb_len >= BUFFER_SIZE {
                             [()][len]; // XXX: show me the value
                             [()][vb_len]; // XXX: show me the value
@@ -632,9 +648,9 @@ mod static_noalloc_msg {
                         }
                         let mut j = 0;
                         while j < vb_len {
-                            if len>=BUFFER_SIZE {
+                            if len >= BUFFER_SIZE {
                                 [()][len]; // XXX: show me the value
-                                assert!(len < BUFFER_SIZE,"no more space left in dest buffer1");
+                                assert!(len < BUFFER_SIZE, "no more space left in dest buffer1");
                             }
                             self.the_buffer[len] = valid_bytes[j];
                             len += 1;
@@ -651,43 +667,43 @@ mod static_noalloc_msg {
 
                         let mut j = 0;
                         while j < valid_up_to {
-                            if len>=BUFFER_SIZE {
+                            if len >= BUFFER_SIZE {
                                 [()][len]; // XXX: show me the value
-                                assert!(len < BUFFER_SIZE,"no more space left in dest buffer2");
+                                assert!(len < BUFFER_SIZE, "no more space left in dest buffer2");
                             }
                             self.the_buffer[len] = input[i + j];
                             len += 1;
                             j += 1;
-                        }//while
+                        } //while
 
                         let mut k = 0;
                         while k < REPL_LEN {
-                            if len>=BUFFER_SIZE {
+                            if len >= BUFFER_SIZE {
                                 [()][len]; // XXX: show me the value
                                 assert!(len < BUFFER_SIZE, "can't insert replacement char due to not enough space in destination buffer");
                             }
                             //if len < BUFFER_SIZE {
-                                self.the_buffer[len] = REPLACEMENT[k];
-                                len += 1;
+                            self.the_buffer[len] = REPLACEMENT[k];
+                            len += 1;
                             //} else {
                             //    break;
                             //}
                             k += 1;
-                        }//while
+                        } //while
 
                         i += valid_up_to + invalid_sequence_length;
                     }
-                }//match
-            }//while
+                } //match
+            } //while
 
-            self.the_buf_len=len;
+            self.the_buf_len = len;
             //ErrMessage { buffer, len }
-        }//fn
-    }//impl
+        } //fn
+    } //impl
 
     pub const fn log10(n: usize) -> usize {
         let mut count = 0;
-        let mut tmp=n;
+        let mut tmp = n;
         while tmp >= 10 {
             tmp /= 10;
             count += 1;
@@ -697,7 +713,7 @@ mod static_noalloc_msg {
 
     // that buffer param there, needs: #![feature(const_mut_refs)] // Enable mutable references in const functions
     const fn size_to_str(size: usize, buffer: &mut [u8], start: usize) -> usize {
-        const DIGITS_LEN: usize = log10(usize::MAX);//eg. 20; maximum number of digits for a usize
+        const DIGITS_LEN: usize = log10(usize::MAX); //eg. 20; maximum number of digits for a usize
 
         let mut digits = [b'0'; DIGITS_LEN];
         let mut num = size;
@@ -720,7 +736,7 @@ mod static_noalloc_msg {
         let mut len = 0;
         let mut i = index;
         while i < DIGITS_LEN {
-            buffer[start + len] = digits[i];//if this fails with index outta bounds, u don't have enough space in buffer!
+            buffer[start + len] = digits[i]; //if this fails with index outta bounds, u don't have enough space in buffer!
             len += 1;
             i += 1;
         }
@@ -730,15 +746,15 @@ mod static_noalloc_msg {
     const fn copy_to_buf(buf: &mut [u8], start_at: usize, bytes: &[u8]) -> usize {
         let bytes_len = bytes.len();
         //        XXX: can't properly err from this! because 'const fn'
-//        let have_space=buf.len()-start_at;
-//        if have_space < bytes_len {
-//            //panic!("foo");
-//            //panic!("You have {have_space} bytes in buffer but you need {bytes_len}, so {} more bytes.",bytes_len - have_space);
-//            //panic!("{}",format_args!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space));
-//            //panic!("{}",crate::format_into_buffer!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space));
-//            //let foo=crate::format_into_buffer!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space);
-//            //panic!("not enough space left");
-//        }
+        //        let have_space=buf.len()-start_at;
+        //        if have_space < bytes_len {
+        //            //panic!("foo");
+        //            //panic!("You have {have_space} bytes in buffer but you need {bytes_len}, so {} more bytes.",bytes_len - have_space);
+        //            //panic!("{}",format_args!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space));
+        //            //panic!("{}",crate::format_into_buffer!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space));
+        //            //let foo=crate::format_into_buffer!("You have {} bytes in buffer but you need {}, so {} more bytes.",have_space, bytes_len, bytes_len - have_space);
+        //            //panic!("not enough space left");
+        //        }
         let mut j = 0;
 
         while j < bytes_len {
@@ -749,7 +765,12 @@ mod static_noalloc_msg {
         start_at + bytes_len
     }
 
-    const fn copy_to_buf_2(buf: &mut [u8], start_at: usize, bytes: &[u8], bytes_len: usize) -> usize {
+    const fn copy_to_buf_2(
+        buf: &mut [u8],
+        start_at: usize,
+        bytes: &[u8],
+        bytes_len: usize,
+    ) -> usize {
         let mut j = 0;
 
         while j < bytes_len {
@@ -769,7 +790,7 @@ mod static_noalloc_msg {
         while i < input.len() && len < buffer.len() {
             let result = std::str::from_utf8(&input[i..]);
             match result {
-               Ok(valid) => {
+                Ok(valid) => {
                     let valid_bytes = valid.as_bytes();
                     if len + valid_bytes.len() > buffer.len() {
                         break;
@@ -782,7 +803,7 @@ mod static_noalloc_msg {
                     }
                     break;
                 }
-               Err(e) => {
+                Err(e) => {
                     let valid_up_to = e.valid_up_to();
                     let invalid_sequence_length = match e.error_len() {
                         Some(len) => len,
@@ -794,7 +815,7 @@ mod static_noalloc_msg {
                         buffer[len] = input[i + j];
                         len += 1;
                         j += 1;
-                    }//while
+                    } //while
 
                     let mut k = 0;
                     while k < REPLACEMENT.len() {
@@ -805,23 +826,27 @@ mod static_noalloc_msg {
                             break;
                         }
                         k += 1;
-                    }//while
+                    } //while
 
                     i += valid_up_to + invalid_sequence_length;
                 }
-            }//match
-        }//while
+            } //match
+        } //while
 
-        ErrMessage { the_buffer:buffer, the_buf_len:len }
+        ErrMessage {
+            the_buffer: buffer,
+            the_buf_len: len,
+        }
     }
-
 
     impl<const SIZE: usize> NoAllocFixedLenMessageOfPreallocatedSize<SIZE> {
         pub const fn get_name_of_self() -> ErrMessage<{ self_name_max_buffer_size() }> {
             //let mut buffer = [0u8; self_name_max_buffer_size()];
             //let mut len = 0;
-            let mut ret=ErrMessage { the_buffer:[0u8; self_name_max_buffer_size()],
-                the_buf_len:0 };
+            let mut ret = ErrMessage {
+                the_buffer: [0u8; self_name_max_buffer_size()],
+                the_buf_len: 0,
+            };
 
             const PART1: &[u8] = stringify!(NoAllocFixedLenMessageOfPreallocatedSize).as_bytes();
             const PART2: &[u8] = b"::<";
@@ -841,7 +866,10 @@ mod static_noalloc_msg {
         }
 
         //pub const fn append_msg_as_lossy(&self, dest: &mut ErrMessage<{ err_msg_max_buffer_size(SIZE) }>) {
-        pub const fn append_msg_to_dest_as_lossy<const ANY_SIZE:usize>(&self, dest: &mut ErrMessage<ANY_SIZE>) {
+        pub const fn append_msg_to_dest_as_lossy<const ANY_SIZE: usize>(
+            &self,
+            dest: &mut ErrMessage<ANY_SIZE>,
+        ) {
             //let mut buffer = [0u8; err_msg_max_buffer_size()];
             //let mut len = 0;
             //let mut ret=ErrMessage { buffer:[0u8; err_msg_max_buffer_size()], len:0 };
@@ -850,7 +878,7 @@ mod static_noalloc_msg {
             const PART2: &[u8] = stringify!(NoAllocFixedLenMessageOfPreallocatedSize).as_bytes();
             //assert!(PART2.len() == 40);
             const PART3: &[u8] = b"::<";
-            assert!(PART3.len() == 3);//just to show that they've a size that matches the assignment.
+            assert!(PART3.len() == 3); //just to show that they've a size that matches the assignment.
             const PART4: &[u8] = b"> but here it is lossily: \"";
             const PART5: &[u8] = b"\">";
             assert!(PART5.len() == 2);
@@ -881,24 +909,24 @@ mod static_noalloc_msg {
             //okTODO: use this /home/user/sandbox/rust/05_sandbox/strings/concat_strings_on_stack/concat_strings_and_a_num_const or better: /home/user/sandbox/rust/05_sandbox/strings/concat_strings_on_stack/concat_strings_and_a_num_const_at_compiletime
             //eprintln!("{:?}", &self.msg[..self.msg_len]);
             //let s =
-                std::str::from_utf8(&self.msg[..self.msg_len])
-                //;
+            std::str::from_utf8(&self.msg[..self.msg_len])
+            //;
             //eprintln!("{}", s.unwrap());
             //s
-//                let foo=self.get_msg_as_lossy();
-//                &foo
-//            }
-//                concat!(
-//                "<invalid UTF-8 in this instance of ",
-//                stringify!(NoAllocFixedLenMessageOfPreallocatedSize),
-//                "::<",
-//                //stringify!(SIZE),//this is "SIZE" lol
-//                //wtwFIXME: can't put SIZE here without proc macros looks like
-//                //SIZE, // expected a literal only literals (like `"foo"`, `-42` and `3.14`) can be passed to `concat!()`
-//                ">>"
-//            )
-//            );
-//            slice
+            //                let foo=self.get_msg_as_lossy();
+            //                &foo
+            //            }
+            //                concat!(
+            //                "<invalid UTF-8 in this instance of ",
+            //                stringify!(NoAllocFixedLenMessageOfPreallocatedSize),
+            //                "::<",
+            //                //stringify!(SIZE),//this is "SIZE" lol
+            //                //wtwFIXME: can't put SIZE here without proc macros looks like
+            //                //SIZE, // expected a literal only literals (like `"foo"`, `-42` and `3.14`) can be passed to `concat!()`
+            //                ">>"
+            //            )
+            //            );
+            //            slice
         }
 
         pub const fn new(msg: [u8; SIZE], msg_len: usize) -> Self {
@@ -935,7 +963,6 @@ mod static_noalloc_msg {
             //        &self.msg_slice
         }
     } // impl
-
 
     /// format the args (like println!()) into the returned pre-allocated buffer
     //#[deny(unused_must_use)] // no effect!
@@ -1026,9 +1053,8 @@ fn some_fn() -> MyResult<()> {
             crate::formatted_msg!("Custom ·\u{b7}borrow error message with error code {}", 404),
             source: err,
         )
-    })?;/*XXX: but we can forget to use '?' at the end there!*/
+    })?; /*XXX: but we can forget to use '?' at the end there!*/
     //let i:i32=_inst;//found `RefMut<'_, {integer}>`
-
 
     Ok(())
 }
@@ -1036,11 +1062,11 @@ fn some_fn() -> MyResult<()> {
 //#[deny(unused_must_use)] // works ofc, because it applies to call sites!
 //fn main() {
 fn main() -> Result<(), my_error_things::MyError> {
-    let res=some_fn();
-    let err=res.err().unwrap();
+    let res = some_fn();
+    let err = res.err().unwrap();
     println!("{}\n======", err);
     //return err;
-    let _res=some_fn()?;
+    let _res = some_fn()?;
 
     let r = RefCell::new(0);
     //let inst = r.borrow_mut();/*this won't drop the borrow, even tho it's gonna be shadowed.*/
