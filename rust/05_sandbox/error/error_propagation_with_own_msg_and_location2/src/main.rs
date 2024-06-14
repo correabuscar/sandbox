@@ -157,7 +157,8 @@ mod my_error_things {
 
     //const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 6;
     pub const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 4096; // one kernel page?!
-                                                          //^ must be pub due to being used in a macro!
+    // ^ must be pub due to being used in a macro!
+    // space before ^ is required for rustfmt(aka cargo fmt) to not 'error[internal]: left behind trailing whitespace' see: https://github.com/rust-lang/rustfmt/issues/6157#issuecomment-2096598378 https://github.com/rust-lang/rustfmt/issues/5391#issuecomment-1159932006
 
     use std::cell::BorrowMutError;
     use std::fmt;
@@ -232,8 +233,8 @@ mod my_error_things {
             //};
             //let variant_name= std::any::type_name_of_val(self);
             let variant_name = self.variant_name_as_str(); //made by enum_str! macro
-                                                           //self.as_str();
-                                                           //let fixed=crate::format_into_buffer!("{}::{}", type_name, variant_name).get_msg();/* E0716: temporary value dropped while borrowed consider using a `let` binding to create a longer lived value */
+            //self.as_str();
+            //let fixed=crate::format_into_buffer!("{}::{}", type_name, variant_name).get_msg();/* E0716: temporary value dropped while borrowed consider using a `let` binding to create a longer lived value */
             let fixed: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<
                 CUSTOM_ERROR_MSG_BUFFER_SIZE,
             > = crate::format_into_buffer!(
@@ -259,7 +260,7 @@ mod my_error_things {
             //Substring slicing: The &[start..end] syntax for creating string slices operates on existing memory without allocating new memory. It simply points to a portion of the original string's memory." - chatgpt 3.5
             //ok so no heap allocations and can return substring aka slice because that's in data segment.
             let full_type_name = self.type_name_full(); //std::any::type_name::<Self>(); /* error_propagation_with_own_msg_and_location::my_error_things::MyError */
-                                                        //std::any::type_name_of_val(self) /* same ^ */
+            //std::any::type_name_of_val(self) /* same ^ */
             if let Some(last_double_colon) = full_type_name.rfind("::") {
                 &full_type_name[(last_double_colon + 2)..] // Skip the last '::'
             } else {
@@ -287,9 +288,9 @@ mod my_error_things {
                     crate::static_noalloc_msg::err_msg_max_buffer_size(CUSTOM_ERROR_MSG_BUFFER_SIZE)
                 },
             >::new(); //{ buffer:[0u8; crate::static_noalloc_msg::err_msg_max_buffer_size(CUSTOM_ERROR_MSG_BUFFER_SIZE)], len:0 }; // field 'len' is private
-                      //let err=&full.get_msg_as_lossy();//kindadoneTODO: this is proper ugly but can't get it only when it errors, LOL!
-                      //const ERR:&str = &crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy();
-                      //let err=&crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy();
+            //let err=&full.get_msg_as_lossy();//kindadoneTODO: this is proper ugly but can't get it only when it errors, LOL!
+            //const ERR:&str = &crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy();
+            //let err=&crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::<0>::get_msg_as_lossy();
             let full_as_str: &str = full.get_msg_as_str_maybe().unwrap_or_else(|_e| {
                 //TODO: use 'e'
                 //err
@@ -365,16 +366,16 @@ mod my_error_things {
                     source,
                 } => {
                     write!(
-                    f,
-                    "{} at location: '{}', custom msg: '{}', generic msg: Already borrowed or recursing error, source error: '{}'",
-                    self.variant_name_full(),
-                    //std::any::type_name::<MyError>(),//::<Self::AlreadyBorrowedOrRecursingError>(),//self,
-                    //doneTODO: how to show the variant itself with the type prefixing it too, without duplicating its name inside the string and hopefully without procedural macros?
-                    //String::from_utf8_lossy(&custom_message[..*custom_message_len]),
-                    location_of_instantiation,
-                    custom_message,
-                    source
-                )
+                        f,
+                        "{} at location: '{}', custom msg: '{}', generic msg: Already borrowed or recursing error, source error: '{}'",
+                        self.variant_name_full(),
+                        //std::any::type_name::<MyError>(),//::<Self::AlreadyBorrowedOrRecursingError>(),//self,
+                        //doneTODO: how to show the variant itself with the type prefixing it too, without duplicating its name inside the string and hopefully without procedural macros?
+                        //String::from_utf8_lossy(&custom_message[..*custom_message_len]),
+                        location_of_instantiation,
+                        custom_message,
+                        source
+                    )
                 }
                 MyError::TimeoutError {
                     location_of_instantiation,
@@ -382,12 +383,16 @@ mod my_error_things {
                     //custom_message_len,
                     ..
                 } => {
-                    write!(f, "{} at location '{}', custom msg: '{}', generic msg: Timeout after {:?} while trying to find a free slot for thread {}.",
-                    self.variant_name_full(),
-                    //String::from_utf8_lossy(&custom_message[..*custom_message_len]),
-                    location_of_instantiation,
-                    custom_message,
-                    Duration::new(0, 0), 0)
+                    write!(
+                        f,
+                        "{} at location '{}', custom msg: '{}', generic msg: Timeout after {:?} while trying to find a free slot for thread {}.",
+                        self.variant_name_full(),
+                        //String::from_utf8_lossy(&custom_message[..*custom_message_len]),
+                        location_of_instantiation,
+                        custom_message,
+                        Duration::new(0, 0),
+                        0
+                    )
                 }
             }
         }
@@ -421,8 +426,8 @@ mod my_error_things {
     }};
     }
 } //mod my_error_things
-  //
-  //#[deny(unused_must_use)] //no effect
+//
+//#[deny(unused_must_use)] //no effect
 mod static_noalloc_msg {
 
     pub struct NoAllocFixedLenMessageOfPreallocatedSize<const SIZE: usize> {
@@ -481,11 +486,11 @@ mod static_noalloc_msg {
                 .finish()
         }
     } //impl
-      //macro_rules! foo {
-      //    ($($e:tt),*) => {
-      //        concat!( $( $e ),*)
-      //        }
-      //}
+    //macro_rules! foo {
+    //    ($($e:tt),*) => {
+    //        concat!( $( $e ),*)
+    //        }
+    //}
 
     pub const fn err_msg_max_buffer_size(msg_size: usize) -> usize {
         //doneFIXME: this needs to be 4096+whatever extras I added! well SIZE+extras actually
@@ -680,7 +685,10 @@ mod static_noalloc_msg {
                         while k < REPL_LEN {
                             if len >= BUFFER_SIZE {
                                 [()][len]; // XXX: show me the value
-                                assert!(len < BUFFER_SIZE, "can't insert replacement char due to not enough space in destination buffer");
+                                assert!(
+                                    len < BUFFER_SIZE,
+                                    "can't insert replacement char due to not enough space in destination buffer"
+                                );
                             }
                             //if len < BUFFER_SIZE {
                             self.the_buffer[len] = REPLACEMENT[k];
