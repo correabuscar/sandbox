@@ -157,8 +157,8 @@ mod my_error_things {
 
     //const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 6;
     pub const CUSTOM_ERROR_MSG_BUFFER_SIZE: usize = 4096; // one kernel page?!
-    // ^ must be pub due to being used in a macro!
-    // space before ^ is required for rustfmt(aka cargo fmt) to not 'error[internal]: left behind trailing whitespace' see: https://github.com/rust-lang/rustfmt/issues/6157#issuecomment-2096598378 https://github.com/rust-lang/rustfmt/issues/5391#issuecomment-1159932006
+    //^ must be pub due to being used in a macro!
+    // nvm fixed by patch /patches/portage/dev-lang/rust.reused/2100_rustfmt_single_line_comments_left_space_behind.patch //old://space before ^ is required for rustfmt(aka cargo fmt) to not 'error[internal]: left behind trailing whitespace' see: https://github.com/rust-lang/rustfmt/issues/6157#issuecomment-2096598378 https://github.com/rust-lang/rustfmt/issues/5391#issuecomment-1159932006
 
     use std::cell::BorrowMutError;
     use std::fmt;
