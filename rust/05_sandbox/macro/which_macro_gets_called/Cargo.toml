@@ -1,0 +1,6 @@
+[package]
+name = "which_macro_gets_called"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
