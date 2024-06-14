@@ -220,6 +220,7 @@ mod my_error_things {
     }//macro
 
     impl MyError {
+        //TODO: the size of the returned here shouldn't need to be same as CUSTOM_ERROR_MSG_BUFFER_SIZE it can be different/less!
         pub fn variant_name_full(&self) -> crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE> {
             //let type_name = std::any::type_name::<Self>();/* error_propagation_with_own_msg_and_location::my_error_things::MyError */
             //let type_name= std::any::type_name_of_val(self); /* same ^ */
@@ -235,7 +236,7 @@ mod my_error_things {
             let variant_name=self.variant_name_as_str();//made by enum_str! macro
             //self.as_str();
             //let fixed=crate::format_into_buffer!("{}::{}", type_name, variant_name).get_msg();/* E0716: temporary value dropped while borrowed consider using a `let` binding to create a longer lived value */
-            let fixed: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE>=crate::format_into_buffer!(1000,"{}::{}", type_name, variant_name);
+            let fixed: crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize<CUSTOM_ERROR_MSG_BUFFER_SIZE>=crate::format_into_buffer!(CUSTOM_ERROR_MSG_BUFFER_SIZE,"{}::{}", type_name, variant_name);
             //let fixed=fixed.get_msg();
             return fixed;
         }
@@ -934,17 +935,18 @@ mod static_noalloc_msg {
         //#[deny(unused_must_use)] //no effect here
         {
             //kindadoneTODO: don't hardcode this const here CUSTOM_ERROR_MSG_BUFFER_SIZE, allow it to be first arg? but also make a version of this macro with hardcoded arg for the MyError type in its module
-            const fn check_usize(val: usize) -> usize {
-                //FIXME: detect values over CUSTOM_ERROR_MSG_BUFFER_SIZE and warn or compile error or something!
-                val
-            }
-            check_usize($buffer_size_const);
+            //const fn check_usize(val: usize) -> usize {
+            //    //FIXME: detect values over CUSTOM_ERROR_MSG_BUFFER_SIZE and warn or compile error or something!
+            //    val
+            //}
+            //check_usize($buffer_size_const);
 
-            const fn const_min(a: usize, b: usize) -> usize {
-                if a <= b { a } else { b }
-            }
-        const LESSER_ONE:usize=const_min($buffer_size_const, $crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE);
-        let mut buffer = [0u8; LESSER_ONE];//allocated at call site aka destination, due to being itself returned/owned, instead of a ref to it which wouldn't work unless it's a static but then every thread will share same one, even tho it's different for each macro call site!
+            //const fn const_min(a: usize, b: usize) -> usize {
+            //    if a <= b { a } else { b }
+            //}
+        //const LESSER_ONE:usize=const_min($buffer_size_const, $crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE);
+        const BUFFER_SIZE:usize=$buffer_size_const;//coerce/ensure it's const and usize!
+        let mut buffer = [0u8; BUFFER_SIZE];//allocated at call site aka destination, due to being itself returned/owned, instead of a ref to it which wouldn't work unless it's a static but then every thread will share same one, even tho it's different for each macro call site!
         let mut cursor = std::io::Cursor::new(&mut buffer[..]);
         //use std::io::Write;
         //let res=write!(cursor, $fmt, $($arg)*);
@@ -965,14 +967,14 @@ So, in summary, `format_args!` itself does not allocate memory on the heap. Howe
 
         let len = cursor.position() as usize;
         //let ret_slice:&'static str=std::str::from_utf8(&buffer[..len]).unwrap_or("<invalid UTF-8>");
-        let ret_type=$crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::< { LESSER_ONE } >::new(buffer, len);
+        let ret_type=$crate::static_noalloc_msg::NoAllocFixedLenMessageOfPreallocatedSize::< { BUFFER_SIZE } >::new(buffer, len);
         if res.is_err() {
             eprintln!("Failed to write to buffer of size '{}' due to error '{}' (was it due to buffer too small? '{}'), wrote '{}' bytes so far, as '{:?}' or as rust UTF-8 string: '{}'",
             //$crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,
-            LESSER_ONE,
+            BUFFER_SIZE,
             res.err().unwrap(),
             //len==$crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,
-            LESSER_ONE,
+            len==BUFFER_SIZE,
             len,
             buffer,
                 //String::from_utf8_lossy(&buffer[..len]) //XXX:this is on heap!
@@ -1009,7 +1011,7 @@ fn some_fn() -> MyResult<()> {
     let _inst = r.try_borrow_mut().map_err(|err| {
         crate::my_error!(
             crate::my_error_things::MyError::AlreadyBorrowedOrRecursingError,
-            crate::format_into_buffer!(4096,"Custom ·\u{b7}borrow error message with error code {}", 404),
+            crate::format_into_buffer!(my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,"Custom ·\u{b7}borrow error message with error code {}", 404),
             source: err,
         )
     })?;/*XXX: but we can forget to use '?' at the end there!*/
@@ -1037,7 +1039,7 @@ fn main() -> Result<(), my_error_things::MyError> {
     //format_into_buffer!("Custom borrow error message with error code {}", 404); /*XXX: this gets an unused warning! */
     let borrow_error = my_error!(
         my_error_things::MyError::AlreadyBorrowedOrRecursingError,
-        format_into_buffer!(100,"Custom borrow error message with error code {}", 404),
+        format_into_buffer!(my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,"Custom borrow error message with error code {}", 404),
         source: inst.err().unwrap()
     );
 
@@ -1045,7 +1047,7 @@ fn main() -> Result<(), my_error_things::MyError> {
     let tid = 6;
     let timeout_error = my_error!(
         my_error_things::MyError::TimeoutError,
-        format_into_buffer!(100,"Timeout occurred for thread {} after {:?}", tid, dur),
+        format_into_buffer!(my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,"Timeout occurred for thread {} after {:?}", tid, dur),
         duration: dur,
         tid: tid,
     );
