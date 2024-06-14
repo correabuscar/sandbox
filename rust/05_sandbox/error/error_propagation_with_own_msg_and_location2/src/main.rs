@@ -378,6 +378,17 @@ mod my_error_things {
         }
     }
 
+    /// use this as second arg to my_error!() macro
+    #[macro_export]
+    macro_rules! formatted_msg {
+        ($fmt:expr, $($arg:tt)*) => {
+            //$crate::my_error_things::format_into_buffer!($crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,
+            $crate::format_into_buffer!($crate::my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,
+                $fmt, $($arg)*)
+        }
+    }
+
+    /// the second arg(ie. the message) can be a macro call to formatted_msg!() macro.
     #[macro_export]
     macro_rules! my_error {
     ($variant:path, $message:expr, $($field:ident : $value:expr),* $(,)?) => {{
@@ -934,7 +945,7 @@ mod static_noalloc_msg {
         //#[must_use] // unused_attributes: `#[must_use]` has no effect when applied to an expression `#[warn(unused_attributes)]` on by default
         //#[deny(unused_must_use)] //no effect here
         {
-            //kindadoneTODO: don't hardcode this const here CUSTOM_ERROR_MSG_BUFFER_SIZE, allow it to be first arg? but also make a version of this macro with hardcoded arg for the MyError type in its module
+            //doneTODO: don't hardcode this const here CUSTOM_ERROR_MSG_BUFFER_SIZE, allow it to be first arg? but also make a version of this macro with hardcoded arg for the MyError type in its module
             //const fn check_usize(val: usize) -> usize {
             //    //FIXME: detect values over CUSTOM_ERROR_MSG_BUFFER_SIZE and warn or compile error or something!
             //    val
@@ -1011,7 +1022,8 @@ fn some_fn() -> MyResult<()> {
     let _inst = r.try_borrow_mut().map_err(|err| {
         crate::my_error!(
             crate::my_error_things::MyError::AlreadyBorrowedOrRecursingError,
-            crate::format_into_buffer!(my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,"Custom ·\u{b7}borrow error message with error code {}", 404),
+            //crate::format_into_buffer!(my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,"Custom ·\u{b7}borrow error message with error code {}", 404),
+            crate::formatted_msg!("Custom ·\u{b7}borrow error message with error code {}", 404),
             source: err,
         )
     })?;/*XXX: but we can forget to use '?' at the end there!*/
@@ -1036,10 +1048,11 @@ fn main() -> Result<(), my_error_things::MyError> {
     //let _ = r.borrow_mut();/*this immediately drops the borrow, so a next borrow mut won't err!*/
     let inst = r.try_borrow_mut();
 
-    //format_into_buffer!("Custom borrow error message with error code {}", 404); /*XXX: this gets an unused warning! */
+    //format_into_buffer!(1,"Custom borrow error message with error code {}", 404); /*XXX: this gets an unused warning! */
     let borrow_error = my_error!(
         my_error_things::MyError::AlreadyBorrowedOrRecursingError,
-        format_into_buffer!(my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,"Custom borrow error message with error code {}", 404),
+        crate::formatted_msg!("Custom borrow error message with error code {}", 404),
+        //format_into_buffer!(my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,"Custom borrow error message with error code {}", 404),
         source: inst.err().unwrap()
     );
 
@@ -1047,7 +1060,8 @@ fn main() -> Result<(), my_error_things::MyError> {
     let tid = 6;
     let timeout_error = my_error!(
         my_error_things::MyError::TimeoutError,
-        format_into_buffer!(my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,"Timeout occurred for thread {} after {:?}", tid, dur),
+        formatted_msg!("Timeout occurred for thread {} after {:?}", tid, dur),
+        //format_into_buffer!(my_error_things::CUSTOM_ERROR_MSG_BUFFER_SIZE,"Timeout occurred for thread {} after {:?}", tid, dur),
         duration: dur,
         tid: tid,
     );
