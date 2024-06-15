@@ -540,6 +540,7 @@ mod static_noalloc_msg {
                 concat!("<invalid UTF-8 in ", stringify!(ErrMessage), " instance>")
                 },
                 Ok(s) => s,
+                //TODO: so what about return a type that has len+fixed size array, instead of &str, for both match arms here; or an enum type like Cow is? but then have to kinda handle both cases at call site, unless type has a method to return str like as_str heh.
             //})
             } //match
         }
