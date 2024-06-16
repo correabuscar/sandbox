@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source "/swcode/swcode.bash"
+
+rerunasroot "$@"
+
+set -e
+source vars.sh
+set +e
+
+chmod -v -- o+rx,g+rx "${dir}/"{../../,../}
