@@ -1,0 +1,1520 @@
+Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/core/src/fmt/mod.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/core/src/fmt/mod.rs
++++ /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/core/src/fmt/mod.rs
+@@ -360,6 +360,20 @@ impl<'a> Arguments<'a> {
+         Arguments { pieces, fmt: Some(fmt), args }
+     }
+ 
++    /// just return the unformatted string
++    /// so this:
++    /// "some formatted string i={} j={}"
++    /// would be seen as:
++    /// "some formatted string i= j="
++    /// because the {}s get removed and transformed into the args array.
++    /// this assumes `pub fn write` was already patched to handle the extra pieces,
++    /// else you only see the first piece like:
++    /// "some formatted string i="
++    #[inline]
++    pub fn unformat_it(&self) -> Arguments<'a> {
++        Arguments { pieces:self.pieces, fmt: None, args: &[] }
++    }
++
+     /// Estimates the length of the formatted text.
+     ///
+     /// This is intended to be used for setting initial `String` capacity
+@@ -450,8 +464,22 @@ impl<'a> Arguments<'a> {
+ 
+ #[stable(feature = "rust1", since = "1.0.0")]
+ impl Debug for Arguments<'_> {
+-    fn fmt(&self, fmt: &mut Formatter<'_>) -> Result {
+-        Display::fmt(self, fmt)
++    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
++        Display::fmt(self, f)
++//        let fmt_display = match &self.fmt {
++//            Some(fmt) => Display::fmt(fmt,f),//format!("{}", fmt),
++//            None => "<no fmt>".to_string(),
++//        };
++//        let args_display = match &self.args {
++//            Some(args) => format!("{}", args),
++//            None => String::from("<no args>"),
++//        };
++//        f.debug_struct("Arguments")
++//            .field("pieces", &self.pieces)
++//            //.field("fmt", &self.fmt)
++//            .field("fmt", &fmt_display)
++//            .field("args", &fmt_display)
++//            .finish()
+     }
+ }
+ 
+@@ -1173,10 +1201,23 @@ pub fn write(output: &mut dyn Write, arg
+     }
+ 
+     // There can be only one trailing string piece left.
+-    if let Some(piece) = args.pieces.get(idx) {
+-        formatter.buf.write_str(*piece)?;
++    //if let Some(piece) = args.pieces.get(idx) {
++    //    formatter.buf.write_str(*piece)?;
++    //}
++    //Maybe there's a ton of pieces*, that had fmt: None and args: &[]
++    //and we wanna print them all, yes they'll be unformatted like due to .unformat_it() function
++    //from Arguments struct.
++    // * not just the one trailing string piece left.
++    if idx < args.pieces.len() {
++        // Iterate over the remaining string pieces starting from idx
++        for piece in &args.pieces[idx..] {
++            // Write each piece to the formatter buffer
++            formatter.buf.write_str(*piece)?;
++        }
+     }
+ 
++
++
+     Ok(())
+ }
+ 
+Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/lib.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/lib.rs
++++ /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/lib.rs
+@@ -413,6 +413,7 @@
+ // tidy-alphabetical-end
+ //
+ #![default_lib_allocator]
++#![feature(fmt_internals)] // used in https://github.com/rust-lang/rust/pull/122984/files#diff-88e2a536317b831c2e958b9205fde12f5edaabefba963bdd3a7503bbdedf8da9R752
+ 
+ // Explicitly import the prelude. The compiler uses this same unstable attribute
+ // to import the prelude implicitly when building crates that depend on std.
+Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/panicking.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/panicking.rs
++++ /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/panicking.rs
+@@ -259,17 +259,48 @@ fn default_hook(info: &PanicInfo<'_>) {
+     let thread = thread_info::current_thread();
+     let name = thread.as_ref().and_then(|t| t.name()).unwrap_or("<unnamed>");
+ 
++    //TODO: need to know how much stack is left, and if calling this closure uses it or it's used
++    //already even before calling it.(im expecting the former and it seems to be so)
++    //TODO: save all pieces (2 here, right? the msg+stacktrace if any) into buffer, then print both
+     let write = |err: &mut dyn crate::io::Write| {
+-        let _ = writeln!(err, "thread '{name}' panicked at {location}:\n{msg}");
++        // Try to write the panic message to a buffer first to prevent other concurrent outputs
++        // interleaving with it.
++        let mut buffer = [0u8; 16384]; //this is PR: https://github.com/rust-lang/rust/pull/122565
++        let mut cursor = crate::io::Cursor::new(&mut buffer[..]);
++
++        let write_msg = |dst: &mut dyn crate::io::Write| {
++            // We add a newline to ensure the panic message appears at the start of a line.
++            writeln!(dst, "\nthread '{name}' panicked at {location}:\n{msg}")
++        };
++
++        if write_msg(&mut cursor).is_ok() {
++            let pos = cursor.position() as usize;
++            let res = err.write_all(&buffer[0..pos]);
++            drop(res);
++        } else {
++            // The message did not fit into the buffer, write it directly instead.
++            let _ = write_msg(err);
++        };
+ 
+         static FIRST_PANIC: AtomicBool = AtomicBool::new(true);
+ 
+-        match backtrace {
++        let maybe_kind=match backtrace {
+             Some(BacktraceStyle::Short) => {
+-                drop(backtrace::print(err, crate::backtrace_rs::PrintFmt::Short))
++                Some(crate::backtrace_rs::PrintFmt::Short)
++//                //drop(backtrace::print(err, crate::backtrace_rs::PrintFmt::Short))
++//                let w=|dst: &mut dyn crate::io::Write| {
++//                    backtrace::print(dst, crate::backtrace_rs::PrintFmt::Short)
++//                };
++//                if w(&mut cursor).is_ok() {
++//                    let pos = cursor.position() as usize;
++//                    let _ = err.write_all(&buffer[0..pos]);
++//                } else {
++//                    let _ = w(err);
++//                }
+             }
+             Some(BacktraceStyle::Full) => {
+-                drop(backtrace::print(err, crate::backtrace_rs::PrintFmt::Full))
++                Some(crate::backtrace_rs::PrintFmt::Full)
++                //drop(backtrace::print(err, crate::backtrace_rs::PrintFmt::Full));
+             }
+             Some(BacktraceStyle::Off) => {
+                 if FIRST_PANIC.swap(false, Ordering::SeqCst) {
+@@ -279,9 +310,29 @@ fn default_hook(info: &PanicInfo<'_>) {
+                              backtrace"
+                     );
+                 }
++                None
+             }
+             // If backtraces aren't supported or are forced-off, do nothing.
+-            None => {}
++            None => {None}
++        };
++
++        let mut cursor = crate::io::Cursor::new(&mut buffer[..]);
++        if let Some(kind)=maybe_kind {
++            let w=|dst: &mut dyn crate::io::Write| {
++                backtrace::print(dst, kind)
++            };
++            let mut res=w(&mut cursor);
++            if res.is_ok() {
++                let pos = cursor.position() as usize;
++                let _ = err.write_all(&buffer[0..pos]);
++            } else {
++                drop(res);
++                res = w(err);
++            }
++            drop(res);
++            //TODO: unclear why drop() was needed before, for backtrace::print() maybe it was in
++            //same scope as the match itself? and didn't wanna wait until write() closure itself
++            //ended?
+         }
+     };
+ 
+@@ -290,7 +341,7 @@ fn default_hook(info: &PanicInfo<'_>) {
+         try_set_output_capture(Some(local)).ok();
+     } else if let Some(mut out) = panic_output() {
+         write(&mut out);
+-    }
++    };
+ }
+ 
+ #[cfg(not(test))]
+@@ -350,10 +401,18 @@ pub mod panic_count {
+         PanicInHook,
+     }
+ 
++        #[cfg(not(any(target_os = "linux", target_os = "windows")))]
++        compile_error!("This thread_local!() code only works w/o allocations on Linux or Windows platforms! I mean, \n
++                       it's kinda guaranteed*(should double check) to not allocate on heap\n
++                       on Linux/Windows but not sure on other platforms. And we don't want\n
++                       it to allocate anything so that the 'fork' case below is respected.\n
++                       *Well actually looks like not even this is guaranteed, see:\n
++                       https://github.com/rust-lang/rust/issues/122940#issuecomment-2016600046");
+     // Panic count for the current thread and whether a panic hook is currently
+     // being executed..
+     thread_local! {
+         static LOCAL_PANIC_COUNT: Cell<(usize, bool)> = const { Cell::new((0, false)) }
++        //static PANIC_MULTIPATHS:  //TODO? i mean, it should work still(even if fork, in practice): https://github.com/rust-lang/rust/issues/122940#issuecomment-2016600046
+     }
+ 
+     // Sum of panic counts from all threads. The purpose of this is to have
+@@ -382,6 +441,7 @@ pub mod panic_count {
+     // Stealing a bit is fine because it just amounts to assuming that each
+     // panicking thread consumes at least 2 bytes of address space.
+     static GLOBAL_PANIC_COUNT: AtomicUsize = AtomicUsize::new(0);
++    //doneFIXME: temp 'pub'
+ 
+     // Increases the global and local panic count, and returns whether an
+     // immediate abort is required.
+@@ -726,6 +786,7 @@ pub const fn begin_panic<M: Any + Send>(
+     }
+ }
+ 
++
+ /// Central point for dispatching panics.
+ ///
+ /// Executes the primary logic for a panic, including checking for recursive
+@@ -738,33 +799,181 @@ fn rust_panic_with_hook(
+     can_unwind: bool,
+     force_no_backtrace: bool,
+ ) -> ! {
++    rtprintpanic!("!!!!!!!!!!!!!!! PANIC STARTING !!!!!!!!!!!!!!\n");
+     let must_abort = panic_count::increase(true);
++    rtprintpanic!("!! must_abort={:?}\n", must_abort);
++    //rtprintpanic!("must_abort={:?} global_panic_count={}\n", must_abort,panic_count::GLOBAL_PANIC_COUNT.load(Ordering::SeqCst));
++    //that last 'true' arg means it pretends it's recursing here if there's no space in the thread local for the current thread to use(therefore it can't detect if it's recursing), ie. assume it's recursing, as fallback.
++//FIXME:    let recursion_detection_zone_for_fork_query=recursion_detection_zone!(noalloc_start, std::time::Duration::from_secs(3), true);
++    //this won't use heap internally, but only stack and data segment(statics)
++    //3 sec timeout(waiting for concurrent threads that are in the zone(either just passing, or
++    //  even recursing)), return 'true' for .is_recursing if timeout is reached.
++
++    //okFIXME: the following call if panics will recurse forever without mutipaths protection!
++    //let is_fork=crate::rt::is_this_forked_process(/*trust_getpid==*/true);
++    //FIXME: comment out this:
++    let is_fork_or_the_query_panicked=crate::rt::is_this_forked_process(/*trust_getpid==*/true);
++//FIXME:    let is_fork_or_the_query_panicked=if !recursion_detection_zone_for_fork_query.is_recursing {
++//        crate::rt::is_this_forked_process(/*trust_getpid==*/true) //this is the query!
++//    } else {
++//        //recursion, pretend we're in fork then:
++//        crate::rt::ForkState::Forked
++//    };
++//FIXME:    recursion_detection_zone!(end_zone, recursion_detection_zone_for_fork_query);
++
++    //we assume it's forked if we can't determine:
++    let is_fork_or_unsure=match is_fork_or_the_query_panicked {
++        crate::rt::ForkState::NotForked => false,
++        crate::rt::ForkState::Forked => true,
++        crate::rt::ForkState::InProgressInsideTheForkHooks => true,//won't see this when trust_getpid=true
++        crate::rt::ForkState::CanNotBeKnown => true,//uninited, unlikely to hit this normally, hit only when calling rust externally.
++    };
++    //let is_fork=crate::rt::isolated_globals::IS_THIS_FORKED_PROCESS_AB;//good: error[E0603]: static `IS_THIS_FORKED_PROCESS_AB` is private
++    rtprintpanic!("!! is_fork_or_unsure={:?} is_fork_or_the_query_panicked={:?}\n", is_fork_or_unsure, is_fork_or_the_query_panicked);
++    let must_abort=if is_fork_or_unsure {
++        Some(panic_count::MustAbort::AlwaysAbort)
++    } else {
++        must_abort
++    };
++    rtprintpanic!("!! must_abort={:?}\n", must_abort);
+ 
+     // Check if we need to abort immediately.
+     if let Some(must_abort) = must_abort {
+         match must_abort {
+             panic_count::MustAbort::PanicInHook => {
+-                // Don't try to print the message in this case
+-                // - perhaps that is causing the recursive panics.
+-                rtprintpanic!("thread panicked while processing panic. aborting.\n");
+-            }
+-            panic_count::MustAbort::AlwaysAbort => {
++                rtprintpanic!("!!! in panic_count::MustAbort::PanicInHook\n");
++
++                //this is formatted message in a Some() TODO: if let?
++                rtprintpanic!("!!!0of2 message={:?}\n",message);//FIXME: use this first, if it panics in it, skip it next time.
++                let message2=message.map(|m| m.unformat_it()); // call message.unformat_it() only if
++                                                              // message is Some, not when None
++                //rtprintpanic!("!!!0of2 message2={:?}\n",message2);
++                let panic_info = PanicInfo::internal_constructor(
++                    message2.as_ref(),
++                    //message_str.as_ref(),
++                    location,
++                    can_unwind,
++                    false,//okTODO: is this actually false here? or is it false only
++                    //during must abort variant/branch below?! actually this isn't part of its Display
++                    //impl so it doesn't matter its value here, therefore i must use 'false' as it's
++                    //what it does anyway, but know that it is ignored: https://github.com/rust-lang/rust/blob/42198bf562b548015e3eae3926c175c4aabb3a7b/library/core/src/panic/panic_info.rs#L159-L178
++                );
++                //rtprintpanic!("thread panicked while processing panic. aborting. msg='{:?}' loc='{:?}'\n",message, location);
++//                let panic_info = PanicInfo {
++//                    payload, // this should already get printed as string: https://github.com/rust-lang/rust/blob/af98101ed89dba94309c64f1fbf37c890d988f9f/library/core/src/panic/panic_info.rs#L168-L171   well this won't work unless i use the payload.get() like below which actually does formatting which isn't what I want
++//                    message:None, // ^ but only if message is None
++//                    location,
++//                    can_unwind,
++//                    force_no_backtrace,
++//                };
++                //FIXME: I need thread local(that doesn't do allocations when accessing it) and
++                //which will let me progressively remove things from the output which might panic
++                //like the 'message'(+loc+backtr) at first, then just 'location'(+backtr), then just the backtrace dump
++                //but can't guarantee TLS won't alloc atll (which we'd need for the oom case which will panic and get here)
++                //XXX: this won't show msg for opt.expect("some string") either because is formatted eg. it kinda uses panic!("{}", "some string") internally; https://github.com/rust-lang/rust/pull/122984/files#r1538124227
++                rtprintpanic!("!!!1of2 {panic_info}\n!!! thread panicked while processing panic. aborting. msg was not shown at all if it was formatted(above)\n");//, loc='{:?}'\n", location); location's already shown via panic_info's Display impl as first line.
++
++                //src: https://github.com/rust-lang/rust/pull/122984/files
++                // Don't try to format the message in this case, perhaps that is causing the
++                // recursive panics. However if the message is just a string, no user-defined
++                // code is involved in printing it, so that is risk-free.
++                // XXX: so this shows the message if it has no formatting, else it doesn't show it
++                // at all - by design: https://github.com/rust-lang/rust/pull/122984/files#r1536775570
++                // Not gonna lie, I didn't expect this code would just not show it at all, if it's
++                // formatted.
++                //rtprintpanic!("!!!0of2 message={:?}\n",message);//doneFIXME: remove these
++                let msg_str = message.and_then(|m| m.as_str()).map(|m| [m]);
++                let message1 = msg_str.as_ref().map(|m| fmt::Arguments::new_const(m));
++                //let message_str = match message {
++                //    Some(args) => args.pieces.get(0).copied().map(fmt::Arguments::new_const),
++                //    None => None,
++                //};
++                //rtprintpanic!("!!!0of2 message1={:?}\n",message1);
++                let panic_info = PanicInfo::internal_constructor(
++                    message1.as_ref(),
++                    //message_str.as_ref(),
++                    location,
++                    can_unwind,
++                    false,//okTODO: is this actually false here? or is it false only
++                    //during must abort variant/branch below?! actually this isn't part of its Display
++                    //impl so it doesn't matter its value here, therefore i must use 'false' as it's
++                    //what it does anyway, but know that it is ignored: https://github.com/rust-lang/rust/blob/42198bf562b548015e3eae3926c175c4aabb3a7b/library/core/src/panic/panic_info.rs#L159-L178
++                );
++                rtprintpanic!("!!!2of2 {panic_info}\n!!! thread panicked while processing panic. aborting. msg was not shown at all if it was formatted(above)\n");//, loc='{:?}'\n", location); location's already shown via panic_info's Display impl as first line.
++                //let panicinfo = PanicInfo::internal_constructor(
++                //    message,//this would infinite panic
++                //    location,
++                //    can_unwind,
++                //    force_no_backtrace,
++                //);
++                //rtprintpanic!("{panicinfo}\nhere's a stacktrace attempt:\n");
++                //FIXME: this would alloc here which is bad in oom or fork case(but fork case
++                //doesn't hit this currently, well unless u forgot to call panic::always_abort()
++                //in the fork and a double panic occurs)
++                rtprintpanic!("!!! FIXME: not printing a backtrace here, atm, to avoid alloc or infinite panics due to alloc might've been overriden in global allocator and set to panic!\n");
++                //rtprintpanic!("!! Forcing a backtrace (FIXME: allocs and could thus panic again for infinite panics):\n{}\n", crate::backtrace::Backtrace::force_capture());
++             }
++             panic_count::MustAbort::AlwaysAbort => { // this is hit on first and any subseq.
++                                                      // (ie. recursive) panics(while always_abort() has been
++                                                      // called before once(since it can't be
++                                                      // reset/unset after)
++                rtprintpanic!("!!! in panic_count::MustAbort::AlwaysAbort\n");
+                 // Unfortunately, this does not print a backtrace, because creating
+-                // a `Backtrace` will allocate, which we must to avoid here.
+-                let panicinfo = PanicInfo::internal_constructor(
+-                    message,
++                // a `Backtrace` will allocate, which we must avoid here.
++//               static BEEN_HERE:AtomicBool=AtomicBool::new(false);
++               //FIXME: this is the wrong way; need a thread local var, but one that doesn't alloc (for the fork case)
++               //actually can't use thread locals in fork either because it allocs (even the
++               //__thread thing in C could) so TODO: detect if fork then don't alloc or use TLS and
++               //just print simple+abort.
++//               if false==BEEN_HERE.swap(true, Ordering::SeqCst) {
++                //let panicinfo = PanicInfo::internal_constructor(
++                //    message,//FIXME: user controlled via Display impl(thus could alloc or panic again there)
++                //    location,
++                //    can_unwind,
++                //    force_no_backtrace,
++                //);
++                //old way ^ was recursing because formatted msg could re-panic in Display impl of
++                //the passed args(to panic).
++                //src: https://github.com/rust-lang/rust/pull/122984/files
++                let msg_str = message.and_then(|m| m.as_str()).map(|m| [m]);
++                let message = msg_str.as_ref().map(|m| fmt::Arguments::new_const(m));
++                let panic_info = PanicInfo::internal_constructor(
++                    message.as_ref(),//shows message if it has no formatting, else doesn't show it at all.
+                     location,
+                     can_unwind,
+-                    force_no_backtrace,
++                    false,//mehTODO: how do we know this 'force_no_backtrace' was set to false already? it's
++                    //ignored in Display impl anyway! so setting to 'false' to be obvious.
+                 );
+-                rtprintpanic!("{panicinfo}\npanicked after panic::always_abort(), aborting.\n");
++                rtprintpanic!("!!! {panic_info}\n!!! panicked after panic::always_abort(), aborting.\n");
++                //XXX: we'd restore this even if thread local because this whole thing may end up in a
++                //landing pad and some future new panic(like if this is ran within libtest via
++                //'cargo test' with --test-threads 1, it could be catch_unwind-ed aka
++                //caught, then the next test that panics gets back here)
++                //might get itself here and have an unclean path state from this old panic we're doing now.
++                //even the abort below might get caught by atexit hook(iirc) and end up in landing
++                //pad (well, it would with my hacky patch that's about that, iirc)
++                //Restoration of other paths would be done before the abort or return from this
++                //func. For the reasons above, ie. in case panic/abort is caught(eg. landing
++                //padded)
++//                BEEN_HERE.store(false, Ordering::SeqCst);
++//               } else {//been here, prevent recursion
++                   //we assume something could've panic-ed above, but in truth only when message
++                   //formatting woulda been shown it could panic in Display impl(user-code)
++                   //but now that we're never showing formatted message...
++                   //or also if some alloc happened(but it can't really, not in the above protected-section)
++//                    rtprintpanic!("!! panicked after panic::always_abort(), aborting. (and recursion prevented) loc='{:?}'\n", location);
++//               }
+             }
+         }
++        rtprintpanic!("!!! about to abort_internal() which does a libc::abort() in fact.\n");
++        rtprintpanic!(concat!(r"\\\\\\\\\\\\\\ PANIC ENDING (1) //////////","\n"));
+         crate::sys::abort_internal();
+     }
+ 
++    rtprintpanic!("!! about to mut info\n");
+     let mut info =
+         PanicInfo::internal_constructor(message, location, can_unwind, force_no_backtrace);
++    rtprintpanic!("!! about to hook read\n");
+     let hook = HOOK.read().unwrap_or_else(PoisonError::into_inner);
+     match *hook {
+         // Some platforms (like wasm) know that printing to stderr won't ever actually
+@@ -773,31 +982,50 @@ fn rust_panic_with_hook(
+         // methods, this means we avoid formatting the string at all!
+         // (The panic runtime might still call `payload.take_box()` though and trigger
+         // formatting.)
+-        Hook::Default if panic_output().is_none() => {}
++        Hook::Default if panic_output().is_none() => {
++            rtprintpanic!("!!! 1\n");
++        }
+         Hook::Default => {
+-            info.set_payload(payload.get());
++            rtprintpanic!("!!! 2\n");
++            let p=payload.get();
++            rtprintpanic!("!!! 22\n");
++            info.set_payload(p);
++            rtprintpanic!("!!! 222\n");
+             default_hook(&info);
+         }
+         Hook::Custom(ref hook) => {
+-            info.set_payload(payload.get());
++            rtprintpanic!("!!! 3\n");
++            let p=payload.get();
++            rtprintpanic!("!!! 33\n");
++            info.set_payload(p);
++            //info.set_payload(payload.get());
++            rtprintpanic!("!!! 333\n");
+             hook(&info);
+         }
+     };
++    rtprintpanic!("!! 4\n");
+     drop(hook);
+ 
++    rtprintpanic!("!! 5\n");
+     // Indicate that we have finished executing the panic hook. After this point
+     // it is fine if there is a panic while executing destructors, as long as it
+     // it contained within a `catch_unwind`.
+     panic_count::finished_panic_hook();
+ 
++    rtprintpanic!("!! 6\n");
+     if !can_unwind {
++        rtprintpanic!("!!! 7\n");
+         // If a thread panics while running destructors or tries to unwind
+         // through a nounwind function (e.g. extern "C") then we cannot continue
+         // unwinding and have to abort immediately.
+-        rtprintpanic!("thread caused non-unwinding panic. aborting.\n");
++        rtprintpanic!("!!! thread caused non-unwinding panic. aborting. loc={:?}\n", location);
++        rtprintpanic!("!!! 8ai\n");
++        rtprintpanic!(concat!(r"\\\\\\\\\\\\\\ PANIC ENDING (2) //////////","\n"));
+         crate::sys::abort_internal();
+     }
+ 
++    rtprintpanic!("!! 9rp\n");
++    rtprintpanic!(concat!(r"\\\\\\\\\\\\\\ PANIC ENDING (3) //////////","\n"));
+     rust_panic(payload)
+ }
+ 
+@@ -839,3 +1067,8 @@ fn rust_panic(_: &mut dyn PanicPayload)
+         crate::intrinsics::abort();
+     }
+ }
++
++//TODO: add the recursion detection code here or what?
++//include!("/home/user/sandbox/rust/05_sandbox/recursive_multipath/multipath_backoff5/src/lib.rs");
++//^ this can't work due to std:: prefix needing to be crate:: here!
++
+Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/rt.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/rt.rs
++++ /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/rt.rs
+@@ -68,6 +68,417 @@ macro_rules! rtunwrap {
+     };
+ }
+ 
++pub mod isolated_globals {
++    //Initially it's not forked, only after fork() is called.
++    //TODO: do I even need atomic? are writes not sync-ed? presumably the forked process is only 1
++    //thread anyway even before the value is set to 'true', then any new threads(if any are even
++    //allowed), wouldn't need sync-ed read to this bool, would they? visibility-wise.
++    //pub(super) static mut IS_THIS_FORKED_PROCESS:bool=false;
++    use core::sync::atomic::AtomicBool;
++    //static IS_THIS_FORKED_PROCESS_AB:AtomicBool=AtomicBool::new(false);
++    //pub(super) static IS_THIS_FORKED_PROCESS_AB:AtomicBool=AtomicBool::new(false);
++
++    //XXX: so using main()'s pid and comparing it with current pid to determine if we're fork, in the
++    //child hooks that would run prior to our own child hook isn't reliable (because `man 2 getpid` isn't)
++    static MAIN_PID: crate::sync::atomic::AtomicU32=crate::sync::atomic::AtomicU32::new(0);
++
++    #[derive(Debug, PartialEq)]
++    pub enum ForkState {
++        //we're not in forked process, so we're in main()'s, unforked, process.
++        NotForked,
++
++        //we're definitely in forked process after our child hook got executed
++        Forked,
++
++        //unknown if it's parent or fork, call again later,
++        //due to you're calling it inside the fork hooks after our prepare hook ran and before our child hook
++        //executed.
++        //Normally, you wouldn't see this at all*(even if you don't trust_getpid), because,
++        //your prepare handler(s) gets executed before ours(and it's ours that sets this, and then
++        //our parent handler gets executed before your prepare handler(s) (and it's ours which
++        //unsets this). So you shouldn't ever get this returned. Also, our child hook will run
++        //before your child hook(s) (and ours sets the state to Forked). If you don't even query
++        //fork state from pthread_atfork hooks then you shouldn't see this too. Even if you're
++        //query-ing from concurrent threads, then you won't see this because it's thread local,
++        //*But you will see it if you've done some tricks like you somehow were able to
++        //register pthread_atfork hooks before main() got called(eg. via ffi from a c program or what)
++        //then you would see this from your hooks if you were to query fork state.
++        InProgressInsideTheForkHooks,
++
++        //was never inited so pthread_atfork hooks aren't set up, so we'll never know fork state!
++        /// run init_fork_detection() at some point to "install" the hooks, after than you can
++        /// know.
++        CanNotBeKnown,
++    }
++    //If user forks via kernel syscall directly, our hook won't ever run thus we can't detect if
++    //it's forked or not, so this bool will know that:
++    static WAS_EVER_INITED:AtomicBool=AtomicBool::new(false);
++    //This bool knows if it's a fork or not, but only if our hook got executed (read above with the syscall)
++    static WAS_EVER_IN_CHILD_AKA_FORK:AtomicBool=AtomicBool::new(false);
++    //nvmTODO: get this from env. var if set to !="0", init it once and then cache that;
++    // if 'true' it will never return ForkState::InProgressInsideTheForkHooks
++    //static TRUST_GETPID:AtomicBool=AtomicBool::new(true);
++
++    // Define a thread-local boolean
++    crate::thread_local! {
++        //TODO: ensure there's not alloc or init-ing of this(which is alloc) in the child(aka
++        //fork)! iirc the init happens before the child gets to access it, but need to double check
++        //it's so!
++        static IS_FORKING_IN_PROGRESS: crate::cell::RefCell<bool> = crate::cell::RefCell::new(false);
++    }
++
++    #[track_caller]
++    #[inline(always)]
++    pub fn is_this_main_process(trust_getpid:bool) -> Option<bool> {
++        match is_this_forked_process(trust_getpid) {
++            ForkState::NotForked => Some(true),
++            ForkState::Forked => Some(false),
++            ForkState::InProgressInsideTheForkHooks => None,
++            ForkState::CanNotBeKnown => None,
++        }
++    }
++
++    #[inline]
++    #[track_caller]
++    pub fn get_current_process_id() -> u32 {
++        /* well looks like I can't trust libc::getpid() to return accurate pid inside the fork
++         * hooks(or at least, in the child hook), as per `man 2 getpid`:
++         * "C library/kernel differences
++    From  glibc  2.3.4 up to and including glibc 2.24, the glibc wrapper function for getpid() cached PIDs, with the
++    goal of avoiding additional system calls when a process calls getpid() repeatedly.  Normally  this  caching  was
++    invisible,  but  its  correct  operation  relied  on support in the wrapper functions for fork(2), vfork(2), and
++    clone(2): if an application bypassed the glibc wrappers for these system calls by using syscall(2), then a  call
++    to  getpid()  in  the  child  would return the wrong value (to be precise: it would return the PID of the parent
++    process).  In addition, there were cases where getpid() could return the wrong value even when invoking clone(2)
++    via the glibc wrapper function.  (For a discussion of one such case, see BUGS in  clone(2).)   Furthermore,  the
++    complexity of the caching code had been the source of a few bugs within glibc over the years.
++
++    Because of the aforementioned problems, since glibc 2.25, the PID cache is removed: calls to getpid() always in‐
++    voke the actual system call, rather than returning a cached value." - man 2 getpid
++
++    "Yes, the wrapper functions for system calls like fork(), vfork(), and clone() are typically the ones that handle the interaction with pthread_atfork() hooks. When you call pthread_atfork() to set up pre and post-fork handlers, these handlers will be invoked by the wrapper functions before and after the corresponding system call is made.
++
++Bypassing the Wrapper Functions: While it's generally recommended to use the wrapper functions provided by glibc, it's technically possible for an application to bypass these wrappers and directly invoke the underlying system calls using the syscall() function or inline assembly. When this happens, the glibc wrappers and any associated functionality, such as pthread_atfork() hooks, may be bypassed as well. This can lead to unexpected behavior, including issues with PID caching as mentioned in the documentation you referenced." - chatgpt 3.5
++    */
++        crate::process::id()
++    }
++
++    //TODO: also look into man 2 clone and maybe vfork() which got removed from libc::
++
++    /// Thread-safe inits(verb) only once, if it panics before initing completely another thread can still
++    /// re-run the init until it's completed.
++    /// Normally this runs (once) automatically before main() gets control, but if rust is called
++    /// externally, anything could happen?! ergo we are prepared!
++    /// Returns true if it was inited before or just inited,
++    /// false otherwise which means ForkState::CanNotBeKnown is gonna
++    /// be returned by the query function later on.
++    //Only these target OSes have fork() and pthread_atfork():
++    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
++    pub fn init_fork_detection<'a>() -> bool {
++        //doneTODO: prevent re-entry, esp. from multiple threads. ie. run this only once!
++
++        //Flag says was function completely done, or even, has function been run once already.
++        //Since Mutex<()>(ie. must have an inner) better use bool instead of that AtomicBool static
++        //to check if inited, it's cheaper.
++        static MUTEX: crate::sync::Mutex<bool> = crate::sync::Mutex::new(false);
++        // Acquire the lock before accessing/modifying the boolean flag
++        //gets lock for the whole function block, any concurrent threads will be stuck waiting
++        //here, until either we panic or exit this function. TODO: a timeout would be ideal, else
++        //risk infinite wait if we add code that makes this func. never exit!
++        let mut flag: crate::sync::MutexGuard<'a,bool> = match MUTEX.lock() {
++            Ok(guard) => guard,
++            Err(poisoned) => {
++                //println!("Ignoring poisoning!");
++                poisoned.into_inner()
++            }
++        };
++        if *flag {
++            //already inited completely, just return then!
++
++            //This protects against forgetting to use the proper function name after it got
++            //renamed/refactored:
++            fn get_function_name<F>(_: F) -> &'static str
++                where
++                    F: Fn() -> bool,
++                {
++                    crate::any::type_name::<F>()
++                }
++
++            eprintln!("!!! The init function '{}'() has already run, skipping it. It's approximately located at: {}:{}:{}", get_function_name(init_fork_detection),
++            file!(), line!(), column!());
++            return true;
++        }
++
++
++        // NOTE: this function is not guaranteed to be called, for example when Rust code is called externally.
++        // because init() aka our caller from below, is same ^.
++        // so TODO: maybe return an Option in super::is_this_forked_process() to signify this?
++        // but also this means that that init() from below can be called by external code, thus
++        // pthread_atfork hooks might've been already set before calling it! so our child hook
++        // won't be the first to run and yet we'd have to know before that if we're in fork or not!
++
++        //unreliablegetpidTODO: save main pid here.
++        MAIN_PID.store(get_current_process_id(), crate::sync::atomic::Ordering::Relaxed);
++
++        unsafe {
++            //doneTODO: find out if these hooks are ever cleared (apparently not, they live in fork too) - they're never cleared!
++            let result: libc::c_int = libc::pthread_atfork(Some(prepare), Some(parent), Some(child));
++            if result != 0 {
++                //"On success, pthread_atfork() returns zero.  On error, it returns  an  error  number." - man
++                //ERRORS
++                // ENOMEM Could not allocate memory to record the fork handler list entry.
++                //sureTODO: more details
++                // Get the value of errno
++                let errno_value = *libc::__errno_location();
++                // Convert errno value to a human-readable error message
++                let c_err_msg: *const crate::ffi::c_char = libc::strerror(errno_value);
++                let err_msg = crate::ffi::CStr::from_ptr(c_err_msg);
++                let err_msg_str = err_msg.to_str().unwrap_or("couldn't convert the c string of the error into a rust string");
++                eprintln!("!!! libc::pthread_atfork() failed with error code: '{}'('{}'). Forks won't be detected!", result, err_msg_str);
++                //assert later to ensure the actual error is seen if this assert fails:
++                assert_eq!(result, errno_value,"these were supposed to be same, or 'result' should be ENOMEM");
++                //XXX: we returns without saying it was inited, to allow the init to be called
++                //later, which would normally never happen though, unless rust code (init() func
++                //below, but it's private!) was actually called from external code, like idno, from C?
++                return false;
++            }
++        }//unsafe
++        //Even tho this is set as inited, the hooks set by pthread_atfork may still be bypassed if
++        //user is syscalling fork, apparently. (tested this and hooks still ran, maybe glibc hooked
++        //the fork syscall?!)
++        WAS_EVER_INITED.store(true, crate::sync::atomic::Ordering::Release);
++        *flag=true;//never re-run this function/initialization
++        return true;
++    }//fn, lock released here.
++
++    //"prepare specifies a handler that is executed in the parent process before fork(2) processing starts." - man
++    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
++    unsafe extern "C" fn prepare() {
++        match is_this_forked_process(false) {
++            ForkState::NotForked => {
++                //do nothing, aka fall thru
++            },
++            ForkState::Forked => {
++                return; //early, since we already know it's forked
++            },
++            ForkState::InProgressInsideTheForkHooks => unreachable!("impossible, unless we somehow inited twice thus this hook got called twice now, or we set the thread local bool from below too soon(as a coding mistake)!"),
++            ForkState::CanNotBeKnown => unreachable!("impossible, this says we didn't init and yet the hook got called! some inconsistency in the code we wrote."),
++        }
++        //okTODO: set a thread_local bool to true, then to false in parent() hook. The bool would say
++        //forking is in process.
++        //Now if any of the hooks(that aren't ours) are calling super::is_this_forked_process()
++        //we'd base our return on this bool, if the func. would've otherwise returned false, that is.
++        //TODO: use a const or what, to make these correctness invariants on/off-able.
++        let foo=is_this_forked_process(false);
++        match foo {
++            ForkState::InProgressInsideTheForkHooks => {
++                unreachable!("wtf0 {:?}", foo);
++            },
++            _ => { //fallthru
++            },
++        }
++        if let Err(err)=IS_FORKING_IN_PROGRESS.try_with(|b| *b.borrow_mut() = true) {
++            panic!("Unexpected recursion(?1), or somehow unable to access the thread local bool, possibly even due to this being called somehow in destructor or after some kind of uninitialization of the thread. Err='{}'",err);
++        }
++        //#[allow(deprecated)]
++        //crate::thread::sleep_ms(1000); //FIXME: this is temporary
++        let foo=is_this_forked_process(false);
++        match foo {
++            ForkState::InProgressInsideTheForkHooks => { //fallthru
++            },
++            _ => { unreachable!("wtf1 {:?}", foo); },
++        }
++    }
++
++    //"parent specifies a handler that is executed in the parent process after fork(2) processing completes." - man
++    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
++    unsafe extern "C" fn parent() {
++        match is_this_forked_process(false) {
++            ForkState::NotForked => {
++                //do nothing, aka fall thru
++            },
++            ForkState::Forked => {
++                return; //early, since we already know it's forked
++            },
++            ForkState::InProgressInsideTheForkHooks => {
++                //this happens because prepare says we're in progress
++                //fall thru to say we stopped progress.
++            },
++            ForkState::CanNotBeKnown => unreachable!("impossible, this says we didn't init and yet the hook got called! some inconsistency in the code we wrote."),
++        }
++        //#[allow(deprecated)]
++        //crate::thread::sleep_ms(1000); //FIXME: this is temporary
++        let foo=is_this_forked_process(false);
++        match foo {
++            ForkState::InProgressInsideTheForkHooks => { //fallthru
++            },
++            _ => { unreachable!("wtf2 {:?}", foo); },
++        }
++        if let Err(err)=IS_FORKING_IN_PROGRESS.try_with(|b| *b.borrow_mut() = false) {
++            panic!("Unexpected recursion(?2), or somehow unable to access the thread local bool, possibly even due to this being called somehow in destructor or after some kind of uninitialization of the thread. Err='{}'",err);
++        }
++        let foo=is_this_forked_process(false);
++        match foo {
++            ForkState::InProgressInsideTheForkHooks => {
++                unreachable!("wtf3 {:?}", foo);
++            },
++            _ => { //fallthru
++            },
++        }
++    }
++
++    /// This always executes in forked process(and any forked process of a forked process too) before returning control from fork() call.
++    //"child specifies a handler that is executed in the child process after fork(2) processing completes." - man
++    //this runs in fork of a fork too! and in any (later) fork(aka child)s!
++    #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
++    unsafe extern "C" fn child() {
++        //wtwTODO: fix ordering(s) later.
++        match WAS_EVER_IN_CHILD_AKA_FORK.compare_exchange(false, true, crate::sync::atomic::Ordering::Release, crate::sync::atomic::Ordering::Acquire) {
++            Ok(false) => {
++                //either it wasn't a fork before and it obviously is now(setting it to 'true'),
++                if let Err(err)=IS_FORKING_IN_PROGRESS.try_with(|b| *b.borrow_mut() = false) {
++                    panic!("Unexpected recursion(?3), or somehow unable to access the thread local bool, possibly even due to this being called somehow in destructor or after some kind of uninitialization of the thread. Err='{}'",err);
++                }
++                return;
++            },
++            Err(true) => {
++                //or it was a fork before so this is the fork of a fork(keeping it 'true').
++                return;
++            },
++            Ok(true) => {
++                unreachable!("impossible, somehow it was 'true' and it tried to set it to 'true' again!");
++            },
++            Err(false) => {
++                unreachable!("impossible? somehow it failed to set it to 'true' and returned prev. value of 'false'");
++            },
++        };
++//        if super::is_this_forked_process() {
++//            return; //early, no need to set the bool to 'true' again!
++//        }
++//        //unsafe { // it's always set to same 'true', and it's done in a new process
++//        //    IS_THIS_FORKED_PROCESS=true;
++//        //}
++//        IS_THIS_FORKED_PROCESS_AB.store(true, core::sync::atomic::Ordering::Release);
++        /* "When you write with Release, the memory operations prior to that write are guaranteed to be completed and visible to other threads before the write itself. However, the write operation itself might not be immediately visible to other threads depending on the ordering semantics of their subsequent read operations.
++
++           To ensure that the write operation is immediately visible to other threads, you need to use appropriate ordering semantics for their read operations. If you want the write to be immediately visible, you should pair it with Acquire ordering for the reading threads. This establishes a synchronization relationship that ensures the write will be visible to any threads reading with Acquire.
++
++           So, to make sure your write with Release is immediately visible to other threads, those threads should read with Acquire ordering. This combination ensures the desired synchronization and visibility of the write operation."
++           - chatgpt 3.5
++        */
++        /*
++         * "On strongly-ordered platforms most accesses have release or acquire semantics, making
++         * release and acquire often totally free. This is not the case on weakly-ordered
++         * platforms."
++         * "There's rarely a benefit in making an operation relaxed on strongly-ordered platforms,
++         * since they usually provide release-acquire semantics anyway. However relaxed operations
++         * can be cheaper on weakly-ordered platforms."
++         * both quotes from: https://doc.rust-lang.org/nomicon/atomics.html#relaxed
++         */
++    }
++
++    /// If this process, whether it's a direct(fork) or indirect(fork of a fork) descendant of main, was forked,
++    /// and we know that for sure, then returns ForkState::Forked
++    /// It can be a fork of a forked process, it's still detected as a fork.
++    /// If the fork() is in progress, whether we call from parent or forked process, we return ForkState::InProgressInsideTheForkHooks
++    /// If the fork() is done, or our child(fork) pthread_atfork hook got executed already, even
++    /// tho other user child hooks are still yet to be executed, then returns ForkState::Forked
++    /// If we're in parent and there's no forking in progress we return ForkState::NotForked
++    /// If our initialize(that sets the pthread_atfork hooks) was never called we return ForkState::CanNotBeKnown;
++    /// Doesn't use PID to detect because it seems to be unreliable, or used to be in the past and
++    /// we don't know which we're using. But if you set the arg to true then it does use PID and you
++    /// won't then ever get ForkState::InProgressInsideTheForkHooks returned!
++    ///
++    /// This can panic!
++    #[track_caller] // if this panics somehow, show the location of this function call in caller! even when RUST_BACKTRACE isn't set to 1 or full (because first line of panic includes Location, unless panic=abort or something?)
++    #[inline(always)]
++    pub fn is_this_forked_process(trust_getpid:bool) -> ForkState {
++        //return unsafe { isolated_globals::IS_THIS_FORKED_PROCESS };
++        //return IS_THIS_FORKED_PROCESS_AB.load(core::sync::atomic::Ordering::Acquire);
++        if WAS_EVER_IN_CHILD_AKA_FORK.load(core::sync::atomic::Ordering::Acquire) {
++            if trust_getpid {
++                //TODO: maybe don't test these always?
++                let current_pid=get_current_process_id();
++                let main_pid=MAIN_PID.load(crate::sync::atomic::Ordering::Acquire);
++                assert_ne!(current_pid, main_pid,"inconsistency detected(1), getpid isn't reliable?");
++            }
++            return ForkState::Forked;
++        } else {
++            //well then one of the following is true:
++            //1.we're in parent process and can't rely on libc::getpid() (see `man 2 getpid` for why)
++            //to tell the difference between forked and parent.
++            //2. we're in fork's child hook before our hook got to execute,
++            //or dare I say maybe even right after it executed but atomicbool didn't propagate yet?
++            //however since the child hooks are executed sequentially and in the same thread,
++            //this latter case shouldn't happen due to https://en.wikipedia.org/wiki/Memory_disambiguation#Store_to_load_forwarding
++            //ergo, we're either in parent or in the fork's child hook, somehow before our hook got
++            //executed.
++            //3. we never got inited, thus we cannot know if we're in fork or not!
++            //doneFIXME: handle the cases
++            //TODO: update the doc comments for the above cases.
++            //FIXME: this has to return true even if called within a user's hook made via pthread_atfork
++            //that happens before our 'child' hook gets to run, and even if those hooks spawned threads(even
++            //though it's not allowed to spawn threads in multithreaded program(ie. any rust program) in forked process)
++            if WAS_EVER_INITED.load(crate::sync::atomic::Ordering::Acquire) {
++                //this branch is most likely to happen 99.99% of the time.
++                //handle cases 1&2
++                match IS_FORKING_IN_PROGRESS.try_with(|b| {
++                    if !*b.borrow() {
++                        //this branch is most likely to happen 99.99% of the time.
++                        //well, if it's not in progress, we're in parent
++                        if trust_getpid {
++                            //TODO: maybe don't test these always?
++                            let current_pid=get_current_process_id();
++                            let main_pid=MAIN_PID.load(crate::sync::atomic::Ordering::Acquire);
++                            assert_eq!(current_pid, main_pid,"inconsistency detected(2), getpid isn't reliable?");
++                        }
++                        return ForkState::NotForked;
++                    } else {
++                        //yes forking is in progress which means here we can be in:
++                        //either parent or child(aka fork) process(prepare/parent/child hooks),
++                        //we can't determine where we are and thus can't determine if the caller of
++                        //this function is the parent process or the forked process, yet!
++                        //getpid woulda worked but hey, it's unreliable!
++                        //TODO: if here we could compare the stored PID of main() and the current
++                        //PID and determine they differ than we'd conclude we're in fork! else
++                        //we're still in parent at this stage(when we got called)
++                        if trust_getpid {
++                            let current_pid=get_current_process_id();
++                            let main_pid=MAIN_PID.load(crate::sync::atomic::Ordering::Acquire);
++                            if current_pid == main_pid {
++                                //pids are the same, we're in main process
++                                return ForkState::NotForked;
++                            } else {
++                                //pids differ, we are in forked process
++                                return ForkState::Forked;
++                            }
++                        } else {
++                            return ForkState::InProgressInsideTheForkHooks;
++                        }
++                    };
++                }) { //match
++                    Ok(res) => return res,//return what the closure returned
++                    Err(err) => {
++                        panic!("Unexpected recursion(?4), or somehow unable to access the thread local bool, possibly even due to this being called somehow in destructor or after some kind of uninitialization of the thread. Err='{}'",err);
++                    }//if
++                }//match
++            } else {
++                //was never inited, ie. hooks weren't set!
++                //this is case 3 here.
++                return ForkState::CanNotBeKnown;
++            }//else
++        }//else
++    }//fn
++}//mod
++/// Allow using it like crate::rt::is_this_forked_process() or std::rt::is_this_forked_process()
++// i wonder which doc comment will this show? TODO: find out somehow(ie. use isolated example)
++pub use isolated_globals::is_this_forked_process;
++pub use isolated_globals::is_this_main_process;
++pub use isolated_globals::get_current_process_id;
++pub use isolated_globals::init_fork_detection;
++pub use isolated_globals::ForkState; //export this enum
++
++
+ // One-time runtime initialization.
+ // Runs before `main`.
+ // SAFETY: must be called only once during runtime initialization.
+@@ -94,7 +505,10 @@ macro_rules! rtunwrap {
+ #[cfg_attr(test, allow(dead_code))]
+ unsafe fn init(argc: isize, argv: *const *const u8, sigpipe: u8) {
+     unsafe {
+-        sys::init(argc, argv, sigpipe);
++        sys::init(argc, argv, sigpipe); //TODO: find out where and what this does!
++
++        #[cfg(any(unix, target_os = "fuchsia", target_os = "vxworks"))]
++        isolated_globals::init_fork_detection();
+ 
+         let main_guard = sys::thread::guard::init();
+         // Next, set up the current Thread with the guard information we just
+Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/test/src/formatters/pretty.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/test/src/formatters/pretty.rs
++++ /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/test/src/formatters/pretty.rs
+@@ -91,7 +91,10 @@ impl<T: Write> PrettyFormatter<T> {
+     pub fn write_plain<S: AsRef<str>>(&mut self, s: S) -> io::Result<()> {
+         let s = s.as_ref();
+         self.out.write_all(s.as_bytes())?;
+-        self.out.flush()
++        let res=self.out.flush();
++        use std::io::stdout;
++        stdout().flush()?;
++        return res;
+     }
+ 
+     fn write_time(
+@@ -173,6 +176,9 @@ impl<T: Write> PrettyFormatter<T> {
+         if let Some(test_mode) = desc.test_mode() {
+             self.write_plain(format!("test {name} - {test_mode} ... "))?;
+         } else {
++            for i in 1..=5 {
++                self.write_plain(format!("test {name} ... {i}\n"))?;
++            }
+             self.write_plain(format!("test {name} ... "))?;
+         }
+ 
+Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/test/src/lib.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/test/src/lib.rs
++++ /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/test/src/lib.rs
+@@ -91,6 +91,22 @@ use options::RunStrategy;
+ use test_result::*;
+ use time::TestExecTime;
+ 
++/// Executes block based on the value of environment variable TEADEBUG
++/// eg. $ TEADEBUG=4 cargo run
++/// set to 0 or unset, to not execute block;
++/// set to 1 or anything non-number to execute blocks with level 1
++/// set to any number >1 to execute blocks with that level or below it!
++macro_rules! tea {
++    ($level:expr, $block:block) => {
++        if let Ok(var_value) = std::env::var("TEADEBUG") {
++            let level= var_value.parse::<u32>().unwrap_or(1);
++            if level > 0 && $level <= level {
++                    $block
++            }
++        }
++    };
++}
++
+ // Process exit code to be used to indicate test failures.
+ const ERROR_EXIT_CODE: i32 = 101;
+ 
+@@ -373,6 +389,9 @@ where
+     }
+ 
+     if concurrency == 1 {
++        tea!(1,{
++            println!("!!!!!!!!!!! concurrency==1");
++        });
+         while !remaining.is_empty() {
+             let (id, test) = remaining.pop_front().unwrap();
+             let event = TestEvent::TeWait(test.desc.clone());
+@@ -395,11 +414,32 @@ where
+             }
+         }
+     } else {
++        tea!(1,{
++            println!("!!!!!!!!!!! concurrency=={}",concurrency);
++        });
+         while pending > 0 || !remaining.is_empty() {
++            /*let mut which_test:TestDesc=TestDesc { name:types::TestName::StaticTestName("not yet"),
++
++    ignore: true,
++    ignore_message: None,
++    source_file: "meh",
++    start_line: 0,
++    start_col: 0,
++    end_line: 0,
++    end_col: 0,
++    should_panic: options::ShouldPanic::Yes,
++    compile_fail: true,
++    no_run: true,
++    test_type: TestType::Unknown,
++            };*/
+             while pending < concurrency && !remaining.is_empty() {
+                 let (id, test) = remaining.pop_front().unwrap();
++				tea!(5,{
++                    println!("!!!!!!!!!!! first while for test={:?}",test.desc.name);
++                });
+                 let timeout = time::get_default_test_timeout();
+                 let desc = test.desc.clone();
++                //which_test=desc.clone();
+ 
+                 let event = TestEvent::TeWait(desc.clone());
+                 notify_about_test_event(event)?; //here no pad
+@@ -415,7 +455,10 @@ where
+                 if let Some(timeout) = calc_timeout(&timeout_queue) {
+                     res = rx.recv_timeout(timeout);
+                     for test in get_timed_out_tests(&running_tests, &mut timeout_queue) {
+-                        let event = TestEvent::TeTimeout(test);
++                        let event = TestEvent::TeTimeout(test.clone());
++                        tea!(10,{
++                            println!("!!!!!!! Got event={:?} for test={:?}", &event, &test);
++                        });
+                         notify_about_test_event(event)?;
+                     }
+ 
+@@ -430,6 +473,9 @@ where
+                     }
+                 } else {
+                     res = rx.recv().map_err(|_| RecvTimeoutError::Disconnected);
++                    tea!(10,{
++                        println!("!!!!!!! Got disconnect");
++                    });
+                     break;
+                 }
+             }
+@@ -437,23 +483,36 @@ where
+             let mut completed_test = res.unwrap();
+             let running_test = running_tests.remove(&completed_test.id).unwrap();
+             running_test.join(&mut completed_test);
++            tea!(4,{
++                println!("!!!!!!!!!!! completed_test={:?}", &completed_test.desc.name);
++            });
+ 
+             let fail_fast = match completed_test.result {
+                 TrIgnored | TrOk | TrBench(_) => false,
+                 TrFailed | TrFailedMsg(_) | TrTimedFail => opts.fail_fast,
+             };
+ 
+-            let event = TestEvent::TeResult(completed_test);
++            let event = TestEvent::TeResult(completed_test.clone());
+             notify_about_test_event(event)?;
+             pending -= 1;
+ 
+             if fail_fast {
+                 // Prevent remaining test threads from panicking
++                tea!(10, {
++                    println!("!!!!!!!!!!!1 Failing fast");
++                });
+                 std::mem::forget(rx);
+                 return Ok(());
+-            }
+-        }
+-    }
++            } else {
++                tea!(10, {
++                    println!("!!!!!!!!!!! NOT Failing fast for test={:?}",&completed_test.desc.name);
++                });
++            }
++        }  //while
++        tea!(1,{
++            println!("!!!!!!!!!!! while is done with pending={} and remaining.is_empty()={}",pending , remaining.is_empty());
++        });
++    } //else concurrent!
+ 
+     if opts.bench_benchmarks {
+         // All benchmarks run at the end, in serial.
+@@ -552,11 +611,18 @@ pub fn run_test(
+     match testfn.into_runnable() {
+         Runnable::Test(runnable_test) => {
+             if runnable_test.is_dynamic() {
++                tea!(10,{
++                    println!("!!!!!! is dynamic for test={:?}",&desc.name);
++                });
+                 match strategy {
+                     RunStrategy::InProcess => (),
+                     _ => panic!("Cannot run dynamic test fn out-of-process"),
+                 };
+-            }
++            } else {
++                tea!(10,{
++                    println!("!!!!!! is NOT dynamic for test={:?}",&desc.name);
++                });
++            }//if
+ 
+             let name = desc.name.clone();
+             let nocapture = opts.nocapture;
+@@ -589,6 +655,9 @@ pub fn run_test(
+             // level.
+             let supports_threads = !cfg!(target_os = "emscripten") && !cfg!(target_family = "wasm");
+             if supports_threads {
++                tea!(7,{
++                    println!("!!!!!!!!! spawning test thread for {:?}",&name);
++                });
+                 let cfg = thread::Builder::new().name(name.as_slice().to_owned());
+                 let mut runtest = Arc::new(Mutex::new(Some(runtest)));
+                 let runtest2 = runtest.clone();
+@@ -624,6 +693,13 @@ fn __rust_begin_short_backtrace<T, F: Fn
+     black_box(result)
+ }
+ 
++
++use std::sync::atomic::{AtomicU64,Ordering};
++static ABORT_WAS_CALLED_THIS_MANY_TIMES: AtomicU64 = AtomicU64::new(0);
++thread_local!(
++    static ABORT_WAS_CALLED_THIS_MANY_TIMES_IN_THIS_THREAD: AtomicU64 = AtomicU64::new(0);
++    );
++
+ fn run_test_in_process(
+     id: TestId,
+     desc: TestDesc,
+@@ -633,31 +709,290 @@ fn run_test_in_process(
+     monitor_ch: Sender<CompletedTest>,
+     time_opts: Option<time::TestTimeOptions>,
+ ) {
++    let tid=thread::current().id();
++    tea!(5,{
++        println!("!!!!! Running test in process(tid={:?}) test={:?} testid={:?} pid={}", tid, &desc.name, id, std::process::id());
++    });
+     // Buffer for capturing standard I/O
+     let data = Arc::new(Mutex::new(Vec::new()));
+ 
+-    if !nocapture {
+-        io::set_output_capture(Some(data.clone()));
++//    use std::io::stdout;
++//    let _=stdout().flush();
++    //use std::io::stdout;
++//    let _=stdout().flush();
++    //println!("!!!!!!! way before calling .run() for test={:?} pid={}", &desc.name, std::process::id());
++
++    //use libc::atexit;//nvmTODO: ideally use libc which is in ../../vendor/libc/Cargo.toml (from libtest's project root) - don't know how yet without needing Cargo.lock modification which is forbidden from this gentoo .ebuild due to --locked; on_exit() isn't in libc:: so using it raw.
++
++    // Declare the external C function atexit
++    //use std::os::raw::c_int;
++    // Thread-local flag to determine whether cleanup should be performed
++    use std::cell::RefCell;
++    //thread_local! {
++    //    static SHOULD_CLEANUP: RefCell<bool> = RefCell::new(true);
++    //}
++    // Atomic flag to determine whether cleanup should be performed
++    //use std::sync::atomic::AtomicBool;//,Ordering};
++    static REGISTERED_HOOKS_SO_FAR: AtomicU64 = AtomicU64::new(0);
++    //presumably you can't/shouldn't register more than 32 (man 3 atexit) and there may
++    //already be user-set ones TODO: test for this, see how this behaves!
++
++    static SHOULD_CLEANUP: AtomicU64 = AtomicU64::new(0);
++    use std::os::raw::{c_int, c_void};
++    type ExitFn = extern "C" fn(exit_code: c_int, extra_data_passed_from_on_exit: *mut c_void);
++    extern "C" {
++        //pub fn atexit(callback: extern "C" fn()) -> c_int;
++
++        //on_exit() isn't in libc 0.2.154(latest) yet:
++        // Declare the `on_exit` function
++        fn on_exit(callback: ExitFn, extra_data_passed_to_callback: *mut c_void) -> c_int;
++    }
++    #[allow(dead_code)]
++    //extern "C" fn cleanup() {
++    extern "C" fn cleanup(exit_code:c_int, _extra_data_passed_from_on_exit: *mut c_void) {
++        //once you hit this point it means u're in atexit hook so it won't run again on
++        //panic!+unwind_catch, thus need to "say" it's deregistered as hook:
++        REGISTERED_HOOKS_SO_FAR.fetch_sub(1, Ordering::SeqCst);
++
++        // Check if any threads were still active when this std::process:exit(?) happened.
++        let active_threads = SHOULD_CLEANUP.load(Ordering::SeqCst);
++        if active_threads > 0 {
++            tea!(5,{
++                println!("!!!! atexit HOOK hit! pid={} exit_code={}",std::process::id(), exit_code);
++            });
++            //TODO: find out what this does again, does it silence output basically? we might not
++            //wanna set it then?!
++            //println!("!!!! before io::try_set_output_capture pid={}",std::process::id());
++            io::try_set_output_capture(None).ok();//doesn't panic!
++            //println!("!!!! after io::try_set_output_capture pid={}",std::process::id());
++            //^ both println to stdout are seen, so unclear what's that supposed to (un)do.
++            //io::set_output_capture(None);//doneFIXME: this can't exec after we've panicked(when we return
++                                         //from run() below, else it will double panic); double
++                                         //panics still even here!
++            //presumably thread is same thing as test!
++            let how_many_aborts_in_this_thread=ABORT_WAS_CALLED_THIS_MANY_TIMES_IN_THIS_THREAD.with(|count| {
++                count.load(Ordering::SeqCst)
++            });
++            let exit_or_abort_msg:String=if how_many_aborts_in_this_thread>=1 {
++                let how_many_aborts=ABORT_WAS_CALLED_THIS_MANY_TIMES.load(Ordering::SeqCst);
++                //either the test hit abort() directly or indirectly by double(or more) panicking?
++                format!("encountered an abort() call '{}' times (and globally so far abort() was called '{}' times) either directly calling it or indirectly via nested panicking", how_many_aborts_in_this_thread, how_many_aborts)
++            } else {
++                //the tets called exit()
++                format!("issued a std::process::exit({})", exit_code)
++            };
++            //this next panic + catch_unwind below acts like an unregistering of this atexit hook.
++            //TODO: how to know exit code here? looks like i'd have to use `man 3 on_exit` instead
++            //of atexit
++            panic!("!!!! Test has {}, we're panicking to allow the test harness to catch this and properly report the test results. If you used --test-threads=1 you can still see which test caused this even without this workaround implemented!", exit_or_abort_msg);
++        } else {
++            tea!(2,{
++                println!("!!!! nothing to clean up, test(s) behaved. hooks so far={} exit_code={}", REGISTERED_HOOKS_SO_FAR.load(Ordering::SeqCst), exit_code);
++            });
++        }
+     }
+ 
++    SHOULD_CLEANUP.fetch_add(1, Ordering::SeqCst);//XXX: must be +1 before the 'if' below!
++
++    //FIXME: this check then add should be atomic, maybe use .with() ? what about the other
++    //places?!
++    let hooks_so_far=REGISTERED_HOOKS_SO_FAR.load(Ordering::SeqCst);
++    let active_test_threads_currently=SHOULD_CLEANUP.load(Ordering::SeqCst);
++    if hooks_so_far < active_test_threads_currently {
++//    if ! DID_REGISTER.load(Ordering::SeqCst) {
++    //XXX: each concurrent running test thread needs one atexit hook, because we're assuming worst
++    //case scenario that all currently running test threads will exit() so they'll each enter one
++    //hook and then the panic!+catch_unwind will deregister the hook so to speak and the test
++    //thread will continue to live and report as failed.
++    //FIXME: problem is, we're not supposed to have more than 32 tops (man 3 atexit) and that's not
++    //counting user-set ones! so this is very hacky at best!
++    //XXX: should only register X max atexit hooks, where X is the max number of concurrent
++    //possible tests, eg. maybe from --test-threads=X arg. to the test harness!
++    //All these registered hooks cumulate and are run at main process exit, or when any test thread tries to
++    //abort() or exit(), but not when they just end normally!
++        // Register the exit handler
++        unsafe {
++            //let result = atexit(cleanup);//replacing with on_exit()
++            let result = on_exit(cleanup, std::ptr::null_mut());
++            if result != 0 {
++                //FIXME: test how this panic behaves here.
++                panic!("Failed to register exit handler(for test='{:?}') which would handle the case when a test used std::process::exit(?) instead of panic!()", &desc.name);
++            } else {
++                //DID_REGISTER.store(true, Ordering::SeqCst);
++                tea!(3,{
++                    println!("!!!!! REGISTERed atexit handler, for test={:?} tid={:?}", &desc.name, tid);
++                });
++                REGISTERED_HOOKS_SO_FAR.fetch_add(1, Ordering::SeqCst);
++            }
++        }
++    } else {
++        tea!(3,{
++            println!("!!!!! ALREADY registered {hooks_so_far}/{active_test_threads_currently} atexit handlers, for test={:?} tid={:?}, not registering a new one.", &desc.name, tid);
++        });
++    }
++
++    //println!("!!!! BEFORE RUN, should={}", SHOULD_CLEANUP.with(|flag| *flag.borrow()));
++    tea!(4,{
++        println!("!!!! BEFORE RUN, should={} tid={:?}", SHOULD_CLEANUP.load(Ordering::SeqCst),tid);
++    });
++    if !nocapture {
++        //doneTODO: look at how this was used before and restore it; also maybe use
++        //try_set_output_capture() to avoid a panic? note: this was called in 2 places(at least) one with None
++        //see: https://github.com/rust-lang/rust/pull/122882 for how to use it.
++        io::try_set_output_capture(Some(data.clone())).ok();//won't panic
++    }
++
++   if "0" != std::env::var("TEAPANICHOOK").unwrap_or("0".to_string()) {
++    //let old_hook = panic::take_hook();
++    // Install a custom panic handler XXX: apparently it's needed else "thread panicked while processing panic. aborting." while doing the cc-rs 'cargo test' with clang_android test failing(unshimmed llvm-ar PR 1016)
++    // ok this is needed because of double panic without "--no-capture" arg, in the panic hook at line 147 in this file,
++    // where it calls io::set_output_capture(None) results in:
++    // "cannot access a Thread Local Storage value during or after destruction: AccessError"
++    panic::set_hook(Box::new(move |panic_info| { //nvmXXX: this was only needed to temporarily find a
++                                                 //double panic caused by io::set_output_capture(None);
++        // Track whether panic handler has been called once
++        //let panic_handler_called_once = AtomicBool::new(false);
++        thread_local! {
++            static CALLED_ONCE: RefCell<bool> = RefCell::new(false);
++        }
++        let double_panic=
++        // Check if CALLED_ONCE is true, if yes, abort, otherwise set it to true
++            CALLED_ONCE.with(|called_once| {
++            let mut called_once = called_once.borrow_mut();
++            if *called_once {
++                true
++            } else {
++                *called_once = true;
++                false
++            }
++        });
++
++        let double_text=
++            if double_panic {
++                "double "
++            } else {
++                ""
++            };
++        // Print the panic message
++        if let Some(message) = panic_info.payload().downcast_ref::<&str>() {
++            println!("Custom panic handler caught {}panic: {}", double_text,message);
++        } else {
++            println!("Custom panic handler caught {}panic",double_text);
++        }
++
++        // Print a backtrace if available
++        if let Some(location) = panic_info.location() {
++            println!("Panic occurred in file '{}' at line {}", location.file(), location.line());
++            println!("{}", std::backtrace::Backtrace::capture());
++        }
++
++        if double_panic {
++            println!("Double panic detected... but can't really abort() here, must fall thru to let test harness exit cleanly or something");//TODO: unsure what to do here, other than nothing.
++            println!("{}", std::backtrace::Backtrace::capture());
++            // Deregister the current panic hook to let the normal panic hook take over
++                //panic::set_hook(old_hook);
++                //process::abort();//XXX: not actually aborting, hence commented out!
++                //let _ = panic::take_hook(); //Unregisters the current panic hook and returns it, registering the default hook in its place. If the default hook is registered it will be returned, but remain registered.
++                //panic!("{}", panic_info);
++                //let def_hook = panic::take_hook();
++                //def_hook(panic_info);
++        }
++            //// Check if panic handler has been called once before
++        ////if panic_handler_called_once.load(Ordering::Relaxed) {
++
++        //    // This is a double panic, abort the process
++        //    process::abort();
++        //} else {
++        //    // This is the first panic, mark panic handler as called
++        //    //panic_handler_called_once.store(true, Ordering::Relaxed);
++        //    // Set CALLED_ONCE to true
++        //    CALLED_ONCE.with(|called_once| {
++        //        *called_once.borrow_mut() = true;
++        //    });
++        //}
++    }));
++   }//if TEAPANICHOOK
++
++    //XXX: So at this point, we want the test to "exit" via panic, not via SIGABRT or exit()
++    //that's why we trap both and make them into panics, so we can catch them.
++    //This then allows the test harness to still capture/show the output and the test that failed!
+     let start = report_time.then(Instant::now);
+     let result = fold_err(catch_unwind(AssertUnwindSafe(|| runnable_test.run())));
++    //SHOULD_CLEANUP.with(|flag| *flag.borrow_mut() = false);//test is done, don't panic anymore after this
++    //SHOULD_CLEANUP.store(false, Ordering::Relaxed);
++    //FIXME: the ordering(s) are probably overkill?!
++    SHOULD_CLEANUP.fetch_sub(1, Ordering::SeqCst);
+     let exec_time = start.map(|start| {
+         let duration = start.elapsed();
+         TestExecTime(duration)
+     });
++    //io::set_output_capture(None);//this causes double panic hmmm, first being in atexit hook!
++    io::try_set_output_capture(None).ok(); //this won't panic!
++    //println!("!!!!!!! returned from .run() of test={:?}", &desc.name);
++    //println!("!!!! AFTER RUN, should={}", SHOULD_CLEANUP.with(|flag| *flag.borrow()));
++    //let result = fold_err(catch_unwind(|| runnable_test.run()));
++    //cleanup();
++    tea!(4,{
++        println!("!!!! AFTER RUN(err), should={} tid={:?} test={:?}", SHOULD_CLEANUP.load(Ordering::SeqCst),tid, &desc.name);
++    });
+ 
+-    io::set_output_capture(None);
+ 
+     let test_result = match result {
+-        Ok(()) => calc_result(&desc, Ok(()), &time_opts, &exec_time),
+-        Err(e) => calc_result(&desc, Err(e.as_ref()), &time_opts, &exec_time),
++        Ok(()) => {
++            let tid_after=thread::current().id();//this panics if it was a test that used
++                                                 //abort() or process::exit()
++                                                 //but if we're here test passed Ok
++                                                 //TODO: try tests that should_panic?
++            if tid != tid_after {
++                println!("!!!! thread ID before/after run differ {:?}!={:?} (was it forked process?)",tid, tid_after);
++            }
++            assert_eq!(tid, tid_after);
++            calc_result(&desc, Ok(()), &time_opts, &exec_time)
++        },
++        Err(e) => {
++            calc_result(&desc, Err(e.as_ref()), &time_opts, &exec_time)
++        },
+     };
++//    let test_result = match result {
++//        Ok(()) => calc_result(&desc, Ok(()), &time_opts, &exec_time),
++//        Err(e) => calc_result(&desc, Err(e.as_ref()), &time_opts, &exec_time),
++//    };
++    //let test_result =calc_result(&desc, result, &time_opts, &exec_time); // ^^^^^^ expected `Result<(), &dyn Any + Send>`, found `Result<(), Box<dyn Any + Send>>`
+     let stdout = data.lock().unwrap_or_else(|e| e.into_inner()).to_vec();
+     let message = CompletedTest::new(id, desc, test_result, exec_time, stdout);
++    tea!(11,{
++        println!("!!!!!!! message={:?}", String::from_utf8_lossy(&message.stdout));
++    });
+     monitor_ch.send(message).unwrap();
+ }
+ 
++/*
++ "When you call libc::abort() from within your program, Rust first searches for the abort() symbol within the current binary. If it finds a matching symbol (i.e., your custom implementation), it uses that instead of the libc::abort() function from the standard C library.
++
++This behavior is consistent with Rust's symbol resolution rules and allows you to override standard library functions with custom implementations within your program. "  - chatgpt 3.5
++*/
++#[no_mangle] //needed for the name override/overwrite to work!
++#[inline(never)] //dno if needed, making sure?
++pub extern "C" fn abort() {
++    // overrides& prevents the real libc::abort() from executing
++    // executes this instead.
++    // So why we exit instead of panic here? in case that panic panics again, perhaps recursively
++    // until it hits the need to SIGABRT again, we reach this, which would wanna panic again, maybe
++    // infinite loop that way. TODO: maybe find a better way ? this way test harness(well, above)
++    // thinks test itself has issued exit() instead of this abort() issuing it! Maybe a
++    // thread_local(or AtomicBool?) var that says that abort was issued, so when we reach that atexit hook, we know
++    // to say it's exit()-ed due to abort() not due to test issuing exit().
++    let prev=ABORT_WAS_CALLED_THIS_MANY_TIMES.fetch_add(1, Ordering::SeqCst);
++    eprintln!("!!! Abort intercepted (globally '{}' times)! Will exit(134) instead(that's 128+6 aka SIGABRT exit code) which will be transformed into a panic to allow the test harness to exit cleanly with failure(s).", prev+1);
++    //FIXME: this^ gets seen by all concurrent tests, but we might not want that. So thread_local this?!
++    // Increment the value of the thread-local variable
++    ABORT_WAS_CALLED_THIS_MANY_TIMES_IN_THIS_THREAD.with(|count| {
++        count.fetch_add(1, Ordering::SeqCst);
++    });
++    std::process::exit(128+6); //134 is SIGABRT's exit code 128+6
++    //panic!("!!! panicking instead of abort()");
++}
++
+ fn fold_err<T, E>(
+     result: Result<Result<T, E>, Box<dyn Any + Send>>,
+ ) -> Result<T, Box<dyn Any + Send>>
+@@ -680,6 +1015,10 @@ fn spawn_test_subprocess(
+     time_opts: Option<time::TestTimeOptions>,
+     bench_benchmarks: bool,
+ ) {
++    //tea!(5,{
++    //since this isn't reached in my so-far tests, i wanna see it always:
++        println!("!!!!! Running test in SUBprocess test={:?}", &desc);
++    //});
+     let (result, test_output, exec_time) = (|| {
+         let args = env::args().collect::<Vec<_>>();
+         let current_exe = &args[0];
+@@ -739,8 +1078,10 @@ fn run_test_in_spawned_subprocess(desc:
+         }
+ 
+         if let TrOk = test_result {
++            println!("!!!!!!!!!! OK test={:?}", desc);
+             process::exit(test_result::TR_OK);
+         } else {
++            println!("!!!!!!!!!! boom test failed test={:?}", desc);
+             process::abort();
+         }
+     });
+Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/io/stdio.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/io/stdio.rs
++++ /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/io/stdio.rs
+@@ -39,6 +39,9 @@ thread_local! {
+ /// the same thread*. Within the same thread, things always have a perfectly
+ /// consistent order. So Ordering::Relaxed is fine.
+ static OUTPUT_CAPTURE_USED: AtomicBool = AtomicBool::new(false);
++//thread_local! {
++//    static SOME_PRINT_DELAY_DURATION: Cell<crate::time::Duration> = Cell::new(crate::time::Duration::from_millis(300));
++//}
+ 
+ /// A handle to a raw instance of the standard input stream of this process.
+ ///
+@@ -1079,9 +1082,43 @@ pub fn try_set_output_capture(
+         return Ok(None);
+     }
+     OUTPUT_CAPTURE_USED.store(true, Ordering::Relaxed);
++    //crate::thread::sleep(crate::time::Duration::from_secs(2));
+     OUTPUT_CAPTURE.try_with(move |slot| slot.replace(sink))
+ }
+ 
++//#[unstable(
++//    feature = "internal_output_capture",
++//    reason = "this function is meant for use in the test crate \
++//        and may disappear in the future",
++//    issue = "none"
++//)]
++//#[doc(hidden)]
++//pub fn set_output_capture2(sink: Option<LocalStream>, delay: crate::time::Duration) -> Option<LocalStream> {
++//    try_set_output_capture2(sink, delay).expect(
++//        "cannot access a Thread Local Storage value \
++//         during or after destruction",
++//    )
++//}
++//#[unstable(
++//    feature = "internal_output_capture",
++//    reason = "this function is meant for use in the test crate \
++//    and may disappear in the future",
++//    issue = "none"
++//)]
++//#[doc(hidden)]
++//pub fn try_set_output_capture2(
++//    sink: Option<LocalStream>, delay: crate::time::Duration,
++//) -> Result<Option<LocalStream>, AccessError> {
++//    if sink.is_none() && !OUTPUT_CAPTURE_USED.load(Ordering::Relaxed) {
++//        // OUTPUT_CAPTURE is definitely None since OUTPUT_CAPTURE_USED is false.
++//        return Ok(None);
++//    }
++//    OUTPUT_CAPTURE_USED.store(true, Ordering::Relaxed);
++//    SOME_PRINT_DELAY_DURATION.set(delay);
++//    //crate::thread::sleep(delay);
++//    OUTPUT_CAPTURE.try_with(move |slot| slot.replace(sink))
++//}
++
+ /// Write `args` to the capture buffer if enabled and possible, or `global_s`
+ /// otherwise. `label` identifies the stream in a panic message.
+ ///
+@@ -1110,13 +1147,15 @@ where
+ }
+ 
+ fn print_to_buffer_if_capture_used(args: fmt::Arguments<'_>) -> bool {
+-    OUTPUT_CAPTURE_USED.load(Ordering::Relaxed)
++    //OUTPUT_CAPTURE_USED.load(Ordering::Relaxed)
++    true
+         && OUTPUT_CAPTURE.try_with(|s| {
+             // Note that we completely remove a local sink to write to in case
+             // our printing recursively panics/prints, so the recursive
+             // panic/print goes to the global sink instead of our local sink.
+             s.take().map(|w| {
+                 let _ = w.lock().unwrap_or_else(|e| e.into_inner()).write_fmt(args);
++                //crate::thread::sleep(SOME_PRINT_DELAY_DURATION.get());
+                 s.set(Some(w));
+             })
+         }) == Ok(Some(()))
+Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/io/mod.rs
+===================================================================
+--- .orig/var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/io/mod.rs
++++ /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/src/io/mod.rs
+@@ -319,6 +319,9 @@ pub use self::stdio::{_eprint, _print};
+ #[unstable(feature = "internal_output_capture", issue = "none")]
+ #[doc(no_inline, hidden)]
+ pub use self::stdio::{set_output_capture, try_set_output_capture};
++//#[unstable(feature = "internal_output_capture", issue = "none")]
++//#[doc(no_inline, hidden)]
++//pub use self::stdio::{set_output_capture2, try_set_output_capture2};
+ #[stable(feature = "rust1", since = "1.0.0")]
+ pub use self::{
+     buffered::{BufReader, BufWriter, IntoInnerError, LineWriter},
