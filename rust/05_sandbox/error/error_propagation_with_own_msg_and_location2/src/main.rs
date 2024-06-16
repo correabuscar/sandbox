@@ -530,6 +530,50 @@ mod static_noalloc_msg {
             //std::str::from_utf8(&self.the_buffer[..self.the_buf_len]).unwrap_or(
             //    concat!("<invalid UTF-8 in ", stringify!(ErrMessage), " instance>")
             //);
+            //And this would be why:
+            /*
+error: method has missing const stability attribute
+    --> /rustc/9b00956e56009bab2aa15d7bff10916599e3d6d6/library/core/src/result.rs:1407:5
+     |
+1407 | /     pub const fn unwrap_or(self, default: T) -> T {
+1408 | |         match self {
+1409 | |             Ok(t) => t,
+1410 | |             Err(_) => default,
+1411 | |         }
+1412 | |     }
+     | |_____^
+
+error: method has missing const stability attribute
+    --> /rustc/9b00956e56009bab2aa15d7bff10916599e3d6d6/library/core/src/result.rs:1428:5
+     |
+1428 | /     pub const fn unwrap_or_else<F: FnOnce(E) -> T>(self, op: F) -> T {
+1429 | |         match self {
+1430 | |             Ok(t) => t,
+1431 | |             Err(e) => op(e),
+1432 | |         }
+1433 | |     }
+     | |_____^
+
+error[E0493]: destructor of `T` cannot be evaluated at compile-time
+    --> /rustc/9b00956e56009bab2aa15d7bff10916599e3d6d6/library/core/src/result.rs:1407:34
+     |
+1407 |     pub const fn unwrap_or(self, default: T) -> T {
+     |                                  ^^^^^^^ the destructor for this type cannot be evaluated in constant functions
+
+error[E0493]: destructor of `result::Result<T, E>` cannot be evaluated at compile-time
+    --> /rustc/9b00956e56009bab2aa15d7bff10916599e3d6d6/library/core/src/result.rs:1407:28
+     |
+1407 |     pub const fn unwrap_or(self, default: T) -> T {
+     |                            ^^^^ the destructor for this type cannot be evaluated in constant functions
+
+error[E0493]: destructor of `F` cannot be evaluated at compile-time
+    --> /rustc/9b00956e56009bab2aa15d7bff10916599e3d6d6/library/core/src/result.rs:1428:58
+     |
+1428 |     pub const fn unwrap_or_else<F: FnOnce(E) -> T>(self, op: F) -> T {
+     |                                                          ^^ the destructor for this type cannot be evaluated in constant functions
+
+For more information about this error, try `rustc --explain E0493`.
+             */
             let res=
             std::str::from_utf8(&self.the_buffer[..self.the_buf_len]);
             match res {
