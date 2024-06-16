@@ -183,17 +183,18 @@ Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/s
  }
  
  #[cfg(not(test))]
-@@ -350,10 +401,18 @@ pub mod panic_count {
+@@ -350,10 +401,19 @@ pub mod panic_count {
          PanicInHook,
      }
  
-+        #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-+        compile_error!("This thread_local!() code only works w/o allocations on Linux or Windows platforms! I mean, \n
-+                       it's kinda guaranteed*(should double check) to not allocate on heap\n
-+                       on Linux/Windows but not sure on other platforms. And we don't want\n
-+                       it to allocate anything so that the 'fork' case below is respected.\n
-+                       *Well actually looks like not even this is guaranteed, see:\n
-+                       https://github.com/rust-lang/rust/issues/122940#issuecomment-2016600046");
++    //XXX: so 'wasm32-unknown-unknown' is hitting this, therefore commenting it out: TODO: do I need this?
++//        #[cfg(not(any(target_os = "linux", target_os = "windows")))]
++//        compile_error!("This thread_local!() code only works w/o allocations on Linux or Windows platforms! I mean, \n
++//                       it's kinda guaranteed*(should double check) to not allocate on heap\n
++//                       on Linux/Windows but not sure on other platforms. And we don't want\n
++//                       it to allocate anything so that the 'fork' case below is respected.\n
++//                       *Well actually looks like not even this is guaranteed, see:\n
++//                       https://github.com/rust-lang/rust/issues/122940#issuecomment-2016600046");
      // Panic count for the current thread and whether a panic hook is currently
      // being executed..
      thread_local! {
@@ -202,7 +203,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/s
      }
  
      // Sum of panic counts from all threads. The purpose of this is to have
-@@ -382,6 +441,7 @@ pub mod panic_count {
+@@ -382,6 +442,7 @@ pub mod panic_count {
      // Stealing a bit is fine because it just amounts to assuming that each
      // panicking thread consumes at least 2 bytes of address space.
      static GLOBAL_PANIC_COUNT: AtomicUsize = AtomicUsize::new(0);
@@ -210,7 +211,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/s
  
      // Increases the global and local panic count, and returns whether an
      // immediate abort is required.
-@@ -726,6 +786,7 @@ pub const fn begin_panic<M: Any + Send>(
+@@ -726,6 +787,7 @@ pub const fn begin_panic<M: Any + Send>(
      }
  }
  
@@ -218,7 +219,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/s
  /// Central point for dispatching panics.
  ///
  /// Executes the primary logic for a panic, including checking for recursive
-@@ -738,33 +799,181 @@ fn rust_panic_with_hook(
+@@ -738,33 +800,181 @@ fn rust_panic_with_hook(
      can_unwind: bool,
      force_no_backtrace: bool,
  ) -> ! {
@@ -410,7 +411,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/s
      let hook = HOOK.read().unwrap_or_else(PoisonError::into_inner);
      match *hook {
          // Some platforms (like wasm) know that printing to stderr won't ever actually
-@@ -773,31 +982,50 @@ fn rust_panic_with_hook(
+@@ -773,31 +983,50 @@ fn rust_panic_with_hook(
          // methods, this means we avoid formatting the string at all!
          // (The panic runtime might still call `payload.take_box()` though and trigger
          // formatting.)
@@ -465,7 +466,7 @@ Index: /var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/library/std/s
      rust_panic(payload)
  }
  
-@@ -839,3 +1067,8 @@ fn rust_panic(_: &mut dyn PanicPayload)
+@@ -839,3 +1068,8 @@ fn rust_panic(_: &mut dyn PanicPayload)
          crate::intrinsics::abort();
      }
  }
