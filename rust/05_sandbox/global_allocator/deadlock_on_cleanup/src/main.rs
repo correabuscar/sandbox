@@ -1134,8 +1134,15 @@ unsafe impl GlobalAlloc for MyAllocator {
                 }
             }
         }
-        // Delegating to System allocator for actual allocation
-        System.alloc(layout)
+        if layout.size()==1024 {
+            // XXX: hacky!, likely the stdout buffer being allocated on first use of print!() or println!(), we emulate allocation failure
+            eprintln!("1024");
+            //std::ptr::null_mut() // return null ptr to signal allocation failure!
+            System.alloc(layout)
+        } else {
+            // Delegating to System allocator for actual allocation
+            System.alloc(layout)
+        }
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
@@ -1254,9 +1261,10 @@ static PANIC_ON_ALLOC:AtomicBool=AtomicBool::new(false);
 //fn main() {
 fn main() -> Result<(), my_error_things::MyError> {
     //XXX: so stdout deadlocks on cleanup only if a panic happens on first use of stdout, ie. when it tries to init it by allocating 1024 bytes, it panics within the alloc triggering the cleanup thus seeing it not having been inited, so it tries to do another init, but since we're within the first init, deadlocks. But as long as the buffer is already inited, it won't deadlock later!
-    print!("supnewline");//on first print to stdout it allocates 1k buffer
+    //println!("supnewline");//on first print to stdout it allocates 1k buffer
+    //print!("yes this new lined part will be flushed\nbut this no new line part won't be flushed supNOnewline");//on first print to stdout it allocates 1k buffer
     PANIC_ON_ALLOC.store(true, Ordering::Relaxed);//from now on, panic on any memory allocations!
-    print!("sup!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");//this allocates on first use a buffer(of 1k) for stdout.
+    print!("!!!! this line won't be seen anyway because it panics within this\nsup!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");//this allocates on first use a buffer(of 1k) for stdout.
     // that print without newline at end won't be flushed on exit when deadlocking (or when avoiding the deadlock)
 
     let mut vec = Vec::<i32>::with_capacity(200); //another way to alloc without needing stdout
