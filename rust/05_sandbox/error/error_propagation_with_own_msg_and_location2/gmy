@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-export RUST_BACKTRACE=1
+set -e
 cargo clean
+RUSTC="$(realpath ./myrust)"
+export RUSTC
+set +e
+export RUST_BACKTRACE=1
 trap 'echo -e "\nCtrl-C pressed, but NOT also exiting script!"' SIGINT
 cargo run ; ec="$?"
 echo "exit code: $ec"

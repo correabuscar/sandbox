@@ -1102,6 +1102,108 @@ So, in summary, `format_args!` itself does not allocate memory on the heap. Howe
 use std::cell::RefCell;
 use std::time::Duration;
 
+use std::alloc::{GlobalAlloc, Layout, System};
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
+
+struct MyAllocator;
+
+unsafe impl GlobalAlloc for MyAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        // Implement custom allocation logic here
+        static ALREADY_BEING_HERE:AtomicBool=AtomicBool::new(false);
+        if ! ALREADY_BEING_HERE.load(Ordering::Relaxed) {
+            eprintln!("before alloc, size={}",layout.size());
+            if PANIC_ON_ALLOC.load(Ordering::Relaxed) {
+                // since panic!() will alloc
+                match ALREADY_BEING_HERE.compare_exchange(false,true,Ordering::Relaxed, Ordering::Relaxed) {
+                    Ok(prev) => {
+                        assert_eq!(false, prev);
+                        panic!("allocation detected when it shouldn't have allocated anymore!");
+                        // this panic deadlocks in cleanup() of stdio due to STDOUT.get_or_init() ah, it's because the realloc below gets triggered and we didn't also panic in it! which would detect a double panic and abort instead of deadlock.
+                        // sure maybe panic shouldn't be called from the allocator, but still, the type of STDOUT seems off.
+                        //put it back, in case we decide to comment out the panic!() call!
+                        #[allow(unreachable_code)]
+                        let _ = ALREADY_BEING_HERE.compare_exchange(true,false,Ordering::Relaxed, Ordering::Relaxed);
+                    },
+                    Err(prev) => {
+                        assert_eq!(true, prev);
+                    },
+                }
+            }
+        }
+        // Delegating to System allocator for actual allocation
+        System.alloc(layout)
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        static HAPPENED_ONCE_ALREADY:AtomicBool=AtomicBool::new(false);
+        if ! HAPPENED_ONCE_ALREADY.load(Ordering::Relaxed) {
+        // Implement custom deallocation logic here
+        // Delegating to System allocator for actual deallocation
+            eprintln!("before dealloc, size={}",layout.size());
+            match HAPPENED_ONCE_ALREADY.compare_exchange(false,true,Ordering::Relaxed, Ordering::Relaxed) {
+                Ok(prev) => {
+                    assert_eq!(false, prev);
+                    eprintln!("!! further deallocs ignored to avoid spam");
+                },
+                Err(prev) => {
+                    assert_eq!(true, prev);
+                },
+            }
+        }
+        System.dealloc(ptr, layout)
+    }
+
+    unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+        eprintln!("before alloc_zeroed, size={}",layout.size());
+        System.alloc_zeroed(layout)
+    }
+
+    unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+        static ALREADY_BEING_HERE:AtomicBool=AtomicBool::new(false);
+        if ! ALREADY_BEING_HERE.load(Ordering::Relaxed) {
+            eprintln!("before realloc, oldsize={} newsize={}",layout.size(), new_size);
+            match ALREADY_BEING_HERE.compare_exchange(false,true,Ordering::Relaxed, Ordering::Relaxed) {
+                Ok(prev) => {
+                    assert_eq!(false, prev);
+                    eprintln!("REallocation detected when it shouldn't have allocated anymore! Further reallocs are ignored to avoid spam.");
+                    //panic!("REallocation detected when it shouldn't have allocated anymore!");
+
+                    //put it back (to enable spam)
+                    //let _=ALREADY_BEING_HERE.compare_exchange(true,false,Ordering::Relaxed, Ordering::Relaxed);
+                },
+                Err(prev) => {
+                    assert_eq!(true, prev);
+                },
+            }
+        }
+        System.realloc(ptr, layout, new_size)
+    }
+
+/*    // error[E0407]: method `dealloc_excess` is not a member of trait `GlobalAlloc`
+    fn dealloc_excess(&self, ptr: *mut u8, layout: Layout, new_size: usize) {
+        System.dealloc_excess(ptr, layout, new_size)
+    }
+
+    fn alloc_layout(&self, layout: Layout) -> Result<*mut u8, alloc::AllocError> {
+        System.alloc_layout(layout)
+    }
+
+    fn realloc_layout(
+        &self,
+        ptr: *mut u8,
+        layout: Layout,
+        new_size: usize,
+    ) -> Result<*mut u8, alloc::AllocError> {
+        System.realloc_layout(ptr, layout, new_size)
+    }
+*/
+}
+
+#[global_allocator]
+static GLOBAL_ALLOCATOR: MyAllocator = MyAllocator;
+
 type MyResult<T> = Result<T, my_error_things::MyError>;
 
 fn some_fn() -> MyResult<()> {
@@ -1123,9 +1225,14 @@ fn some_fn() -> MyResult<()> {
     Ok(())
 }
 
+static PANIC_ON_ALLOC:AtomicBool=AtomicBool::new(false);
+
 //#[deny(unused_must_use)] // works ofc, because it applies to call sites!
 //fn main() {
 fn main() -> Result<(), my_error_things::MyError> {
+    PANIC_ON_ALLOC.store(true, Ordering::Relaxed);//from now on, panic on any memory allocations!
+    println!("sup");//this allocates on first use a buffer(of 1k) for stdout.
+
     let res = some_fn();
     let err = res.err().unwrap();
     println!("{}\n======", err);

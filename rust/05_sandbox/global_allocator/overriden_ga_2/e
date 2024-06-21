@@ -1,1 +1,1 @@
-vim src/main.rs
+"${EDITOR:vim}" src/main.rs

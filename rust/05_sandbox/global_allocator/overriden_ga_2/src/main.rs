@@ -55,7 +55,7 @@ static GLOBAL_ALLOCATOR: MyAllocator = MyAllocator;
 
 fn main() {
     // Your program logic here
-    println!("sup");//this allocates on first use a buffer for stdout.
+    println!("sup");//this allocates on first use a buffer(of 1k) for stdout.
     //struct MyStruct {
     //    data: [u8; 1024],
     //}

@@ -18,7 +18,7 @@ libtests=0
 charsperline=0
 prev=""
 #FIXME: this 6 is no good anymore for rust 1.78.0, it worked for 1.76.0 tho! Seems 3 is max seen by 1.78.0 but that's true even when it failed
-while test "$libtests" -ne "6"; do
+while test "$libtests" -ne "3"; do
   libtests="$(find "${dir}/build/" -iname \*libtest\* 2>/dev/null |grep stage1|wc -l)"
   sleep 1 #sometimes it misses the kill because it had nothing new/modded to compile, so this must be low
   now="$libtests"
@@ -43,7 +43,7 @@ pkill --echo -u portage -- 'rustc'
 echo "Waiting for next recompilation...C-c if not."
 charsperline=0
 prev=""
-while test "$libtests" -eq "6"; do
+while test "$libtests" -eq "3"; do
   libtests="$(find "${dir}/build/" -iname \*libtest\* 2>/dev/null |grep stage1|wc -l)"
   sleep 1
   now="$libtests"
