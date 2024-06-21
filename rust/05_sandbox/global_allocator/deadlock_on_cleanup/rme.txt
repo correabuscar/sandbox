@@ -1,2 +1,4 @@
 this was a copy of /home/user/sandbox/rust/05_sandbox/error/error_propagation_with_own_msg_and_location2
 that's only for deadlocking on cleanup() purposes!
+
+see the ../deadlock_on_cleanup2/rme.txt too

@@ -1,0 +1,22 @@
+diff --git a/library/std/src/io/stdio.rs b/library/std/src/io/stdio.rs
+index 9aee2bb5e1c..f982eb699b6 100644
+--- a/library/std/src/io/stdio.rs
++++ b/library/std/src/io/stdio.rs
+@@ -677,6 +677,17 @@ pub fn stdout() -> Stdout {
+ // by replacing the line writer by one with zero
+ // buffering capacity.
+ pub fn cleanup() {
++    if STDOUT.get().is_none() {
++        // We get here in two ways:
++        // 1. a panic happened in a previous call to STDOUT.get_or_init()
++        // 2. stdout was never used and this is normal program exit, thus not
++        // needing a stdout flush; but might need a stdout with 0 size buffer,
++        // from here onwards?
++        // In the first case it would've deadlocked without this early 'return'.
++        // However this means we'll miss any printed text that didn't end in
++        // newline (if any), and the current print that caused this(if any).
++        return;
++    }
+     let mut initialized = false;
+     let stdout = STDOUT.get_or_init(|| {
+         initialized = true;

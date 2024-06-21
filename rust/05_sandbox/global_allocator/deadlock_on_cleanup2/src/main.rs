@@ -17,9 +17,12 @@ unsafe impl GlobalAlloc for MyAllocator {
                 match ALREADY_BEING_HERE.compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed) {
                     Ok(prev) => {
                         assert_eq!(false, prev);
-                        //using std::process::abort() here would be preferred but it creates coredumps which I might
-                        // want to avoid.
-                        panic!("allocation detected when it shouldn't have allocated anymore!");
+                        //using std::process::abort() or std::alloc::handle_alloc_error(layout ) here would be
+                        // preferred but it creates coredumps which I might want to avoid.
+                        eprintln!("allocation detected when it shouldn't have allocated anymore!");
+                        std::alloc::handle_alloc_error(layout); //never returns, see: https://doc.rust-lang.org/alloc/alloc/fn.handle_alloc_error.html
+
+                        //panic!("allocation detected when it shouldn't have allocated anymore!");
                         // this panic deadlocks in cleanup() of stdio due to STDOUT.get_or_init() ah, it's because the
                         // realloc below gets triggered and we didn't also panic in it! which would detect a double
                         // panic and abort instead of deadlock. sure maybe panic shouldn't be

@@ -1,2 +1,10 @@
 this is the simplified version of ../deadlock_on_cleanup
 which I may hopefully use/copy in an issue that I might open
+
+
+well I guess they could argue that since i'm using panic!() instead of std::process::abort() or std::alloc::handle_alloc_error()
+then, it's UB, because:
+"It’s undefined behavior if global allocators unwind. This restriction may be lifted in the future, but currently a panic from any of these functions may lead to memory unsafety." src: https://doc.rust-lang.org/std/alloc/trait.GlobalAlloc.html
+so since deadlock happens because I'm using panic!() which is UB, it's not really an issue.
+so I'm not making a github issue for this!
+
