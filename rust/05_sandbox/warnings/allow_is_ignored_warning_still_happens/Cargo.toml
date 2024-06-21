@@ -1,0 +1,6 @@
+[package]
+name = "allow_is_ignored_warning_still_happens"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

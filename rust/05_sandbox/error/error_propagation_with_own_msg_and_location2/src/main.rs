@@ -1126,6 +1126,7 @@ unsafe impl GlobalAlloc for MyAllocator {
                         // this panic deadlocks in cleanup() of stdio due to STDOUT.get_or_init() ah, it's because the realloc below gets triggered and we didn't also panic in it! which would detect a double panic and abort instead of deadlock.
                         // sure maybe panic shouldn't be called from the allocator, but still, the type of STDOUT seems off.
                         // XXX: should use:
+                        #[allow(dead_code)]
                         #[allow(unreachable_code)] //FIXME: why does this not silence the warning?!
                         {
                         std::alloc::handle_alloc_error(layout); //this doesn't return, but acts as if we returned null ptr, so no deadlocks!
