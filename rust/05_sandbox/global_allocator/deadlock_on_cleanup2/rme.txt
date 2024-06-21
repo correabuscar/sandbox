@@ -1,0 +1,2 @@
+this is the simplified version of ../deadlock_on_cleanup
+which I may hopefully use/copy in an issue that I might open
