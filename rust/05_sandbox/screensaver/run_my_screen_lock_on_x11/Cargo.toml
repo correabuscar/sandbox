@@ -1,0 +1,8 @@
+[package]
+name = "run_my_screen_lock_on_x11"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+x11 = "2.21.0"
+nix = "0.24.2"
