@@ -1112,6 +1112,7 @@ unsafe impl GlobalAlloc for MyAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         // Implement custom allocation logic here
         static ALREADY_BEING_HERE:AtomicBool=AtomicBool::new(false);
+        //eprintln!("!! before alloc, size={}",layout.size());
         if ! ALREADY_BEING_HERE.load(Ordering::Relaxed) {
             eprintln!("!! before alloc, size={}",layout.size());
             if PANIC_ON_ALLOC.load(Ordering::Relaxed) {
@@ -1192,6 +1193,7 @@ unsafe impl GlobalAlloc for MyAllocator {
 
     unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
         static ALREADY_BEING_HERE:AtomicBool=AtomicBool::new(false);
+        //eprintln!("!! before realloc, oldsize={} newsize={}",layout.size(), new_size);
         if ! ALREADY_BEING_HERE.load(Ordering::Relaxed) {
             eprintln!("!! before realloc, oldsize={} newsize={}",layout.size(), new_size);
             match ALREADY_BEING_HERE.compare_exchange(false,true,Ordering::Relaxed, Ordering::Relaxed) {
@@ -1264,7 +1266,7 @@ fn main() -> Result<(), my_error_things::MyError> {
     //println!("supnewline");//on first print to stdout it allocates 1k buffer
     //print!("yes this new lined part will be flushed\nbut this no new line part won't be flushed supNOnewline");//on first print to stdout it allocates 1k buffer
     PANIC_ON_ALLOC.store(true, Ordering::Relaxed);//from now on, panic on any memory allocations!
-    print!("!!!! this line won't be seen anyway because it panics within this\nsup!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");//this allocates on first use a buffer(of 1k) for stdout.
+    //print!("!!!! this line won't be seen anyway because it panics within this\nsup!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");//this allocates on first use a buffer(of 1k) for stdout.
     // that print without newline at end won't be flushed on exit when deadlocking (or when avoiding the deadlock)
 
     let mut vec = Vec::<i32>::with_capacity(200); //another way to alloc without needing stdout
