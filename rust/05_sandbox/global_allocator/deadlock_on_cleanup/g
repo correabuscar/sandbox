@@ -8,5 +8,5 @@ echo "exit code: $ec"
 if test "$ec" == 130; then
   #ie. pressed C-c due to deadlock, then debug it
   echo "$(tput setab 1)Press 'r' inside gdb to run it, and C-c again when deadlocked, then 'bt' to see stacktrace!$(tput sgr0)"
-  rust-gdb target/debug/error_propagation_with_own_msg_and_location2
+  rust-gdb target/debug/deadlock_on_cleanup
 fi
