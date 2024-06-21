@@ -1119,6 +1119,9 @@ unsafe impl GlobalAlloc for MyAllocator {
                 match ALREADY_BEING_HERE.compare_exchange(false,true,Ordering::Relaxed, Ordering::Relaxed) {
                     Ok(prev) => {
                         assert_eq!(false, prev);
+                        //XXX: using panic here is UB, as per docs:
+                        //"It’s undefined behavior if global allocators unwind. This restriction may be lifted in the future, but currently a panic from any of these functions may lead to memory unsafety." - https://doc.rust-lang.org/std/alloc/trait.GlobalAlloc.html#safety
+                        //but if we wanna see the stacktrace then... panic
                         panic!("allocation detected when it shouldn't have allocated anymore!");
                         // this panic deadlocks in cleanup() of stdio due to STDOUT.get_or_init() ah, it's because the realloc below gets triggered and we didn't also panic in it! which would detect a double panic and abort instead of deadlock.
                         // sure maybe panic shouldn't be called from the allocator, but still, the type of STDOUT seems off.
@@ -1253,10 +1256,10 @@ static PANIC_ON_ALLOC:AtomicBool=AtomicBool::new(false);
 //#[deny(unused_must_use)] // works ofc, because it applies to call sites!
 //fn main() {
 fn main() -> Result<(), my_error_things::MyError> {
-    println!("sup"); //allocs 1k and flushes the output too (because it ends with newline)
+    //println!("sup"); //allocs 1k and flushes the output too (because it ends with newline)
     PANIC_ON_ALLOC.store(true, Ordering::Relaxed);//from now on, panic on any memory allocations!
-    //print!("sup!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");//this allocates on first use a buffer(of 1k) for stdout.
-    //let mut _vec = Vec::<i32>::new();
+    print!("sup!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");//this allocates on first use a buffer(of 1k) for stdout.
+    //let mut _vec = Vec::<i32>::with_capacity(200);
 
     let res = some_fn();
     let err = res.err().unwrap();
