@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -e
+cargo clean
+RUSTC="$(realpath ./myrust)"
+export RUSTC
+set +e
+export RUST_BACKTRACE=1
+trap 'echo -e "\nCtrl-C pressed, but NOT also exiting script!"' SIGINT
+cargo run ; ec="$?"
+echo "exit code: $ec"
+#128+2 where 2 is SIGINT (see $ kill -l )
+if test "$ec" == 130; then
+  #ie. pressed C-c due to deadlock, then debug it
+  echo "$(tput setab 1)Press 'r' inside gdb to run it, and C-c again when deadlocked, then 'bt' to see stacktrace!$(tput sgr0)"
+  rust-gdb target/debug/error_propagation_with_own_msg_and_location2
+fi
