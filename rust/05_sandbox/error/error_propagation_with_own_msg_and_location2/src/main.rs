@@ -1113,7 +1113,7 @@ unsafe impl GlobalAlloc for MyAllocator {
         // Implement custom allocation logic here
         static ALREADY_BEING_HERE:AtomicBool=AtomicBool::new(false);
         if ! ALREADY_BEING_HERE.load(Ordering::Relaxed) {
-            eprintln!("before alloc, size={}",layout.size());
+            eprintln!("!! before alloc, size={}",layout.size());
             if PANIC_ON_ALLOC.load(Ordering::Relaxed) {
                 // since panic!() will alloc
                 match ALREADY_BEING_HERE.compare_exchange(false,true,Ordering::Relaxed, Ordering::Relaxed) {
@@ -1124,7 +1124,9 @@ unsafe impl GlobalAlloc for MyAllocator {
                         // sure maybe panic shouldn't be called from the allocator, but still, the type of STDOUT seems off.
                         //put it back, in case we decide to comment out the panic!() call!
                         #[allow(unreachable_code)]
+                        {
                         let _ = ALREADY_BEING_HERE.compare_exchange(true,false,Ordering::Relaxed, Ordering::Relaxed);
+                        }
                     },
                     Err(prev) => {
                         assert_eq!(true, prev);
@@ -1141,7 +1143,7 @@ unsafe impl GlobalAlloc for MyAllocator {
         if ! HAPPENED_ONCE_ALREADY.load(Ordering::Relaxed) {
         // Implement custom deallocation logic here
         // Delegating to System allocator for actual deallocation
-            eprintln!("before dealloc, size={}",layout.size());
+            eprintln!("!! before dealloc, size={}",layout.size());
             match HAPPENED_ONCE_ALREADY.compare_exchange(false,true,Ordering::Relaxed, Ordering::Relaxed) {
                 Ok(prev) => {
                     assert_eq!(false, prev);
@@ -1156,14 +1158,35 @@ unsafe impl GlobalAlloc for MyAllocator {
     }
 
     unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
-        eprintln!("before alloc_zeroed, size={}",layout.size());
+        static ALREADY_BEING_HERE:AtomicBool=AtomicBool::new(false);
+        if ! ALREADY_BEING_HERE.load(Ordering::Relaxed) {
+            eprintln!("!! before alloc_zeroed, size={}",layout.size());
+            if PANIC_ON_ALLOC.load(Ordering::Relaxed) {
+                // since panic!() will alloc
+                match ALREADY_BEING_HERE.compare_exchange(false,true,Ordering::Relaxed, Ordering::Relaxed) {
+                    Ok(prev) => {
+                        assert_eq!(false, prev);
+                        panic!("allocation(zeroed) detected when it shouldn't have allocated anymore!");
+                        //put it back, in case we decide to comment out the panic!() call!
+                        #[allow(unreachable_code)]
+                        {
+                        let _ = ALREADY_BEING_HERE.compare_exchange(true,false,Ordering::Relaxed, Ordering::Relaxed);
+                        }
+                    },
+                    Err(prev) => {
+                        assert_eq!(true, prev);
+                    },
+                }
+            }
+        }
+        // Delegating to System allocator for actual allocation
         System.alloc_zeroed(layout)
     }
 
     unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
         static ALREADY_BEING_HERE:AtomicBool=AtomicBool::new(false);
         if ! ALREADY_BEING_HERE.load(Ordering::Relaxed) {
-            eprintln!("before realloc, oldsize={} newsize={}",layout.size(), new_size);
+            eprintln!("!! before realloc, oldsize={} newsize={}",layout.size(), new_size);
             match ALREADY_BEING_HERE.compare_exchange(false,true,Ordering::Relaxed, Ordering::Relaxed) {
                 Ok(prev) => {
                     assert_eq!(false, prev);
