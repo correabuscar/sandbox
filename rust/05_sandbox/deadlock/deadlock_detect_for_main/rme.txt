@@ -1,0 +1,5 @@
+so this uses another thread, and counts on main to tell the deadlock-detecting thread that main is still alive
+it's more like a watchdog thread
+also main must tell the thread to exit when done
+
+not ideal at all because it uses heap allocation (Arc) and starts another thread when I'm unsure if we can do that (ie. is this a fork?)
