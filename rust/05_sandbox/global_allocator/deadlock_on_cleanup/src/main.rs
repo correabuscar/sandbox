@@ -1266,7 +1266,7 @@ fn main() -> Result<(), my_error_things::MyError> {
     //println!("supnewline");//on first print to stdout it allocates 1k buffer
     //print!("yes this new lined part will be flushed\nbut this no new line part won't be flushed supNOnewline");//on first print to stdout it allocates 1k buffer
     PANIC_ON_ALLOC.store(true, Ordering::Relaxed);//from now on, panic on any memory allocations!
-    //print!("!!!! this line won't be seen anyway because it panics within this\nsup!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");//this allocates on first use a buffer(of 1k) for stdout.
+    print!("!!!! this line won't be seen anyway because it panics within this\nsup!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");//this allocates on first use a buffer(of 1k) for stdout.
     // that print without newline at end won't be flushed on exit when deadlocking (or when avoiding the deadlock)
 
     let mut vec = Vec::<i32>::with_capacity(200); //another way to alloc without needing stdout

@@ -6,6 +6,8 @@ export RUSTC
 set +e
 export RUST_BACKTRACE=1
 trap 'echo -e "\nCtrl-C pressed, but NOT also exiting script!"' SIGINT
+export RUSTC_DONT_DEADLOCK_ON_CLEANUP=0
+export RUSTC_DONT_DEADLOCK_ON_CLEANUP_VERBOSE=1
 cargo run ; ec="$?"
 echo "exit code: $ec"
 #128+2 where 2 is SIGINT (see $ kill -l )
