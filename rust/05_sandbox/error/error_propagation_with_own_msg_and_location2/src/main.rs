@@ -1253,8 +1253,9 @@ static PANIC_ON_ALLOC:AtomicBool=AtomicBool::new(false);
 //#[deny(unused_must_use)] // works ofc, because it applies to call sites!
 //fn main() {
 fn main() -> Result<(), my_error_things::MyError> {
-    println!("sup");//this allocates on first use a buffer(of 1k) for stdout.
+    //println!("sup");//this allocates on first use a buffer(of 1k) for stdout.
     PANIC_ON_ALLOC.store(true, Ordering::Relaxed);//from now on, panic on any memory allocations!
+    let mut _vec = Vec::<i32>::new();
 
     let res = some_fn();
     let err = res.err().unwrap();
