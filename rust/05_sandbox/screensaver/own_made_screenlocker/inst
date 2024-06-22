@@ -1,0 +1,1 @@
+cargo install --offline --debug --path .

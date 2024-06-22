@@ -1,0 +1,5 @@
+well, this works well enough;
+triggers my screensaver which is a screen lock
+after 5mins of inactivity
+
+project name is kinda poorly choosen, in retrospect
