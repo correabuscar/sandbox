@@ -32,8 +32,6 @@ impl PowerManager {
         exec(
             "Shutting down",
             &[
-            "--",
-            "/sbin/shutdown",
             "-h",
             "-P",
             "-t",
