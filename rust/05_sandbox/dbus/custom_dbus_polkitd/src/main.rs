@@ -70,10 +70,7 @@ fn exec(action: &str, args: &[&str]) {
 // Although we use `tokio` here, you can use any async runtime of choice.
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    //let greeter = Greeter { count: 0 };
     let _conn = connection::Builder::system()?
-//        .name("org.zbus.MyGreeter")?
-//        .serve_at("/org/zbus/MyGreeter", greeter)?
         .name("org.freedesktop.ConsoleKit")?
         .serve_at("/org/freedesktop/ConsoleKit/Manager", PowerManager)?
         .build()
