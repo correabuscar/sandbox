@@ -1,4 +1,5 @@
-%wheel ALL=(root:root) NOPASSWD: /sbin/shutdown -r now "reboot issued by lxqt-leave"
+%wheel ALL=(root:root) NOPASSWD: /sbin/shutdown -r now reboot issued by lxqt-leave
+#%wheel ALL=(root:root) NOPASSWD: /bin/echo -r now "reboot issued by lxqt-leave"
 #^ and anyone else who can see this from wheel group.
 #		  -r:      reboot after shutdown.
 

@@ -50,6 +50,7 @@ fn exec(action: &str, args: &[&str]) {
     let status = std::process::Command::new("/usr/bin/sudo")
         .arg("--")
         .arg("/sbin/shutdown")
+        //.arg("/bin/echo")
         .args(args)
         .status();
     match status {
