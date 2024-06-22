@@ -1,0 +1,6 @@
+needs to run as root
+and only works if u have the permission file(that *.conf) for it and place it in /etc/dbus-1/system.d/
+(technically can run as 'user' too, if u mod the conf file for it, just make sure u don't allow everything or it will hang on timeout for eg. CanHibernate)
+
+tested to work with lxqt-leave
+

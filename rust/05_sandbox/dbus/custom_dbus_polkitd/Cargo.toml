@@ -1,0 +1,11 @@
+[package]
+name = "custom_dbus_polkitd"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+zbus = "4.3.0"
+#zbus_macros = "4.3.0"
+tokio = { version = "1.38.0", features = ["full"] }
+#serde = { version = "1.0", features = ["derive"] }
+#async-std = { version = "1.10", features = ["attributes"] }  # async runtime
