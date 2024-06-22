@@ -1,3 +1,5 @@
+it's not actually a polkitd replacement, but having polkitd allowed Shutdown/Reboot to work, soo, in that respect it is.
+
 doesn't need to run as root anymore, can run as any user!
 
 `cargo run` only works if u have the permission file(that *.conf) for it and place it in /etc/dbus-1/system.d/
