@@ -45,7 +45,7 @@ impl PowerManager {
 } //impl
 
 fn exec(action: &str, args: &[&str]) {
-    //XXX: we use 'sudo' with properly set sudoers, to not require running this dbus service as root!
+    //XXX: we use 'sudo' with properly set sudoers, to not require running this dbus service as root! thus it will not prompt for password when running these commands, that is!
     println!("{}", action);
     let status = std::process::Command::new("/usr/bin/sudo")
         .arg("--")
