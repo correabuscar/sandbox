@@ -3,3 +3,6 @@ triggers my screensaver which is a screen lock
 after 5mins of inactivity
 
 project name is kinda poorly choosen, in retrospect
+
+the files/dirs in ./home_dir/ is what you should put in ~/ aka ur home dir
+so when 'startx' it will then run that at startup

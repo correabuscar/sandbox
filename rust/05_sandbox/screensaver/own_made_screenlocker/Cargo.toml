@@ -3,5 +3,8 @@ name = "own_made_screenlocker"
 version = "0.1.0"
 edition = "2021"
 
+# Exclude the specified subdirectory
+exclude = ["home_dir"]
+
 [dependencies]
 x11 ="2.20.0"
