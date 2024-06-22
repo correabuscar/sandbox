@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+export RUST_BACKTRACE=1
+/etc/local.d/custom_dbus_polkitd &
