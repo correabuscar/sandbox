@@ -10,3 +10,8 @@ exclude = ["root_drive"]
 zbus = "4.3.0"
 tokio = { version = "1.38.0", features = ["full"] }
 #async-std = { version = "1.10", features = ["attributes"] }  # async runtime
+
+[profile.dev]
+opt-level=1
+debug=true
+debug-assertions=true
