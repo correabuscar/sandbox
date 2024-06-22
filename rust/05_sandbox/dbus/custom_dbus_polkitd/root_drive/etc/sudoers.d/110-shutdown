@@ -1,0 +1,14 @@
+%wheel ALL=(root:root) NOPASSWD: /sbin/shutdown -h -P -t 3 now "shutdown issued by lxqt-leave"
+#^ and anyone else who can see this from wheel group.
+#Usage:	  shutdown [-akrhPHfFnc] [-t sec] time [warning message]
+#		  -h:      halt after shutdown.
+#		  -P:      halt action is to turn off power.
+#		           can only be used along with -h flag.
+#		  -t secs: delay between warning and kill signal.
+#		  ** the "time" argument is mandatory! (try "now") **
+#       -t sec Tell  init(8) to wait sec seconds between sending all processes the warning (SIGTERM) and the kill signal
+#              (SIGKILL), before changing to another runlevel.  The default time, if  no  value  is  specified,  between
+#              these two signals is three seconds. Warning: when shutdown calls init(8) to perform the shutdown (the de‐
+#              fault  behavior), init(8) checks to see if all processes have terminated and will stop waiting early once
+#              its children have all terminated.  When shutdown is called with the -n flag, it waits the full time spec‐
+#              ified (or three seconds) even if all other processes have terminated.

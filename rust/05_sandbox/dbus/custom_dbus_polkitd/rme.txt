@@ -1,6 +1,14 @@
-needs to run as root
-and only works if u have the permission file(that *.conf) for it and place it in /etc/dbus-1/system.d/
-(technically can run as 'user' too, if u mod the conf file for it, just make sure u don't allow everything or it will hang on timeout for eg. CanHibernate)
+doesn't need to run as root anymore, can run as any user!
+
+`cargo run` only works if u have the permission file(that *.conf) for it and place it in /etc/dbus-1/system.d/
+else you see:
+Error: FDO(AccessDenied("Connection \":1.6\" is not allowed to own the service \"org.freedesktop.ConsoleKit\" due to security policies in the configuration file"))
+
 
 tested to work with lxqt-leave
 
+sudoers are needed for anyone in wheel group to can execute the shutdown/reboot commands without password prompt and without needing to be root!
+
+files in ./root_drive/ should be in your /  (but with proper permissions, ie. run `visudo -c` to check) and should be root:root owned!
+as they are required for this whole thing to work properly
+and this `cargo run` rust executable should be running, for lxqt-leave command to work properly and thus to can exit from lxqt via reboot/shutdown options, while you don't have any polkitd installed!

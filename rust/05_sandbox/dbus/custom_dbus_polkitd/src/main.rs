@@ -29,25 +29,53 @@ impl PowerManager {
     // systemd: "Reboot" = "Rejected send message, 3 matched rules; type=\"method_call\", sender=\":1.122\" (uid=1000 pid=90753 comm=\"/var/tmp/portage/lxqt-base/lxqt-session-2.0.0/work\") interface=\"org.freedesktop.ConsoleKit.Manager\" member=\"Reboot\" error name=\"(unset)\" requested_reply=\"0\" destination=\"org.freedesktop.ConsoleKit\" (uid=0 pid=88903 comm=\"./target/debug/custom_dbus_polkitd\")"
     // dbusCall: QDBusInterface is invalid "org.freedesktop.ConsoleKit" "/org/freedesktop/ConsoleKit/Manager" "org.freedesktop.ConsoleKit.Manager" "Reboot"
     fn reboot(&self) {
-        println!("Pretend reboot here1");
-        return;
+        println!("Rebooting.");
+        let status = std::process::Command::new("/usr/bin/sudo") //XXX: we use 'sudo' with properly set sudoers, to not require running this dbus service as root!
+            .arg("--")
+            .arg("/sbin/shutdown")
+            .arg("-r")
+            .arg("now")
+            .arg("reboot issued by lxqt-leave") //TODO: make sure only lxqt-leave can call us?
+            .status();
+
+        match status {
+            Ok(status) if status.success() => {
+                println!("Command executed ok!");
+            },
+            Ok(status) => {
+                println!("Reboot failed with status: {}", status);
+            },
+            Err(err) => {
+                println!("Failed to execute reboot command, error: '{}'", err)
+            },
+        };
     }
     // systemd: "PowerOff" = "Rejected send message, 3 matched rules; type=\"method_call\", sender=\":1.129\" (uid=1000 pid=91946 comm=\"/var/tmp/portage/lxqt-base/lxqt-session-2.0.0/work\") interface=\"org.freedesktop.ConsoleKit.Manager\" member=\"PowerOff\" error name=\"(unset)\" requested_reply=\"0\" destination=\"org.freedesktop.ConsoleKit\" (uid=0 pid=91930 comm=\"./target/debug/custom_dbus_polkitd\")"
     // dbusCall: QDBusInterface is invalid "org.freedesktop.ConsoleKit" "/org/freedesktop/ConsoleKit/Manager" "org.freedesktop.ConsoleKit.Manager" "PowerOff"
-    fn power_off(&self) { //-> ZbusResult<()> {
-        println!("Pretend poweroff here");
-        //return Ok(());
-        return;
-//        let status = Command::new("shutdown")
-//            .arg("-h")
-//            .arg("now")
-//            .status();
-//
-//        match status {
-//            Ok(status) if status.success() => Ok(()),
-//            Ok(status) => Err(zbus::fdo::Error::Failed(format!("Shutdown failed with status: {}", status))),
-//            Err(err) => Err(zbus::fdo::Error::Failed(format!("Failed to execute shutdown command: {}", err))),
-//        }
+    fn power_off(&self) {
+        println!("Shutting down.");
+        let status = std::process::Command::new("/usr/bin/sudo")
+            .arg("--")
+            .arg("/sbin/shutdown")
+            .arg("-h")
+            .arg("-P")
+            .arg("-t")
+            .arg("3")
+            .arg("now")
+            .arg("shutdown issued by lxqt-leave") //TODO: make sure only lxqt-leave can call us? and above for reboot too!
+            .status();
+
+        match status {
+            Ok(status) if status.success() => {
+                println!("Command executed ok!");
+            },
+            Ok(status) => {
+                println!("Shutdown failed with status: {}", status);
+            },
+            Err(err) => {
+                println!("Failed to execute shutdown command, error: '{}'", err)
+            },
+        };
     }
 }
 

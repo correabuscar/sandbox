@@ -3,6 +3,9 @@ name = "custom_dbus_polkitd"
 version = "0.1.0"
 edition = "2021"
 
+# Exclude the specified subdirectory
+exclude = ["root_drive"]
+
 [dependencies]
 zbus = "4.3.0"
 #zbus_macros = "4.3.0"
