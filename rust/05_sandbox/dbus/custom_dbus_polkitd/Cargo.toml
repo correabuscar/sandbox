@@ -12,6 +12,10 @@ tokio = { version = "1.38.0", features = ["full"] }
 #async-std = { version = "1.10", features = ["attributes"] }  # async runtime
 
 [profile.dev]
-opt-level=1
-debug=true
+opt-level=3
+debug=2
 debug-assertions=true
+overflow-checks = true
+lto = "thin"
+panic= "unwind"
+

@@ -6,5 +6,14 @@ edition = "2021"
 # Exclude the specified subdirectory
 exclude = ["home_dir"]
 
+[profile.dev]
+opt-level=3
+debug=2
+debug-assertions=true
+overflow-checks = true
+lto = "thin"
+panic= "unwind"
+
+
 [dependencies]
 x11 ="2.20.0"
