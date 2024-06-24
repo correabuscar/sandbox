@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+script -O output.txt -q -c "nvim -u ./init.vim +'normal! 90G' -- ./btop_draw_4.cpp"
