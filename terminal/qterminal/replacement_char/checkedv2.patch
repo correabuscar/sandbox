@@ -74,7 +74,7 @@ index c88ac12..dee470b 100644
 +    QString str2 = _toUtf16(ba);
 +    qDebug() << "!!!!!!!!!! str2:" << str2;
 +    std::wstring unicodeText = str2.toStdWString();
-+    qDebug() << "!!!!!!!!!! unicodeText:" << unicodeText.c_str();
++    qDebug() << "!!!!!!!!!! unicodeText:" << QString::fromStdWString(unicodeText.c_str());
 +    if (the_diff>0) {
 +        qDebug() << "!!!!!!!!!! More replacement characters("<<the_diff<<") found in 'str' than in 'text'.";
 +        //throw std::runtime_error("Something got replaced with replacement character. Crashing as requested.");
