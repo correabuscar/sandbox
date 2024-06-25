@@ -28,8 +28,13 @@ export QT_LOGGING_RULES="*=true"
 # Now do same for qterminal
 
 # Create a script file with your gdb commands
-echo "set environment LD_LIBRARY_PATH /tmp/qtw2/lib64:/var/tmp/portage/dev-qt/qtbase-6.7.2/work/qtbase-everywhere-src-6.7.2_build/lib64" > /tmp/gdb_cmds.txt
+#echo "set environment LD_LIBRARY_PATH /tmp/qtw2/lib64:/var/tmp/portage/dev-qt/qtbase-6.7.2/work/qtbase-everywhere-src-6.7.2_build/lib64" > /tmp/gdb_cmds.txt
+echo "set environment LD_LIBRARY_PATH /tmp/qtw2/lib64" > /tmp/gdb_cmds.txt
 echo "run -p foo_qterminal -e 'less -R --shift 5 -- ./less.txt' > /tmp/foo7.log 2>&1 " >> /tmp/gdb_cmds.txt
 gdb -x /tmp/gdb_cmds.txt /tmp/qtw2/bin/qterminal
 
 
+#echo "set environment LD_LIBRARY_PATH /tmp/qtw1/lib64:/var/tmp/portage/dev-qt/qtbase-6.7.2/work/qtbase-everywhere-src-6.7.2_build/lib64" > /tmp/gdb_cmds.txt
+#echo "set environment LD_LIBRARY_PATH /tmp/qtw1/lib64" > /tmp/gdb_cmds.txt
+#echo "run -p foo_qterminal -e 'less -R --shift 5 -- ./less.txt' > /tmp/foo7.log 2>&1 " >> /tmp/gdb_cmds.txt
+#gdb -x /tmp/gdb_cmds.txt /tmp/qtw1/bin/qterminal

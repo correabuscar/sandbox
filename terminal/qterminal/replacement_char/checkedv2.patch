@@ -1,0 +1,97 @@
+modified patch actualv2.patch
+originally from https://github.com/lxqt/qterminal/issues/1143#issuecomment-2189138026
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9cf3516..3533c86 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -153,6 +153,7 @@ set_target_properties( ${QTERMWIDGET_LIBRARY_NAME} PROPERTIES
+                        VERSION ${QTERMWIDGET_VERSION}
+                      )
+ 
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
+ 
+ if(APPLE)
+     target_compile_definitions(${QTERMWIDGET_LIBRARY_NAME}
+diff --git a/lib/Emulation.cpp b/lib/Emulation.cpp
+index c88ac12..dee470b 100644
+--- a/lib/Emulation.cpp
++++ b/lib/Emulation.cpp
+@@ -52,7 +52,7 @@ Emulation::Emulation() :
+   _keyTranslator(nullptr),
+   _usesMouse(false),
+   _bracketedPasteMode(false),
+-  _fromUtf8(QStringEncoder::Utf16)
++  _toUtf16(QStringEncoder::Utf8)
+ {
+   // create screens with a default size
+   _screen[0] = new Screen(40,80);
+@@ -213,6 +213,23 @@ void Emulation::sendMouseEvent(int /*buttons*/, int /*column*/, int /*row*/, int
+ TODO: Character composition from the old code.  See #96536
+ */
+ 
++int countReplacementCharactersInText(const char* text, int length) {
++    int count = 0;
++    for (int i = 0; i < length - 2; ++i) {
++        if (static_cast<unsigned char>(text[i]) == 0xEF &&
++            static_cast<unsigned char>(text[i + 1]) == 0xBF &&
++            static_cast<unsigned char>(text[i + 2]) == 0xBD) {
++            count++;
++            i += 2; // Skip the next two bytes
++        }
++    }
++    return count;
++}
++
++int countReplacementCharactersInString(const QString& str) {
++    return str.count(QChar::ReplacementCharacter);
++}
++
+ void Emulation::receiveData(const char* text, int length)
+ {
+     emit stateSet(NOTIFYACTIVITY);
+@@ -224,9 +241,29 @@ void Emulation::receiveData(const char* text, int length)
+      * U+10FFFF
+      * https://unicodebook.readthedocs.io/unicode_encodings.html#surrogates
+      */
++    qDebug() << "!!!!!!!!!! length:" << length;
++    qDebug() << "!!!!!!!!!! text:" << text; //yes replacement chars here because it get converted to utf8
+     QString str = QString::fromUtf8(text, length);
+-    auto encoded = _fromUtf8(str);
+-    std::wstring unicodeText = encoded.data.toStdWString(); 
++    qDebug() << "!!!!!!!!!! str:" << str; //yes replacement chars here
++    // Count replacement characters in 'text'
++    int textReplacementCount = countReplacementCharactersInText(text, length);
++    // Count replacement characters in 'str'
++    int strReplacementCount = countReplacementCharactersInString(str);
++    int the_diff=strReplacementCount-textReplacementCount;
++    qDebug() << "!!!!!!!!!! the_diff:" << the_diff;
++    // Compare the counts
++
++
++
++    QByteArray ba(text, length);
++    QString str2 = _toUtf16(ba);
++    qDebug() << "!!!!!!!!!! str2:" << str2;
++    std::wstring unicodeText = str2.toStdWString();
++    qDebug() << "!!!!!!!!!! unicodeText:" << unicodeText.c_str();
++    if (the_diff>0) {
++        qDebug() << "!!!!!!!!!! More replacement characters("<<the_diff<<") found in 'str' than in 'text'.";
++        //throw std::runtime_error("Something got replaced with replacement character. Crashing as requested.");
++    }
+ 
+     //send characters to terminal emulator
+     for (size_t i=0;i<unicodeText.length();i++)
+diff --git a/lib/Emulation.h b/lib/Emulation.h
+index 98ba2fe..ad0c513 100644
+--- a/lib/Emulation.h
++++ b/lib/Emulation.h
+@@ -494,7 +494,7 @@ private:
+   bool _bracketedPasteMode;
+   QTimer _bulkTimer1{this};
+   QTimer _bulkTimer2{this};
+-  QStringEncoder _fromUtf8;
++  QStringDecoder _toUtf16;
+ };
+ 
+ }

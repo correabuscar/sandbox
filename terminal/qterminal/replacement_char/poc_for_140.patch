@@ -1,0 +1,150 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ce50ed0..1747931 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -153,6 +153,7 @@ set_target_properties( ${QTERMWIDGET_LIBRARY_NAME} PROPERTIES
+                        VERSION ${QTERMWIDGET_VERSION}
+                      )
+ 
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
+ 
+ if(APPLE)
+     target_compile_definitions(${QTERMWIDGET_LIBRARY_NAME}
+diff --git a/lib/Emulation.cpp b/lib/Emulation.cpp
+index 723f5d2..8be0797 100644
+--- a/lib/Emulation.cpp
++++ b/lib/Emulation.cpp
+@@ -25,6 +25,7 @@
+ // System
+ #include <cstdio>
+ #include <cstdlib>
++#include <cstring> // for memcpy
+ #include <unistd.h>
+ #include <string>
+ 
+@@ -38,6 +39,7 @@
+ #include <QThread>
+ 
+ #include <QTime>
++#include <QDebug>
+ 
+ // KDE
+ //#include <kdebug.h>
+@@ -239,6 +241,23 @@ void Emulation::sendMouseEvent(int /*buttons*/, int /*column*/, int /*row*/, int
+ TODO: Character composition from the old code.  See #96536
+ */
+ 
++int countReplacementCharactersInText(const char* text, int length) {
++    int count = 0;
++    for (int i = 0; i < length - 2; ++i) {
++        if (static_cast<unsigned char>(text[i]) == 0xEF &&
++            static_cast<unsigned char>(text[i + 1]) == 0xBF &&
++            static_cast<unsigned char>(text[i + 2]) == 0xBD) {
++            count++;
++            i += 2; // Skip the next two bytes
++        }
++    }
++    return count;
++}
++
++int countReplacementCharactersInString(const QString& str) {
++    return str.count(QChar::ReplacementCharacter);
++}
++
+ void Emulation::receiveData(const char* text, int length)
+ {
+     emit stateSet(NOTIFYACTIVITY);
+@@ -250,8 +269,79 @@ void Emulation::receiveData(const char* text, int length)
+      * U+10FFFF
+      * https://unicodebook.readthedocs.io/unicode_encodings.html#surrogates
+      */
+-    QString utf16Text = _decoder->toUnicode(text,length);
++    qDebug() << "!!!!!!!!!! length:" << length;
++    qDebug() << "!!!!!!!!!! text:" << text; //yes replacement chars here because it get converted to utf8
++    QString str = QString::fromUtf8(text, length);
++    qDebug() << "!!!!!!!!!! str:" << str; //yes replacement chars here
++    // Count replacement characters in 'text'
++    int textReplacementCount = countReplacementCharactersInText(text, length);
++    // Count replacement characters in 'str'
++    int strReplacementCount = countReplacementCharactersInString(str);
++
++    //char combinedBuffer[3 + length];
++    //std::vector<char> combinedBuffer(_last_max_three_bytes_of_text.size() + length);
++
++    // do we have any new invalid utf8 bytes at the end of this new chunk?
++    int the_diff=strReplacementCount-textReplacementCount;
++    qDebug() << "!!!!!!!!!! the_diff:" << the_diff;
++    qDebug() << "!!!!!!!!!! _how_many_of_last_max_three_are_in:" << _how_many_of_last_max_three_are_in;
++    //qDebug() << "!!!!!!!!!! _last_max_three_bytes_of_text:" << _last_max_three_bytes_of_text;
++//    qDebug() << "!!!!!!!!!! _last_max_three_bytes_of_text:";
++//    for (const auto& byte : _last_max_three_bytes_of_text) {
++//        qDebug() << QString::number(byte, 16).rightJustified(2, '0');  // Print each byte as a 2-digit hexadecimal number
++//    }
++//    qDebug() << "!!!!!!!!!! _last_max_three_bytes_of_text:";
++//    for (const auto& byte : _last_max_three_bytes_of_text) {
++//        qDebug() << QString::number(static_cast<unsigned char>(byte), 16).rightJustified(2, '0');
++//    }
++//    qDebug() << "!!!!!!!!!! _last_max_three_bytes_of_text:";
++//    for (const auto& byte : _last_max_three_bytes_of_text) {
++//        qDebug().noquote() << QString::number(static_cast<unsigned char>(byte), 16).rightJustified(2, '0');
++//    }
++//    qDebug() << "!!!!!!!!!! _last_max_three_bytes_of_text:";
++//    for (const auto& byte : _last_max_three_bytes_of_text) {
++//        qDebug().noquote() << QString("%1").arg(static_cast<unsigned char>(byte), 2, 16, QChar('0'));
++//    }
++
++
++
++    std::vector<uint8_t> combinedBuffer(_how_many_of_last_max_three_are_in + length);
++    //"allocates memory on the heap, but it is automatically deallocated when the vector goes out of scope, such as when the function exits"
++    int combinedLength = 0;
++    if (_how_many_of_last_max_three_are_in > 0) {
++        //copy last state bytes from the end of a prev. chunk which woulda been invalid utf8
++        //copy to the beginning of this new chunk
++        std::memcpy(combinedBuffer.data(), _last_max_three_bytes_of_text.data(), _how_many_of_last_max_three_are_in);
++        combinedLength+=_how_many_of_last_max_three_are_in;
++    }
++
++    // Compare the counts
++    if (the_diff>0) {
++        qDebug() << "!!!!!!!!!! More replacement characters("<<the_diff<<") found in 'str' than in 'text'.";
++        //throw std::runtime_error("Something got replaced with replacement character. Crashing as requested.");
++    }
++
++    // Copy new text to the combined buffer
++    // but not any invalid utf8 bytes from the end, if any.
++    std::memcpy(combinedBuffer.data() + combinedLength, text, length-the_diff);
++    combinedLength += length-the_diff;
++
++    // Try to convert the combined buffer to UTF-8
++    QString str2 = QString::fromUtf8(reinterpret_cast<const char*>(combinedBuffer.data()), combinedLength);
++    qDebug() << "!!!!!!!!!! resultAftermods:" << str2;
++    //QString utf16Text = _decoder->toUnicode(text,length-the_diff);
++    QString utf16Text = _decoder->toUnicode(reinterpret_cast<const char*>(combinedBuffer.data()),combinedLength);
++    qDebug() << "!!!!!!!!!! utf16Text:" << utf16Text;//no repl. chars here, gets truncated before it
+     std::wstring unicodeText = utf16Text.toStdWString();
++    qDebug() << "!!!!!!!!!! unicodeText:" << QString::fromStdWString(unicodeText.c_str());//none here too
++
++    // Store the last up to 3 bytes of invalid UTF-8 from the end of the text
++    if (the_diff > 0) {
++        _how_many_of_last_max_three_are_in = the_diff;
++        std::memcpy(_last_max_three_bytes_of_text.data(), text + length - the_diff, the_diff);
++    } else {
++        _how_many_of_last_max_three_are_in = 0;
++    }
+ 
+     //send characters to terminal emulator
+     for (size_t i=0;i<unicodeText.length();i++)
+diff --git a/lib/Emulation.h b/lib/Emulation.h
+index 7d2263b..b0e4f37 100644
+--- a/lib/Emulation.h
++++ b/lib/Emulation.h
+@@ -488,6 +488,8 @@ protected:
+   const QTextCodec* _codec;
+   QTextDecoder* _decoder;
+   const KeyboardTranslator* _keyTranslator; // the keyboard layout
++  std::array<uint8_t, 3> _last_max_three_bytes_of_text = {0};
++  int _how_many_of_last_max_three_are_in = 0;
+ 
+ protected slots:
+   /**
