@@ -1,0 +1,84 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9cf3516..3533c86 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -153,6 +153,7 @@ set_target_properties( ${QTERMWIDGET_LIBRARY_NAME} PROPERTIES
+                        VERSION ${QTERMWIDGET_VERSION}
+                      )
+ 
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
+ 
+ if(APPLE)
+     target_compile_definitions(${QTERMWIDGET_LIBRARY_NAME}
+diff --git a/lib/Emulation.cpp b/lib/Emulation.cpp
+index c88ac12..a095c4f 100644
+--- a/lib/Emulation.cpp
++++ b/lib/Emulation.cpp
+@@ -208,6 +208,23 @@ void Emulation::sendMouseEvent(int /*buttons*/, int /*column*/, int /*row*/, int
+     // default implementation does nothing
+ }
+ 
++int countReplacementCharactersInText(const char* text, int length) {
++    int count = 0;
++    for (int i = 0; i < length - 2; ++i) {
++        if (static_cast<unsigned char>(text[i]) == 0xEF &&
++            static_cast<unsigned char>(text[i + 1]) == 0xBF &&
++            static_cast<unsigned char>(text[i + 2]) == 0xBD) {
++            count++;
++            i += 2; // Skip the next two bytes
++        }
++    }
++    return count;
++}
++
++int countReplacementCharactersInString(const QString& str) {
++    return str.count(QChar::ReplacementCharacter);
++}
++
+ /*
+    We are doing code conversion from locale to unicode first.
+ TODO: Character composition from the old code.  See #96536
+@@ -224,9 +241,42 @@ void Emulation::receiveData(const char* text, int length)
+      * U+10FFFF
+      * https://unicodebook.readthedocs.io/unicode_encodings.html#surrogates
+      */
++    qDebug() << "!!!!!!!!!! length:" << length;
++    qDebug() << "!!!!!!!!!! text:" << text;
+     QString str = QString::fromUtf8(text, length);
++    //QString str = fromUtf8(text, length);
++    qDebug() << "!!!!!!!!!! str:" << str;
+     auto encoded = _fromUtf8(str);
+-    std::wstring unicodeText = encoded.data.toStdWString(); 
++    qDebug() << "!!!!!!!!!! encoded:" << encoded;
++    std::wstring unicodeText = encoded.data.toStdWString();
++    qDebug() << "!!!!!!!!!! unicodeText:" << QString::fromStdWString(unicodeText.c_str());
++//    if (length >= 3 &&
++//        (
++//         /*(str[length - 3] == '\xEF' &&
++//        str[length - 2] == '\xBF' &&
++//        str[length - 1] == '\xBD')
++//         ||*/
++//         //(str[0]=='\xEF' && str[1]=='\xBF' && str[2]=='\xBD'))
++//    //str.contains(QChar::ReplacementCharacter))
++//    str[0]==QChar::ReplacementCharacter)
++//        ) {
++//
++//        qDebug() << "Replacement character detected at the front of the input.";
++//        throw std::runtime_error("Replacement character detected at the front of the input. Crashing as requested.");
++//        // Option 2: Crash the program using assertion
++//        Q_ASSERT(false); // This will crash the program with a debug assertion
++//    }
++    // Count replacement characters in 'text'
++    int textReplacementCount = countReplacementCharactersInText(text, length);
++    // Count replacement characters in 'str'
++    int strReplacementCount = countReplacementCharactersInString(str);
++
++    // Compare the counts
++    if (strReplacementCount > textReplacementCount) {
++        qDebug() << "More replacement characters found in 'str' than in 'text'.";
++        throw std::runtime_error("Something got replaced with replacement character. Crashing as requested.");
++        Q_ASSERT(false);//not reached
++    }
+ 
+     //send characters to terminal emulator
+     for (size_t i=0;i<unicodeText.length();i++)

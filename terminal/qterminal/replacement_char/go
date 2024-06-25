@@ -1,4 +1,35 @@
-#!/usr/bin/env -vS -i PATH="${PATH}" LANG="${LANG}" TERM='xterm-256color' DISPLAY="${DISPLAY}" HOME="${HOME}" bash --noprofile --norc
+#!/usr/bin/env -S -i PATH="${PATH}" LANG="${LANG}" TERM='xterm-256color' DISPLAY="${DISPLAY}" HOME="${HOME}" bash --noprofile --norc
 
 cp ./qterminal.ini ~/.config/foo_qterminal.conf
-qterminal -p foo_qterminal -e 'less -R --shift 5 -- ./less.txt'
+declare -x XDG_RUNTIME_DIR="/run/user/1000"
+export QT_LOGGING_RULES="*=true"
+#export QT_LOGGING_RULES="qt.*=true"
+#qterminal -p foo_qterminal -e 'less -R --shift 5 -- ./less.txt'
+#LD_LIBRARY_PATH="/var/tmp/portage/x11-libs/qtermwidget-2.0.0/work/qtermwidget-2.0.0_build" qterminal -p foo_qterminal -e 'less -R --shift 5 -- ./less.txt'
+#LD_LIBRARY_PATH="/tmp/qtw1/usr/local/lib64" /tmp/qterminal/build/qterminal -p foo_qterminal -e 'less -R --shift 5 -- ./less.txt'
+#LD_LIBRARY_PATH="/tmp/qtw1" /tmp/qterminal/build/qterminal -p foo_qterminal -e 'less -R --shift 5 -- ./less.txt'
+#export XDG_RUNTIME_DIR="/run/user/1000"
+#/tmp/qterminal/build/qterminal -p foo_qterminal -e 'less -R --shift 5 -- ./less.txt'
+#/tmp/qterminal/build/qterminal -p foo_qterminal -e 'less -R --shift 5 -- ./less.txt'
+#LD_LIBRARY_PATH="/tmp/qtw1/lib64" /tmp/qtw1/bin/qterminal -p foo_qterminal -e 'less -R --shift 5 -- ./less.txt'
+#LD_LIBRARY_PATH="/tmp/qtw2/lib64" /tmp/qtw2/bin/qterminal -p foo_qterminal -e 'less -R --shift 5 -- ./less.txt'
+
+#XXX: Those qterminal+qtermwidget were created like:
+# cd /tmp
+# git clone https://github.com/lxqt/qtermwidget.git
+# git clone https://github.com/lxqt/qterminal.git
+# cd qtermwidget
+# now apply qtermwidget.patch (no patch for qterminal!)
+# mkdir build
+# cd build
+# cmake -DCMAKE_INSTALL_PREFIX=/tmp/qtw2 ..
+# make
+# make install
+# Now do same for qterminal
+
+# Create a script file with your gdb commands
+echo "set environment LD_LIBRARY_PATH /tmp/qtw2/lib64:/var/tmp/portage/dev-qt/qtbase-6.7.2/work/qtbase-everywhere-src-6.7.2_build/lib64" > /tmp/gdb_cmds.txt
+echo "run -p foo_qterminal -e 'less -R --shift 5 -- ./less.txt' > /tmp/foo7.log 2>&1 " >> /tmp/gdb_cmds.txt
+gdb -x /tmp/gdb_cmds.txt /tmp/qtw2/bin/qterminal
+
+
