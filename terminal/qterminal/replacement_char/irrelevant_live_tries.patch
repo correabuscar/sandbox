@@ -1,0 +1,42 @@
+Index: /var/tmp/portage/dev-qt/qtbase-6.7.2/work/qtbase-everywhere-src-6.7.2/src/corelib/text/qstringconverter.cpp
+===================================================================
+--- .orig/var/tmp/portage/dev-qt/qtbase-6.7.2/work/qtbase-everywhere-src-6.7.2/src/corelib/text/qstringconverter.cpp
++++ /var/tmp/portage/dev-qt/qtbase-6.7.2/work/qtbase-everywhere-src-6.7.2/src/corelib/text/qstringconverter.cpp
+@@ -658,10 +658,10 @@ char16_t *QUtf8::convertToUnicode(char16
+             do {
+                 uchar b = *src++;
+                 const qsizetype res = QUtf8Functions::fromUtf8<QUtf8BaseTraits>(b, dst, src, end);
+-                if (res < 0) {
+-                    // decoding error
+-                    *dst++ = QChar::ReplacementCharacter;
+-                }
++                //if (res < 0) {
++                //    // decoding error
++                //    *dst++ = QChar::ReplacementCharacter;
++                //}
+             } while (src < nextAscii);
+         }
+     }
+Index: /var/tmp/portage/x11-libs/qtermwidget-2.0.0/work/qtermwidget-2.0.0/lib/TerminalCharacterDecoder.cpp
+===================================================================
+--- .orig/var/tmp/portage/x11-libs/qtermwidget-2.0.0/work/qtermwidget-2.0.0/lib/TerminalCharacterDecoder.cpp
++++ /var/tmp/portage/x11-libs/qtermwidget-2.0.0/work/qtermwidget-2.0.0/lib/TerminalCharacterDecoder.cpp
+@@ -79,11 +79,14 @@ void PlainTextDecoder::decodeLine(const
+         _linePositions << pos;
+     }
+ 
+-    if (characters == nullptr)
++    // check the real length
++    for (int i = 0 ; i < count ; i++)
+     {
+-        // TODO: So far, this has happened only under kwin_wayland, when the current function
+-        // is called by TerminalDisplay::inputMethodQuery(). The actual issue should be found.
+-        return;
++        if (characters + i == nullptr)
++        {
++            count = i;
++            break;
++        }
+     }
+ 
+     //TODO should we ignore or respect the LINE_WRAPPED line property?
