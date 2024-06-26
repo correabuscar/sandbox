@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+cp workspace.rs.original workspace.rs
+./patch -p0 -i ./wrong_place.patch

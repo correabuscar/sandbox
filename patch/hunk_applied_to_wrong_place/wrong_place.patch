@@ -1,0 +1,14 @@
+#WELL the following hunk gets applied to the wrong function (validate_manifest) in rust 1.79.0 but not in 1.78.0 (or earlier, guessing) instead of fn emit_warnings
+--- workspace.rs
++++ workspace.rs
+@@ -1122,6 +1126,10 @@ impl<'cfg> Workspace<'cfg> {
+                 }
+             }
+         }
++        if seen_any_warnings {
++            //use anyhow::bail;
++            bail!("Compilation failed due to cargo warnings! Manually done this(via cargo patch) so that things like the following (ie. dep key packages= and using rust pre 1.26.0 which ignores it, downloads squatted package) will be avoided in the future: https://github.com/rust-lang/rust/security/advisories/GHSA-phjm-8x66-qw4r");
++        }
+         Ok(())
+     }
+ 
