@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
 export RUST_BACKTRACE=1
 cargo clean
 #FIXME: needs double build to finally compile it O_o ; try ./g2 for a workaround!

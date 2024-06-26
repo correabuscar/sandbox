@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
 export RUST_BACKTRACE=1
 cargo clean
 trap 'echo -e "\nCtrl-C pressed, but NOT also exiting script!"' SIGINT

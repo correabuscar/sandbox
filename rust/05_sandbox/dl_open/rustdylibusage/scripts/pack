@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
 
 who="$(basename `pwd`)"
 file="${who}-0.1.0.tar.gz"

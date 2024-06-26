@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
 
 #qemu-system-arm -M virt -cpu cortex-a53 -m 2G -drive file=/path/to/arm-image.img,format=raw
 #qemu-system-aarch64 -machine virt -smp 4 ./target/aarch64-unknown-linux-gnu/debug/cache_incoherence

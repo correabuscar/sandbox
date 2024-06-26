@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
 
 cargo clean
 #XXX: problem: RUSTFLAGS applies to all (potential)deps too! so if build.rs fails on purpose when set, then a dep's build.rs will fail before our project's build.rs if it uses the same mechanism(ie. a lib that offers this functionality imagine #[cfg(test_build_rs)] as a way to test build.rs functionality)

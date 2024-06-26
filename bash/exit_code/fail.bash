@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
 
 set -euf -o pipefail #like the original: https://github.com/pasadoorian/displaygoat/blob/1883636decae12e8a90da5344798a096c673427c/displaygoat.sh#L19
 OUTPUT="/tmp/some${RANDOM}.log"

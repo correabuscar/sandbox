@@ -1,4 +1,4 @@
-#!/usr/bin/env /run/current-system/sw/bin/bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" /run/current-system/sw/bin/bash
 
 echo "$# $@" >>/tmp/linker.$(/run/current-system/sw/bin/basename "$0").cmds
 #/run/current-system/sw/bin/rustc
