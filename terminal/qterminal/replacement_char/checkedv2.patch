@@ -14,7 +14,7 @@ index 9cf3516..3533c86 100644
  if(APPLE)
      target_compile_definitions(${QTERMWIDGET_LIBRARY_NAME}
 diff --git a/lib/Emulation.cpp b/lib/Emulation.cpp
-index c88ac12..dee470b 100644
+index c88ac12..4ce9f13 100644
 --- a/lib/Emulation.cpp
 +++ b/lib/Emulation.cpp
 @@ -52,7 +52,7 @@ Emulation::Emulation() :
@@ -22,7 +22,7 @@ index c88ac12..dee470b 100644
    _usesMouse(false),
    _bracketedPasteMode(false),
 -  _fromUtf8(QStringEncoder::Utf16)
-+  _toUtf16(QStringEncoder::Utf8)
++  _toUtf16(QStringConverter::Utf8, QStringConverter::Flag::Default)
  {
    // create screens with a default size
    _screen[0] = new Screen(40,80);
@@ -70,10 +70,10 @@ index c88ac12..dee470b 100644
 +
 +
 +
-+    QByteArray ba(text, length);
-+    QString str2 = _toUtf16(ba);
++    const QByteArray ba(text, length);
++    const QString str2 = _toUtf16.decode(ba);
 +    qDebug() << "!!!!!!!!!! str2:" << str2;
-+    std::wstring unicodeText = str2.toStdWString();
++    const std::wstring unicodeText = str2.toStdWString();
 +    qDebug() << "!!!!!!!!!! unicodeText:" << QString::fromStdWString(unicodeText.c_str());
 +    if (the_diff>0) {
 +        qDebug() << "!!!!!!!!!! More replacement characters("<<the_diff<<") found in 'str' than in 'text'.";
