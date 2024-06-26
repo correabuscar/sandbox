@@ -1,2 +1,3 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
 script -O output.txt -q -c "nvim -u ./init.vim +'normal! 90G' -- ./btop_draw_4.cpp"

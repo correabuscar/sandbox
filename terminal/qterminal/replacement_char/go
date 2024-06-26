@@ -1,4 +1,4 @@
-#!/usr/bin/env -S -i PATH="${PATH}" LANG="${LANG}" TERM='xterm-256color' DISPLAY="${DISPLAY}" HOME="${HOME}" bash --noprofile --norc
+#!/usr/bin/env -S -i PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" LANG="${LANG}" TERM='xterm-256color' DISPLAY="${DISPLAY}" HOME="${HOME}" bash --noprofile --norc
 
 cp ./qterminal.ini ~/.config/foo_qterminal.conf
 declare -x XDG_RUNTIME_DIR="/run/user/1000"

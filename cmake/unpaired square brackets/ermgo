@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
 diff -up <(cat erm.log) <(CLICOLOR_FORCE= cmake -P erm.cmake 2>&1)
 if test "$?" == 0; then
   echo "success, outputs are the same"

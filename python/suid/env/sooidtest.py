@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" python
 #^ The shebang, or hash-bang, is a special kind of comment which the system uses to determine what interpreter to use to execute the file. The shebang must be the first line of the file, and start with " #! ". - wikipedia
 
 #test what happens when this $0 is suid root whilst using env as shell.

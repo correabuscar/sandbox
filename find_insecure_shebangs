@@ -1,0 +1,3 @@
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+grep -nrI -- '^#!/usr/bin/env'|grep -vE -- ':#!/usr/bin/env -S (-i )?PATH'|grep --color=always -- "/usr/bin/env" | grep -vF 'sent_to_bug_report'

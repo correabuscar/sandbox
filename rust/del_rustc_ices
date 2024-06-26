@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
 
 #due to rust flags "-Z treat-err-as-bug=5" lots of these get created during compilation that errors.
 find . -name 'rustc-ice-*.txt' -delete

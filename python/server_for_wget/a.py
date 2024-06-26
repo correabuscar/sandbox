@@ -1,4 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" python3
+#^ securized it later, but unset this ^ way.
+
 
 # test with: pushd /tmp; wget --tries=3 --timeout=2 --passive-ftp -O aha 127.1.2.9:8000/a.txt;cat aha;ls -la aha;echo 'Should be 14 bytes when no bug, or 20 if wget bug';popd
 # or test with: $ ./go

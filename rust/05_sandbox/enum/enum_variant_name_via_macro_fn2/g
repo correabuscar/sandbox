@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
 
 export RUST_BACKTRACE=1
 export RUSTFLAGS="-Z trace-macros -Z macro-backtrace -Z debug-macros"

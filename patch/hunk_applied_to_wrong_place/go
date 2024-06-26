@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
 
 cp workspace.rs.original workspace.rs
 ./patch -p0 -i ./wrong_place.patch

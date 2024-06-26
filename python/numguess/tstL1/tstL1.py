@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" python3
+
 #tstL1 rev. 3, python 3.8.10, win7, 21-22 may 2021
 
 import random
