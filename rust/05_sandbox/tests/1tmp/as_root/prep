@@ -13,5 +13,6 @@ source vars.sh
 cd "$dir"
 #patch -p8 -i /quilt_patches/cargo_test-threads_loses_output.patch
 #patch -p8 -i /quilt_patches/cargo_test-threads_loses_output2.patch
-patch -p8 -i /quilt_patches/cargo_test-threads_loses_output4.patch
+#patch -p8 -i /quilt_patches/cargo_test-threads_loses_output4.patch
+patch -p8 -i /quilt_patches/cargo_test-threads_loses_output5.patch
 echo "`tput setab 2`$dir`tput sgr0`"

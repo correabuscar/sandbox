@@ -1,2 +1,2 @@
-dir="/var/tmp/portage/dev-lang/rust-1.78.0/work/rustc-1.78.0-src/"
+dir="/var/tmp/portage/dev-lang/rust-1.79.0/work/rustc-1.79.0-src/"
 
