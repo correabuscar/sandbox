@@ -1099,6 +1099,47 @@ impl<'gctx> Workspace<'gctx> {
                         self.gctx.shell().note(format_args!(
                             "to use the edition {edition} resolver, specify `workspace.resolver = \"{resolver}\"` in the workspace root's manifest"
                         ))?;
+                        /*
+                        what if i shift it 40 lines down (this is 3 so far)
+                        4
+                        5
+                        6
+                        7
+                        8
+                        9
+                        10
+                        11
+                        12
+                        13
+                        14
+                        15
+                        16
+                        17
+                        18
+                        19
+                        20
+                        21
+                        22
+                        23
+                        24
+                        25
+                        26
+                        27
+                        28
+                        29
+                        30
+                        31
+                        32
+                        33
+                        34
+                        35
+                        36
+                        37
+                        38
+                        39
+                        40
+                        41 lines?
+                        */
                         self.gctx.shell().note(
                             "for more details see https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions",
                         )?;

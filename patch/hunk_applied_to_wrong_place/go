@@ -12,7 +12,8 @@ set -vex
 cp -a -- workspace.rs.PATCHED workspace.rs
 set +e
 #the diff cmd always exit(1) because it's differences!
-"${DIFF_CMD[@]}" -up --label fixed -- workspace.rs.original workspace.rs > remade.patch
+#XXX: generation of the patch is commented out, or else it will place it in right spot.
+#"${DIFF_CMD[@]}" -up --label fixed -- workspace.rs.original workspace.rs > remade.patch
 #used label or else the timestamp would need a new git commit on every ./go
 set -e
 cp -a -- workspace.rs.original workspace.rs
