@@ -1137,8 +1137,8 @@ impl<'gctx> Workspace<'gctx> {
                         37
                         38
                         39
-                        40
-                        41 lines?
+                        40 (no effect for 40 or less)
+                        41 (has the effect of placing the hunk in the wrong place, because 81/2=40.5=41(rounded up)), the 81 lines difference between the spots that look the same!
                         */
                         self.gctx.shell().note(
                             "for more details see https://doc.rust-lang.org/cargo/reference/resolver.html#resolver-versions",

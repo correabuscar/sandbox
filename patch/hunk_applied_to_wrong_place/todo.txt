@@ -5,3 +5,13 @@ sys-devel/patch-2.7.6-r5
 also modify diff of
 sys-apps/diffutils-3.10
 so that it won't generate a patch whose hunks can be applied in more than 1 place
+
+so ./go_try_gen  will use ./diff script to generate a tried_gen.patch which ./patch will then try to apply, both succeed but they're wrong both, currently;
+well ./diff generates a patch that could be applied in 2 places, if the original shifts 41 lines down,
+and ./patch applies it in the wrong place if original -//-
+
+so the goal is to change ./diff to try to re-apply (internally) the patch it generated, to see if it's correctly applying back, however this will always succeed on the original file... unless the lines were set to different numbers, like we can try patching with them being set to top and then with them being set to bottom, and one of those will fail if there's a possibility of applying hunks in more than 1 place. Hmm, seems kinda difficult to do, and error-prone.
+
+then change patch to similarily detect if any hunk can be applied in more place than 1, then fail to apply it at all!
+
+

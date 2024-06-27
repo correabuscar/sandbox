@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
 
 #XXX unconditionally use -F 0 aka no fuzz! because the default of 2 fuzz applied a cargo patch wrongly and yielded a compilation error! the code was in a different function!!
 #TODO: add the functionality from this patch: /home/user/build/1packages/4used/pacman/1pacman-git/applyallpatches_and_patch2_functions_implement.patch

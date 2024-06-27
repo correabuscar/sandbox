@@ -9,19 +9,19 @@ if [ ${#PATCH_CMD[@]} -eq 0 ]; then
 fi
 
 set -vex
-cp -a -- workspace.rs.PATCHED workspace.rs
+cp -a -- workspace.rs.PATCHED_real workspace.rs
 set +e
 #the diff cmd always exit(1) because it's differences!
-#XXX: generation of the patch is commented out, or else it will place it in right spot.
-#"${DIFF_CMD[@]}" -up --label fixed -- workspace.rs.original workspace.rs > remade.patch
+"${DIFF_CMD[@]}" -up --label fixed -- workspace.rs.original_real workspace.rs > tried_gen.patch
 #used label or else the timestamp would need a new git commit on every ./go
 set -e
+
 cp -a -- workspace.rs.original workspace.rs
-"${PATCH_CMD[@]}" -p0 -i ./remade.patch
-mv workspace.rs workspace.rs.REAPPLIED
+"${PATCH_CMD[@]}" -p0 -i ./tried_gen.patch
+mv workspace.rs workspace.rs.REAPPLIED_real
 set +vex
-if ! diff -qup -- workspace.rs.PATCHED workspace.rs.REAPPLIED; then
-  echo "Failed, patch applied wrongly!"
+if ! diff -qup -- workspace.rs.PATCHED workspace.rs.REAPPLIED_real; then
+  echo "Failed, patch applied wrongly therefore it was generated wrongly!"
   exit 1
 fi
 echo "Success!"

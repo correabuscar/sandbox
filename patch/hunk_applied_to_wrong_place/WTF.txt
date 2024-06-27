@@ -1,5 +1,12 @@
-i goofed here, somehow the original workspace.rs already was patched, so had the hunk is the right place,
+//i goofed here, somehow the original workspace.rs already was patched, so had the hunk is the right place,
 therefore applying the patch (ie. for the second time), put the hunk in a different place,
 but then that's not a problem really, I goofed by having had the patch already applied,
 if it's not already applied, the hunk is applied in the right place!
+
+
+but i turned it around and played with shifting down the original(presume some code got added), so now it can still apply the hunk in the wrong place, as long as that wrong place happens to be close enough by where the old place was and the old place is farther away than the now-wrong place.
+
+so it's applying it like:
+Hunk #1 succeeded at 1147 (offset -40 lines).
+aka back -40 lines, instead of forward +40(+-1) lines where the correct place is.
 

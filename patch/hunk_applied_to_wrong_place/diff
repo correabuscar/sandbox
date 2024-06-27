@@ -1,0 +1,8 @@
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+diff="/usr/bin/diff"
+#diff="/var/tmp/portage/sys-apps/diffutils-3.10/work/diffutils-3.10/src/diff"
+#if test ! -x "/var/tmp/portage/sys-apps/diffutils-3.10" -o ! -x "/var/tmp/portage/sys-apps/diffutils-3.10/work" -o ! -x "/var/tmp/portage/sys-apps/diffutils-3.10/work/diffutils-3.10"; then
+#  sudo -- chmod a+x "/var/tmp/portage/sys-apps/diffutils-3.10"{,/work,/work/diffutils-3.10}
+#fi
+"${diff}" "$@"
