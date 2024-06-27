@@ -1,8 +1,108 @@
 #!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
 
-diff="/usr/bin/diff"
-#diff="/var/tmp/portage/sys-apps/diffutils-3.10/work/diffutils-3.10/src/diff"
-#if test ! -x "/var/tmp/portage/sys-apps/diffutils-3.10" -o ! -x "/var/tmp/portage/sys-apps/diffutils-3.10/work" -o ! -x "/var/tmp/portage/sys-apps/diffutils-3.10/work/diffutils-3.10"; then
-#  sudo -- chmod a+x "/var/tmp/portage/sys-apps/diffutils-3.10"{,/work,/work/diffutils-3.10}
-#fi
-"${diff}" "$@"
+#diff="/usr/bin/diff"
+diff="/var/tmp/portage/sys-apps/diffutils-3.10/work/diffutils-3.10/src/diff"
+if test ! -x "/var/tmp/portage/sys-apps/diffutils-3.10" -o ! -x "/var/tmp/portage/sys-apps/diffutils-3.10/work" -o ! -x "/var/tmp/portage/sys-apps/diffutils-3.10/work/diffutils-3.10"; then
+  sudo -- chmod a+x "/var/tmp/portage/sys-apps/diffutils-3.10"{,/work,/work/diffutils-3.10}
+fi
+
+if test -z "$diff"; then
+  echo "empty \$diff" >&2
+  exit 99
+fi
+
+AMBIGUOUS_ARG="--ambiguous"
+
+unambiguous=1
+#^ unambiguous by default, which means, don't allow same hunk to can be applied in more than 1 place in the same file!
+
+# Array to store the remaining arguments
+remaining_args=()
+
+# Iterate over the arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    "${AMBIGUOUS_ARG}")
+      unambiguous=0
+      #^ explicitly not checking if hunks can be applied to more than 1 place in the file.
+      shift
+      ;;
+    *)
+      # Add argument to remaining_args array
+      remaining_args+=("$1")
+      shift
+      ;;
+  esac
+done
+
+#XXX "$@" is unusable after the above "shift"(s)
+
+if test "$unambiguous" == "0"; then
+  "${diff}" "${remaining_args[@]}" ; ec="$?"
+elif test "$unambiguous" == "1"; then
+  stdout_file="$(mktemp)"
+  stderr_file="$(mktemp)"
+
+  "${diff}" --show-filenames-on-stderr "${remaining_args[@]}" 1> "$stdout_file" 2> "$stderr_file" ; ec="$?"
+  #"${diff}" "${remaining_args[@]}"
+  cat "$stdout_file" >&1
+  #cat "$stderr_file" >&2 #we output this later in the 'while' below
+
+  #Note that because --label LABEL is a thing, each filename in the output diff can be overwritten with LABEL, so can't extract it from there! That's why trying to use the filenames from the args, well the filenames that 'diff' sees are filenames and aren't set to be treated as binary!
+  #TODO: test what happens if dirs are given on cmdline
+  #TODO: test what happens if files/dirs are given on cmdline AND the arg to treat them as binary is given
+  #TODO: make `git diff` work with this, but likely needs another wrapper to this! see `man git` / GIT_EXTERNAL_DIFF
+
+  #example stderr_file contents:
+  #anythis before
+  #diff: Comparing non-binary files:
+  #workspace.rs.original_real
+  #workspace.rs
+  #anythis after
+
+  # Variables to store filenames aka the file arguments given to the 'diff' command
+  file1=""
+  file2=""
+
+  # Read the stderr input file line by line, and only output the lines that aren't part of the --show-filenames-on-stderr output
+  while IFS= read -r line; do
+    # ^ "Setting IFS to an empty value temporarily within the context of the read command allows you to preserve the exact content of the line, including any leading or trailing whitespace." - chatgpt-4o
+    # Check if the line matches the fixed string
+    if [[ "$line" == "diff: Comparing non-binary files:" ]]; then
+      # Read the next two lines to get the filenames
+      read -r file1
+      read -r file2
+    else
+      # Print the line to stderr
+      echo "$line" >&2
+    fi
+  done < "$stderr_file"
+
+  if test -z "$file1" -o ! -e "$file1"; then
+    echo "First file '$file1' is empty or not a file" >&2
+    exit 11
+  fi
+  if test -z "$file2" -o ! -e "$file2"; then
+    echo "Second file '$file2' is empty or not a file" >&2
+    exit 12
+  fi
+  # Print the filenames to stdout for confirmation
+  echo "file1: $file1" >&2
+  echo "file2: $file2" >&2
+
+  how_many_files_patched="$(grep -c '^+++' -- "$stdout_file")"
+  if test "$how_many_files_patched" -gt "1"; then
+    echo "Detected more than 1 file being patched, to support that pass arg $AMBIGUOUS_ARG which won't check if the same hunk can be applied more than once in the same file." >&2
+    exit 13
+  fi
+
+  #so now make a temp copy of file1, try to apply the resulting 'diff' patch twice and make sure the second time fails fully, no succees hunks! if fails fully then it's unabiguous, else it means the same hunk could be applied in two or more different places!
+  #hmm, this isn't actually fullproof, hmm... maybe doing this for each hunk independently would be best?! because i can imagine having 2 hunks but each could be swapped because the spots yield are same-contents diff except the line numbers. Plus also, if the original file changes like it adds another same-contents spot, then 'diff' won't know, but 'patch' itself will when i modify it soon so it won't apply any hunk that can be applied more than once if u tried.
+
+  rm -v -- "$stdout_file" "$stderr_file" >&2
+  #echo "$stdout_file" "$stderr_file" >&2
+else
+  echo "Bad coding in '$0'" >&2
+  ec="100"
+fi
+exit "$ec"

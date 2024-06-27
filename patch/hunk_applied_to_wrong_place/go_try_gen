@@ -12,10 +12,14 @@ set -vex
 cp -a -- workspace.rs.PATCHED_real workspace.rs
 set +e
 #the diff cmd always exit(1) because it's differences!
-"${DIFF_CMD[@]}" -up --label fixed -- workspace.rs.original_real workspace.rs > tried_gen.patch
+"${DIFF_CMD[@]}" -up --label fixed -- workspace.rs.original_real workspace.rs > tried_gen.patch ; ec="$?"
+set +vx
+if test "$ec" != 0 -a "$ec" != "1"; then
+  echo "Diff failed, exit code '$ec'" >&2
+  exit "$ec"
+fi
 #used label or else the timestamp would need a new git commit on every ./go
-set -e
-
+set -evx
 cp -a -- workspace.rs.original workspace.rs
 "${PATCH_CMD[@]}" -p0 -i ./tried_gen.patch
 mv workspace.rs workspace.rs.REAPPLIED_real
