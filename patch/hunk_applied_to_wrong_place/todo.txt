@@ -1,3 +1,7 @@
 modify patch so it will fail if hunk can be applied in more than 1 place!
 sys-devel/patch: /usr/bin/patch
+sys-devel/patch-2.7.6-r5
 
+also modify diff of
+sys-apps/diffutils-3.10
+so that it won't generate a patch whose hunks can be applied in more than 1 place

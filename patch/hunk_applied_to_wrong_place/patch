@@ -7,7 +7,7 @@ patchexeabs="/var/tmp/portage/sys-devel/patch-2.7.6-r5/work/patch-2.7.6/src/patc
 if test ! -x "/var/tmp/portage/sys-devel/patch-2.7.6-r5" -o ! -x "/var/tmp/portage/sys-devel/patch-2.7.6-r5/work" -o ! -x "/var/tmp/portage/sys-devel/patch-2.7.6-r5/work/patch-2.7.6"; then
   sudo -- chmod a+x "/var/tmp/portage/sys-devel/patch-2.7.6-r5"{,/work,/work/patch-2.7.6}
 fi
-"${patchexeabs}" --read-only=fail --verbose --debug=0 --fuzz=0 "$@" #last working XXX#
+"${patchexeabs}" --read-only=fail --verbose --debug=65535 --fuzz=0 "$@" #last working XXX#
 #command -p patch --read-only=fail --verbose --debug=0 --fuzz=0 "$@" #untested but should be same as before^
 #added 24 july 2020: --read-only=fail --verbose --debug=65535  #note: decided to not use --set-time OR --set-utc   at this time.
 #removed --debug=65535 on 26 july 2020

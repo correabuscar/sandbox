@@ -1,5 +1,5 @@
---- workspace.rs.original	2024-06-27 08:17:54.049771454 +0200
-+++ workspace.rs.GOOD	2024-06-27 08:17:23.686439247 +0200
+--- fixed
++++ workspace.rs	2024-06-27 11:42:19.018497454 +0200
 @@ -1187,6 +1187,10 @@ impl<'gctx> Workspace<'gctx> {
                  }
              }
