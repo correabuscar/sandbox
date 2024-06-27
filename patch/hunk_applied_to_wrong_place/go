@@ -3,3 +3,7 @@
 
 cp workspace.rs.original workspace.rs
 ./patch -p0 -i ./wrong_place.patch
+if diff -qup -- workspace.rs.HUNK_IN_WRONG_PLACE workspace.rs; then
+  echo "Still failed"
+  exit 1
+fi

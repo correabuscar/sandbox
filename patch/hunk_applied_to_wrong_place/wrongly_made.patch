@@ -1,0 +1,13 @@
+--- workspace.rs.original	2024-06-27 08:17:54.049771454 +0200
++++ workspace.rs.GOOD	2024-06-27 08:17:23.686439247 +0200
+@@ -1187,6 +1187,10 @@ impl<'gctx> Workspace<'gctx> {
+                 }
+             }
+         }
++        if seen_any_warnings {
++            //use anyhow::bail;
++            bail!("Compilation failed due to cargo warnings! Manually done this(via cargo patch) so that things like the following (ie. dep key packages= and using rust pre 1.26.0 which ignores it, downloads squatted package) will be avoided in the future: https://github.com/rust-lang/rust/security/advisories/GHSA-phjm-8x66-qw4r");
++        }
+         Ok(())
+     }
+ 

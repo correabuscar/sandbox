@@ -1,0 +1,3 @@
+modify patch so it will fail if hunk can be applied in more than 1 place!
+sys-devel/patch: /usr/bin/patch
+

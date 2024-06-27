@@ -3,8 +3,12 @@
 #XXX unconditionally use -F 0 aka no fuzz! because the default of 2 fuzz applied a cargo patch wrongly and yielded a compilation error! the code was in a different function!!
 #TODO: add the functionality from this patch: /home/user/build/1packages/4used/pacman/1pacman-git/applyallpatches_and_patch2_functions_implement.patch
 #patchexeabs="/usr/bin/patch"
-#"${patchexeabs}" --read-only=fail --verbose --debug=0 --fuzz=0 "$@" #last working XXX#
-command -p patch --read-only=fail --verbose --debug=0 --fuzz=0 "$@" #untested but should be same as before^
+patchexeabs="/var/tmp/portage/sys-devel/patch-2.7.6-r5/work/patch-2.7.6/src/patch"
+if test ! -x "/var/tmp/portage/sys-devel/patch-2.7.6-r5" -o ! -x "/var/tmp/portage/sys-devel/patch-2.7.6-r5/work" -o ! -x "/var/tmp/portage/sys-devel/patch-2.7.6-r5/work/patch-2.7.6"; then
+  sudo -- chmod a+x "/var/tmp/portage/sys-devel/patch-2.7.6-r5"{,/work,/work/patch-2.7.6}
+fi
+"${patchexeabs}" --read-only=fail --verbose --debug=0 --fuzz=0 "$@" #last working XXX#
+#command -p patch --read-only=fail --verbose --debug=0 --fuzz=0 "$@" #untested but should be same as before^
 #added 24 july 2020: --read-only=fail --verbose --debug=65535  #note: decided to not use --set-time OR --set-utc   at this time.
 #removed --debug=65535 on 26 july 2020
 

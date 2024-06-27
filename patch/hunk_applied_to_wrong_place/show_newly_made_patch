@@ -1,0 +1,7 @@
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+diff -up workspace.rs.original workspace.rs.GOOD > newly_made.patch
+if diff -up wrongly_made.patch newly_made.patch; then
+  echo "Made it wrong!"
+  exit 1
+fi
