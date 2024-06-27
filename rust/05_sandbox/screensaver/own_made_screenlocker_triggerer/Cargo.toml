@@ -1,5 +1,5 @@
 [package]
-name = "own_made_screenlocker"
+name = "own_made_screenlocker_triggerer"
 version = "0.1.0"
 edition = "2021"
 
