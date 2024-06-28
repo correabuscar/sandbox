@@ -21,7 +21,13 @@ fi
 #used label or else the timestamp would need a new git commit on every ./go
 set -evx
 cp -a -- workspace.rs.original workspace.rs
-"${PATCH_CMD[@]}" -p0 -i ./tried_gen.patch
+set +vex
+"${PATCH_CMD[@]}" -p0 -i ./tried_gen.patch ; ec="$?"
+if test "$ec" != "0"; then
+  rm workspace.rs
+  exit "$ec"
+fi
+set -evx
 mv workspace.rs workspace.rs.REAPPLIED_real
 set +vex
 if ! diff -qup -- workspace.rs.PATCHED workspace.rs.REAPPLIED_real; then
