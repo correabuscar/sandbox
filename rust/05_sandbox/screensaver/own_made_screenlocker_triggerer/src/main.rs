@@ -35,7 +35,8 @@ fn main() {
         }
 
         let lock_duration = Duration::from_secs(5 * 60); // 5 minutes
-        let blank_duration = Duration::from_secs(lock_duration.as_secs() - 5); // 5 secs before 5mins are up, blank!
+        const BLANK_THIS_MANY_SECONDS_BEFORE_LOCKING:u64=10;
+        let blank_duration = Duration::from_secs(lock_duration.as_secs() - BLANK_THIS_MANY_SECONDS_BEFORE_LOCKING); // 5 secs before 5mins are up, blank!
 
         loop {
             let idle_time = get_idle_time(display);
