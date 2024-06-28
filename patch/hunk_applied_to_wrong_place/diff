@@ -14,12 +14,14 @@ if test -z "$diff"; then
 fi
 
 AMBIGUOUS_ARG="--ambiguous"
+THE_UNAMBIGUOUS_ARG="--unambiguous"
 
 unambiguous=1
 #^ unambiguous by default, which means, don't allow same hunk to can be applied in more than 1 place in the same file!
 
 # Array to store the remaining arguments
 remaining_args=()
+at_saved=("$@")
 
 # Iterate over the arguments
 while [[ $# -gt 0 ]]; do
@@ -27,6 +29,11 @@ while [[ $# -gt 0 ]]; do
     "${AMBIGUOUS_ARG}")
       unambiguous=0
       #^ explicitly not checking if hunks can be applied to more than 1 place in the file.
+      shift
+      ;;
+    "${THE_UNAMBIGUOUS_ARG}")
+      unambiguous=1
+      #^ explicitly checking if hunks can be applied to more than 1 place in the file.
       shift
       ;;
     *)
@@ -42,6 +49,14 @@ done
 if test "$unambiguous" == "0"; then
   "${diff}" "${remaining_args[@]}" ; ec="$?"
 elif test "$unambiguous" == "1"; then
+  diffmode="diff: unambiguous mode used(done by diff wrapper '$0' aka '$(realpath "$0")', used real diff patch too: '/patches/portage/sys-apps/diffutils.reused/diff_show_filenames_on_stderr.patch')"
+  echo "$diffmode" >&2
+  #make it part of the patch too:
+  echo "$diffmode" >&1
+  diffcalledmsg="diff called with ${#at_saved[@]} args: ${at_saved[*]}"
+  echo "$diffcalledmsg" >&2
+  #make it part of the patch too:
+  echo "$diffcalledmsg" >&1
   stdout_file="$(mktemp)"
   stderr_file="$(mktemp)"
 
