@@ -24,7 +24,7 @@ cp -a -- workspace.rs.original workspace.rs
 set +vex
 "${PATCH_CMD[@]}" -p0 -i ./tried_gen.patch ; ec="$?"
 if test "$ec" != "0"; then
-  rm workspace.rs
+  rm -v -- ./ workspace.rs
   exit "$ec"
 fi
 set -evx
