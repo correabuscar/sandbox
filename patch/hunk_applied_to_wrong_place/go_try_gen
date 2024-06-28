@@ -15,6 +15,7 @@ set +e
 "${DIFF_CMD[@]}" -up --label fixed -- workspace.rs.original_real workspace.rs > tried_gen.patch ; ec="$?"
 set +vx
 if test "$ec" != 0 -a "$ec" != "1"; then
+  rm -v -- ./workspace.rs
   echo "Diff failed, exit code '$ec'" >&2
   exit "$ec"
 fi
@@ -24,7 +25,7 @@ cp -a -- workspace.rs.original workspace.rs
 set +vex
 "${PATCH_CMD[@]}" -p0 -i ./tried_gen.patch ; ec="$?"
 if test "$ec" != "0"; then
-  rm -v -- ./ workspace.rs
+  rm -v -- ./workspace.rs
   exit "$ec"
 fi
 set -evx

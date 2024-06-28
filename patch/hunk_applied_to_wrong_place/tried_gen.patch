@@ -1,4 +1,2 @@
 diff: unambiguous mode used(done by diff wrapper './diff' aka '/home/user/sandbox/patch/hunk_applied_to_wrong_place/diff', used real diff patch too: '/patches/portage/sys-apps/diffutils.reused/diff_show_filenames_on_stderr.patch')
 diff called with 6 args: -up --label fixed -- workspace.rs.original_real workspace.rs
-/tmp/tmp.4tDcV8PlPh ~/sandbox/patch/hunk_applied_to_wrong_place
-~/sandbox/patch/hunk_applied_to_wrong_place
