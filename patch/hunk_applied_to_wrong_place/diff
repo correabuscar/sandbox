@@ -122,11 +122,11 @@ elif test "$unambiguous" == "1"; then
     exit 12
   fi
   if test -z "$unified_arg"; then
-    echo "The detected --unified=NUM (or -u NUM) arg is empty probably because it wasn't used, to make this work you've to specify $AMBIGUOUS_ARG which won't check if the same hunk can be applied more than once in the same file. Because $THE_UNAMBIGUOUS_ARG only works with -u arg and you apparently don't want to use it at the moment." >&2
+    echo "The detected --unified=NUM (or -U NUM) arg is empty probably because it wasn't used, to make this work you've to specify $AMBIGUOUS_ARG which won't check if the same hunk can be applied more than once in the same file. Because $THE_UNAMBIGUOUS_ARG only works with -u arg and you apparently don't want to use it at the moment." >&2
     exit 14
   fi
   if ! [[ $unified_arg =~ ^[0-9]+$ ]]; then
-    echo "The detected --unified=NUM (or -u NUM) arg value of '$unified_arg' is not a number which is unexpectedly odd!" >&2
+    echo "The detected --unified=NUM (or -U NUM) arg value of '$unified_arg' is not a number which is unexpectedly odd!" >&2
     exit 15
   fi
 #  # Print the filenames to stdout for confirmation
@@ -173,7 +173,7 @@ elif test "$unambiguous" == "1"; then
         break
       fi
       # TODO: if wanting to be too pedantic prepend --show-unified-arg-value to diff cmd below and check if indeed the value that we passed was used!
-      #the last -u NUM used is in effect! so wtw user specified before even if it's inside $remaining_args it doesn't matter as long as our override comes last!
+      #the last -U NUM used is in effect! so wtw user specified before even if it's inside $remaining_args it doesn't matter as long as our override comes last!
       #retry with higher(+1) --unified=NUM
       #FIXME: this won't work because the arg we add is after the files and more importantly after a possible '--' arg, which means end of option args! So we need an overrider arg! like --override-unified=NUM which ignores any subsequent ones, somehow! /usr/bin/diff: extra operand '--unified=4'
       "${diff}" "${remaining_args[@]}" "--unified=$unified_arg" 1> "$stdout_file" 2> "$stderr_file" ; ec="$?"
@@ -183,7 +183,7 @@ elif test "$unambiguous" == "1"; then
         echo "!! You may inspect stdout and stderr as tmp files $stdout_file respectively $stderr_file, but they got printed above." >&2
         break #out of the 'while', ec is already set so we'll exit code properly!
       fi
-      #else 'diff' succeeded ok, semidoneFIXME: to avoid infinite loop, find out if the generated patch is same (eg. maybe it's too small and any -u NUM value has no effect on the generated output patch!) OR don't -u NUM for a NUM higher than MAX
+      #else 'diff' succeeded ok, semidoneFIXME: to avoid infinite loop, find out if the generated patch is same (eg. maybe it's too small and any -U NUM value has no effect on the generated output patch!) OR don't -U NUM for a NUM higher than MAX
     else
       #patch ok, print it out
       cat "$stdout_file" >&1
