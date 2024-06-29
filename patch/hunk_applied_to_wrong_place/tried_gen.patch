@@ -1,2 +1,39 @@
 diff: unambiguous mode used(done by diff wrapper './diff' aka '/home/user/sandbox/patch/hunk_applied_to_wrong_place/diff', used real diff patch too: '/patches/portage/sys-apps/diffutils.reused/diff_show_filenames_on_stderr.patch')
-diff called with 6 args: -up --label fixed -- workspace.rs.original_real workspace.rs
+diff initially called with 6 args: -up --label fixed -- workspace.rs.original_real workspace.rs
+--- fixed
++++ workspace.rs	2024-06-27 12:28:31.498522450 +0200
+@@ -1175,30 +1175,34 @@ impl<'gctx> Workspace<'gctx> {
+                     let cx =
+                         anyhow::format_err!("failed to parse manifest at `{}`", path.display());
+                     return Err(err.context(cx));
+                 } else {
+                     let msg = if self.root_manifest.is_none() {
+                         warning.message.to_string()
+                     } else {
+                         // In a workspace, it can be confusing where a warning
+                         // originated, so include the path.
+                         format!("{}: {}", path.display(), warning.message)
+                     };
+                     self.gctx.shell().warn(msg)?
+                 }
+             }
+         }
++        if seen_any_warnings {
++            //use anyhow::bail;
++            bail!("Compilation failed due to cargo warnings! Manually done this(via cargo patch) so that things like the following (ie. dep key packages= and using rust pre 1.26.0 which ignores it, downloads squatted package) will be avoided in the future: https://github.com/rust-lang/rust/security/advisories/GHSA-phjm-8x66-qw4r");
++        }
+         Ok(())
+     }
+ 
+     pub fn emit_lints(&self, pkg: &Package, path: &Path) -> CargoResult<()> {
+         let mut error_count = 0;
+         let toml_lints = pkg
+             .manifest()
+             .resolved_toml()
+             .lints
+             .clone()
+             .map(|lints| lints.lints)
+             .unwrap_or(manifest::TomlLints::default());
+         let cargo_lints = toml_lints
+             .get("cargo")
+             .cloned()

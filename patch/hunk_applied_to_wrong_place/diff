@@ -53,7 +53,7 @@ elif test "$unambiguous" == "1"; then
   echo "$diffmode" >&2
   #make it part of the patch too:
   echo "$diffmode" >&1
-  diffcalledmsg="diff called with ${#at_saved[@]} args: ${at_saved[*]}"
+  diffcalledmsg="diff initially called with ${#at_saved[@]} args: ${at_saved[*]}"
   echo "$diffcalledmsg" >&2
   #make it part of the patch too:
   echo "$diffcalledmsg" >&1
@@ -62,6 +62,15 @@ elif test "$unambiguous" == "1"; then
   stderr_file_anew="$(mktemp)"
 
   "${diff}" --show-filenames-on-stderr --show-unified-arg-value "${remaining_args[@]}" 1> "$stdout_file" 2> "$stderr_file" ; ec="$?"
+  #"Exit status is 0 if inputs are the same, 1 if different, 2 if trouble." - man 1 diff
+  if test "$ec" == "0"; then
+    #there's no differences between the files!
+    cat "$stdout_file" >&1
+    cat "$stderr_file" >&2
+    rm -v -- "$stdout_file" "$stderr_file" >&2
+    exit "$ec"
+  fi
+
   #"${diff}" "${remaining_args[@]}"
   #cat "$stdout_file" >&1 #not yet! we don't know if it's good, so later!
   #cat "$stderr_file" >&2 #we output this later in the 'while' below
@@ -159,13 +168,14 @@ elif test "$unambiguous" == "1"; then
     set -e
     popd >/dev/null
     set +e
+    #"patch’s exit status is 0 if all hunks are applied successfully, 1 if some hunks cannot be applied or there  were merge  conflicts,  and 2 if there is more serious trouble." - man 1 patch
     if test "$pec" != "0"; then
        unified_arg_next=$((unified_arg + 1))
-      echo "!! The generated diff '$stdout_file' failed to apply with $THE_UNAMBIGUOUS_ARG and --unified=$unified_arg with exit code '$pec', next retrying with --unified=$unified_arg_next" >&2
+      echo "!! The generated diff '$stdout_file' failed to apply with $THE_UNAMBIGUOUS_ARG and --unified=$unified_arg with exit code '$pec', next retrying patch generation with +1 context lines ie. --override-context-lines=$unified_arg_next" >&2
       # Increment the numeric value by 1
       unified_arg=$(( unified_arg_next ))
       if test "$unified_arg" -gt "$MAX_UNIFIED_VALUE"; then
-        echo "The value of --unified=$unified_arg to try next is higher than MAX allowed to try '$MAX_UNIFIED_VALUE', ergo stopping with failure: the generated diff cannot be unambiguously applied, ie. a hunk can be accidentally placed in a different spot by 'patch' and you can only hope it's a compile error that detects that, else it's gonna be different runtime behaviour from wtw you patched!" >&2
+        echo "The value of --override-context-lines=$unified_arg to try next is higher than MAX allowed to try '$MAX_UNIFIED_VALUE', ergo stopping with failure: the generated diff cannot be unambiguously applied, ie. a hunk can be accidentally placed in a different spot by 'patch' and you can only hope it's a compile error that detects that, else it's gonna be different runtime behaviour from wtw you patched!" >&2
         cat "$stdout_file" >&1
         cat "$stderr_file" >&2 #NVMactually this got already printed, well, kind of, let's fix that so it's not already!
         echo "!! You may inspect stdout and stderr as tmp files $stdout_file respectively $stderr_file, but they got printed above." >&2
@@ -175,12 +185,17 @@ elif test "$unambiguous" == "1"; then
       # TODO: if wanting to be too pedantic prepend --show-unified-arg-value to diff cmd below and check if indeed the value that we passed was used!
       #the last -U NUM used is in effect! so wtw user specified before even if it's inside $remaining_args it doesn't matter as long as our override comes last!
       #retry with higher(+1) --unified=NUM
-      #FIXME: this won't work because the arg we add is after the files and more importantly after a possible '--' arg, which means end of option args! So we need an overrider arg! like --override-unified=NUM which ignores any subsequent ones, somehow! /usr/bin/diff: extra operand '--unified=4'
-      "${diff}" "${remaining_args[@]}" "--unified=$unified_arg" 1> "$stdout_file" 2> "$stderr_file" ; ec="$?"
-      if test "$ec" != "0"; then
+      #doneFIXME: this won't work because the arg we add is after the files and more importantly after a possible '--' arg, which means end of option args! So we need an overrider arg! like --override-unified=NUM which ignores any subsequent ones, somehow! /usr/bin/diff: extra operand '--unified=4'
+      #"${diff}" "${remaining_args[@]}" "--unified=$unified_arg" 1> "$stdout_file" 2> "$stderr_file" ; ec="$?"
+      #--override-context-lines=NUM overrides any subsequent(or previous) setting attempts via -u, -c, -NUM, -U NUM, -C NUM, of context lines! ('diff' needs patch for this, obviously)
+      "${diff}" "--override-context-lines=$unified_arg" "${remaining_args[@]}" 1> "$stdout_file" 2> "$stderr_file" ; ec="$?"
+      #"Exit status is 0 if inputs are the same, 1 if different, 2 if trouble." - man 1 diff
+      #TODO: print the args on stdout and exit code, so it's part of the patch too!
+      if test "$ec" != "0" -a "$ec" != "1"; then
+        echo "!! patch generation failed by using 'diff' cmd, exit code '$ec'" >&2
         cat "$stdout_file" >&1
         cat "$stderr_file" >&2
-        echo "!! You may inspect stdout and stderr as tmp files $stdout_file respectively $stderr_file, but they got printed above." >&2
+        #echo "!! You may inspect stdout and stderr as tmp files $stdout_file respectively $stderr_file, but they got printed above." >&2 #they're removed below!
         break #out of the 'while', ec is already set so we'll exit code properly!
       fi
       #else 'diff' succeeded ok, semidoneFIXME: to avoid infinite loop, find out if the generated patch is same (eg. maybe it's too small and any -U NUM value has no effect on the generated output patch!) OR don't -U NUM for a NUM higher than MAX
