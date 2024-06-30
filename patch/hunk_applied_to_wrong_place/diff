@@ -1,5 +1,7 @@
 #!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
 
+#patch="/usr/bin/patch"
+patch="$(realpath ./patch)"
 diff="/usr/bin/diff"
 #^ system diff now contains patch /patches/portage/sys-apps/diffutils.reused/diff_show_filenames_on_stderr.patch
 #otherwise use this WIP version:
@@ -164,7 +166,7 @@ elif test "$unambiguous" == "1"; then
     set +e
     #we already made sure there's only one file inside the patch, we ignore its name inside the patch tho! we tell 'patch' which name it has on cmdline!
     #       patch [options] [originalfile [patchfile]]
-    patch "$THE_UNAMBIGUOUS_ARG" -- "$file1basename" "$stdout_file"; pec="$?"
+    "${patch}" --special-call "$THE_UNAMBIGUOUS_ARG" -- "$file1basename" "$stdout_file"; pec="$?"
     set -e
     popd >/dev/null
     set +e
