@@ -1,0 +1,219 @@
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+#patch="/usr/bin/patch"
+patch="$(realpath ./patch)"
+diff="/usr/bin/diff"
+#^ system diff now contains patch /patches/portage/sys-apps/diffutils.reused/diff_show_filenames_on_stderr.patch
+#otherwise use this WIP version:
+#diff="/var/tmp/portage/sys-apps/diffutils-3.10/work/diffutils-3.10/src/diff"
+#if test ! -x "/var/tmp/portage/sys-apps/diffutils-3.10" -o ! -x "/var/tmp/portage/sys-apps/diffutils-3.10/work" -o ! -x "/var/tmp/portage/sys-apps/diffutils-3.10/work/diffutils-3.10"; then
+#  sudo -- chmod a+x "/var/tmp/portage/sys-apps/diffutils-3.10"{,/work,/work/diffutils-3.10}
+#fi
+
+if test -z "$diff"; then
+  echo "empty \$diff" >&2
+  exit 99
+fi
+
+AMBIGUOUS_ARG="--ambiguous"
+THE_UNAMBIGUOUS_ARG="--unambiguous"
+
+unambiguous=1
+#^ unambiguous by default, which means, don't allow same hunk to can be applied in more than 1 place in the same file!
+
+# Array to store the remaining arguments
+remaining_args=()
+at_saved=("$@")
+
+# Iterate over the arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    "${AMBIGUOUS_ARG}")
+      unambiguous=0
+      #^ explicitly not checking if hunks can be applied to more than 1 place in the file.
+      shift
+      ;;
+    "${THE_UNAMBIGUOUS_ARG}")
+      unambiguous=1
+      #^ explicitly checking if hunks can be applied to more than 1 place in the file.
+      shift
+      ;;
+    *)
+      # Add argument to remaining_args array
+      remaining_args+=("$1")
+      shift
+      ;;
+  esac
+done
+
+#XXX "$@" is unusable after the above "shift"(s)
+
+if test "$unambiguous" == "0"; then
+  "${diff}" "${remaining_args[@]}" ; ec="$?"
+elif test "$unambiguous" == "1"; then
+  diffmode="diff: unambiguous mode used(done by diff wrapper '$0' aka '$(realpath "$0")', used real diff patch too: '/patches/portage/sys-apps/diffutils.reused/diff_show_filenames_on_stderr.patch')"
+  echo "$diffmode" >&2
+  #make it part of the patch too:
+  echo "$diffmode" >&1
+  diffcalledmsg="diff initially called with ${#at_saved[@]} args: ${at_saved[*]}"
+  echo "$diffcalledmsg" >&2
+  #make it part of the patch too:
+  echo "$diffcalledmsg" >&1
+  stdout_file="$(mktemp)"
+  stderr_file="$(mktemp)"
+  stderr_file_anew="$(mktemp)"
+
+  "${diff}" --show-filenames-on-stderr --show-context-length-value "${remaining_args[@]}" 1> "$stdout_file" 2> "$stderr_file" ; ec="$?"
+  #"Exit status is 0 if inputs are the same, 1 if different, 2 if trouble." - man 1 diff
+  if test "$ec" == "0"; then
+    #there's no differences between the files!
+    cat "$stdout_file" >&1
+    cat "$stderr_file" >&2
+    rm -v -- "$stdout_file" "$stderr_file" >&2
+    exit "$ec"
+  fi
+
+  #"${diff}" "${remaining_args[@]}"
+  #cat "$stdout_file" >&1 #not yet! we don't know if it's good, so later!
+  #cat "$stderr_file" >&2 #we output this later in the 'while' below
+
+  #Note that because --label LABEL is a thing, each filename in the output diff can be overwritten with LABEL, so can't extract it from there! That's why trying to use the filenames from the args, well the filenames that 'diff' sees are filenames and aren't set to be treated as binary!
+  #TODO: test what happens if dirs are given on cmdline
+  #TODO: test what happens if files/dirs are given on cmdline AND the arg to treat them as binary is given
+  #TODO: make `git diff` work with this, but likely needs another wrapper to this! see `man git` / GIT_EXTERNAL_DIFF
+
+  #example stderr_file contents:
+  #anythis before
+  #diff: Comparing non-binary files:
+  #workspace.rs.original_real
+  #workspace.rs
+  #anythis after
+
+  # Variables to store filenames aka the file arguments given to the 'diff' command
+  file1=""
+  file2=""
+  context_length=""
+  MAX_CONTEXT_LINES=15
+
+  # Read the stderr input file line by line, and only output the lines that aren't part of the --show-filenames-on-stderr output
+  while IFS= read -r line; do
+    # ^ "Setting IFS to an empty value temporarily within the context of the read command allows you to preserve the exact content of the line, including any leading or trailing whitespace." - chatgpt-4o
+    # Check if the line matches the fixed string
+    if [[ "$line" == "diff: Comparing non-binary files:" ]]; then
+      # Read the next two lines to get the filenames
+      #-r	do not allow backslashes to escape any characters
+      #-t timeout	time out and return failure if a complete line of
+      #		input is not read within TIMEOUT seconds.  The value of the
+      #		TMOUT variable is the default timeout.  TIMEOUT may be a
+      #		fractional number.  If TIMEOUT is 0, read returns
+      #		immediately, without trying to read any data, returning
+      #		success only if input is available on the specified
+      #		file descriptor.  The exit status is greater than 128
+      #		if the timeout is exceeded
+      read -r -t 1 file1
+      read -r -t 1 file2
+    elif [[ "$line" == "diff: the value of the context length aka lines is:" ]]; then
+      #^ that shows only when --show-context-length-value is used! which means ur 'diff' is patched!
+      read -r -t 1 context_length
+    else
+      #don't print the saved stderr out now, save it for later, but without including the above!
+      echo "$line" > "$stderr_file_anew"
+    fi
+  done < "$stderr_file"
+  #we filtered out the stuff
+  rm -v -- "$stderr_file" >&2
+  stderr_file="$stderr_file_anew"
+
+  if test -z "$file1" -o ! -e "$file1"; then
+    echo "First file '$file1' is empty or not a file" >&2
+    exit 11
+  fi
+  if test -z "$file2" -o ! -e "$file2"; then
+    echo "Second file '$file2' is empty or not a file" >&2
+    exit 12
+  fi
+  if test -z "$context_length"; then
+    echo "The detected context length(lines) is empty which is very odd and points to coding inconsistencies on my part" >&2
+    exit 14
+  fi
+  if ! [[ $context_length =~ ^[0-9]+$ ]]; then
+    echo "The detected context length(lines) is '$context_length' but it's not a number which is unexpectedly odd!" >&2
+    exit 15
+  fi
+#  # Print the filenames to stdout for confirmation
+#  echo "file1: $file1" >&2
+#  echo "file2: $file2" >&2
+
+  how_many_files_patched="$(grep -c '^+++' -- "$stdout_file")"
+  if test "$how_many_files_patched" -gt "1"; then
+    echo "Detected more than 1 file being patched, to support that pass arg $AMBIGUOUS_ARG which won't check if the same hunk can be applied more than once in the same file." >&2
+    exit 13
+  fi
+
+  #so now make a temp copy of file1, try to apply the resulting 'diff' patch twice and make sure the second time fails fully, no succees hunks! if fails fully then it's unabiguous, else it means the same hunk could be applied in two or more different places!
+  #hmm, this isn't actually fullproof, hmm... maybe doing this for each hunk independently would be best?! because i can imagine having 2 hunks but each could be swapped because the spots yield are same-contents diff except the line numbers. Plus also, if the original file changes like it adds another same-contents spot, then 'diff' won't know, but 'patch' itself will when i modify it soon so it won't apply any hunk that can be applied more than once if u tried.
+
+  pec=1 #to get into the 'while'
+  set -e
+  tmpsubdir="$(mktemp -d)" #FIXME: delete this when done!
+  set +e
+  file1basename="$(basename "$file1")"
+  while test "$pec" != 0; do
+    #deref symlinks
+    cp --dereference -- "$file1" "$tmpsubdir"
+    set -e
+    pushd "$tmpsubdir" >/dev/null
+    set +e
+    #we already made sure there's only one file inside the patch, we ignore its name inside the patch tho! we tell 'patch' which name it has on cmdline!
+    #       patch [options] [originalfile [patchfile]]
+    "${patch}" --special-call "$THE_UNAMBIGUOUS_ARG" -- "$file1basename" "$stdout_file"; pec="$?"
+    set -e
+    popd >/dev/null
+    set +e
+    #"patch’s exit status is 0 if all hunks are applied successfully, 1 if some hunks cannot be applied or there  were merge  conflicts,  and 2 if there is more serious trouble." - man 1 patch
+    if test "$pec" != "0"; then
+       context_length_next=$((context_length + 1))
+       echo "!! The generated diff '$stdout_file' (having been generated by a diff with '$context_length' lines of context) failed to apply with patch command using $THE_UNAMBIGUOUS_ARG arg, exit code '$pec', next retrying patch generation via diff command with +1 context lines ie. --override-context-lines=$context_length_next" >&2
+      # Increment the numeric value by 1
+      context_length=$(( context_length_next ))
+      if test "$context_length" -gt "$MAX_CONTEXT_LINES"; then
+        echo "The value of --override-context-lines=$context_length to try next is higher than MAX allowed to try '$MAX_CONTEXT_LINES', ergo stopping with failure: the generated diff cannot be unambiguously applied, ie. a hunk can be accidentally placed in a different spot by 'patch' and you can only hope it's a compile error that detects that, else it's gonna be different runtime behaviour from wtw you patched!" >&2
+        cat "$stdout_file" >&1
+        cat "$stderr_file" >&2 #NVMactually this got already printed, well, kind of, let's fix that so it's not already!
+        echo "!! You may inspect stdout and stderr as tmp files $stdout_file respectively $stderr_file, but they got printed above." >&2
+        ec="98"
+        break
+      fi
+      # TODO: if wanting to be too pedantic prepend --show-context-length-value to diff cmd below and check if indeed the value that we passed was used!
+      #the last -U NUM used is in effect! so wtw user specified before even if it's inside $remaining_args it doesn't matter as long as our override comes last!
+      #retry with higher(+1) context length(lines)
+      #doneFIXME: this won't work because the arg we add is after the files and more importantly after a possible '--' arg, which means end of option args! So we need an overrider arg! like --override-context-lines=NUM which ignores any subsequent ones, somehow! /usr/bin/diff: extra operand '--unified=4'
+      #"${diff}" "${remaining_args[@]}" "--unified=$context_length" 1> "$stdout_file" 2> "$stderr_file" ; ec="$?"
+      #--override-context-lines=NUM overrides any subsequent(or previous) setting attempts via -u, -c, -NUM, -U NUM, -C NUM, of context lines! ('diff' needs patch for this, obviously)
+      "${diff}" "--override-context-lines=$context_length" "${remaining_args[@]}" 1> "$stdout_file" 2> "$stderr_file" ; ec="$?"
+      #"Exit status is 0 if inputs are the same, 1 if different, 2 if trouble." - man 1 diff
+      #TODO: print the args on stdout and exit code, so it's part of the patch too!
+      if test "$ec" != "0" -a "$ec" != "1"; then
+        echo "!! patch generation failed by using 'diff' cmd, exit code '$ec'" >&2
+        cat "$stdout_file" >&1
+        cat "$stderr_file" >&2
+        #echo "!! You may inspect stdout and stderr as tmp files $stdout_file respectively $stderr_file, but they got printed above." >&2 #they're removed below!
+        break #out of the 'while', ec is already set so we'll exit code properly!
+      fi
+      #else 'diff' succeeded ok, semidoneFIXME: to avoid infinite loop, find out if the generated patch is same (eg. maybe it's too small and any -U NUM value has no effect on the generated output patch!) OR don't -U NUM for a NUM higher than MAX
+    else
+      #patch ok, print it out
+      cat "$stdout_file" >&1
+      #and wtw stderr was
+      cat "$stderr_file" >&2
+    fi
+  done
+
+
+  rm -v -- "$stdout_file" "$stderr_file" >&2
+  #echo "$stdout_file" "$stderr_file" >&2
+else
+  echo "Bad coding in '$0'" >&2
+  ec="100"
+fi
+exit "$ec"

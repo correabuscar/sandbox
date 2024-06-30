@@ -1,0 +1,38 @@
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+# Check if the array is set and non-empty, if not, initialize it
+if [ ${#DIFF_CMD[@]} -eq 0 ]; then
+  DIFF_CMD=("./diff")
+fi
+if [ ${#PATCH_CMD[@]} -eq 0 ]; then
+  PATCH_CMD=("./patch")
+fi
+
+set -vex
+cp -a -- workspace.rs.PATCHED_real workspace.rs
+set +e
+#the diff cmd always exit(1) because it's differences!
+"${DIFF_CMD[@]}" -up --label fixed -- workspace.rs.original_real workspace.rs > tried_gen.patch ; ec="$?"
+set +vx
+if test "$ec" != 0 -a "$ec" != "1"; then
+  rm -v -- ./workspace.rs
+  echo "Diff failed, exit code '$ec'" >&2
+  exit "$ec"
+fi
+#used label or else the timestamp would need a new git commit on every ./go
+set -evx
+cp -a -- workspace.rs.original workspace.rs
+set +vex
+"${PATCH_CMD[@]}" -p0 -i ./tried_gen.patch ; ec="$?"
+if test "$ec" != "0"; then
+  rm -v -- ./workspace.rs
+  exit "$ec"
+fi
+set -evx
+mv workspace.rs workspace.rs.REAPPLIED_real
+set +vex
+if ! diff -qup -- workspace.rs.PATCHED workspace.rs.REAPPLIED_real; then
+  echo "Failed, patch applied wrongly therefore it was generated wrongly!"
+  exit 1
+fi
+echo "Success!"

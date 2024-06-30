@@ -1,0 +1,7 @@
+this isn't good enough and got too complicated anyway.
+
+it's better to just test each hunk and increase context only for that hunk, if needed!
+instead of for the whole patch!
+
+
+don't run these, they were moved from ../

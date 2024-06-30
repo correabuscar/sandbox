@@ -1,0 +1,27 @@
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+# Check if the array is set and non-empty, if not, initialize it
+if [ ${#DIFF_CMD[@]} -eq 0 ]; then
+  DIFF_CMD=("./diff")
+fi
+if [ ${#PATCH_CMD[@]} -eq 0 ]; then
+  PATCH_CMD=("./patch")
+fi
+
+set -vex
+cp -a -- workspace.rs.PATCHED workspace.rs
+set +e
+#the diff cmd always exit(1) because it's differences!
+#XXX: generation of the patch is commented out, or else it will place it in right spot.
+#"${DIFF_CMD[@]}" -up --label fixed -- workspace.rs.original workspace.rs > remade.patch
+#used label or else the timestamp would need a new git commit on every ./go
+set -e
+cp -a -- workspace.rs.original workspace.rs
+"${PATCH_CMD[@]}" -p0 -i ./remade.patch
+mv workspace.rs workspace.rs.REAPPLIED
+set +vex
+if ! diff -qup -- workspace.rs.PATCHED workspace.rs.REAPPLIED; then
+  echo "Failed, patch applied wrongly!"
+  exit 1
+fi
+echo "Success!"
