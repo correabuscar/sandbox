@@ -15,5 +15,5 @@ if test -z "$diff"; then
   exit 99
 fi
 
-"${diff}" "$@" ; ec="$?"
+"${diff}" --unambiguous "$@" ; ec="$?"
 exit "$ec"

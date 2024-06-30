@@ -12,7 +12,7 @@ if test -z "$patchexeabs"; then
   exit 99
 fi
 
-"${patchexeabs}" --read-only=fail --debug=0 --fuzz=0 "$@"; ec="$?"
+"${patchexeabs}" --unambiguous --read-only=fail --debug=0 --fuzz=0 "$@"; ec="$?"
 exit "$ec"
 
 #TODO: 23 march 2022, I must detect dangling hunks, ie. hunks that are separated by anything other than comments (eg. new line(s)) because 'patch' will ignore them and treat them as comments, atually the whole file to patch is considered done at that point, and the next hunks if any are ignored as comments! silently!
