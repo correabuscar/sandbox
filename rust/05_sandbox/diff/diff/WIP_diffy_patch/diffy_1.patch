@@ -1,0 +1,180 @@
+diff --git a/src/apply.rs b/src/apply.rs
+index 9b971cf..8e29327 100644
+--- a/src/apply.rs
++++ b/src/apply.rs
+@@ -88,26 +88,42 @@ impl<T: ?Sized> Clone for ImageLine<'_, T> {
+ ///
+ /// assert_eq!(apply(base_image, &patch).unwrap(), expected);
+ /// ```
+-pub fn apply(base_image: &str, patch: &Patch<'_, str>) -> Result<String, ApplyError> {
++pub fn apply(base_image: &str, patch: &Patch<'_, str>, unambiguous: bool) -> Result<String, ApplyError> {
+     let mut image: Vec<_> = LineIter::new(base_image)
+         .map(ImageLine::Unpatched)
+         .collect();
+ 
++    if unambiguous {
++        for (i, hunk) in patch.hunks().iter().enumerate() {
++            //apply each hunk independently, on the original file.
++            let mut image_clone=image.clone();
++            apply_hunk(&mut image_clone, hunk, unambiguous).map_err(|_| ApplyError(i + 1))?;
++        }
++    }
++    //if ambiguous, or unambiguous and the above succeeded, then the below cannot fail!
+     for (i, hunk) in patch.hunks().iter().enumerate() {
+-        apply_hunk(&mut image, hunk).map_err(|_| ApplyError(i + 1))?;
++        let res=apply_hunk(&mut image, hunk, unambiguous).map_err(|_| ApplyError(i + 1));
++        if let Err(e)=res {
++            if !unambiguous {
++                return Err(e);
++            } else {
++                //it's unambiguous
++                panic!("Should not have failed to apply, this means some coding logic error is afoot! err:'{}'",e);
++            }
++        }
+     }
+ 
+     Ok(image.into_iter().map(ImageLine::into_inner).collect())
+ }
+ 
+ /// Apply a non-utf8 `Patch` to a base image
+-pub fn apply_bytes(base_image: &[u8], patch: &Patch<'_, [u8]>) -> Result<Vec<u8>, ApplyError> {
++pub fn apply_bytes(base_image: &[u8], patch: &Patch<'_, [u8]>, unambiguous:bool) -> Result<Vec<u8>, ApplyError> {
+     let mut image: Vec<_> = LineIter::new(base_image)
+         .map(ImageLine::Unpatched)
+         .collect();
+ 
+     for (i, hunk) in patch.hunks().iter().enumerate() {
+-        apply_hunk(&mut image, hunk).map_err(|_| ApplyError(i + 1))?;
++        apply_hunk(&mut image, hunk, unambiguous).map_err(|_| ApplyError(i + 1))?;
+     }
+ 
+     Ok(image
+@@ -120,9 +136,11 @@ pub fn apply_bytes(base_image: &[u8], patch: &Patch<'_, [u8]>) -> Result<Vec<u8>
+ fn apply_hunk<'a, T: PartialEq + ?Sized>(
+     image: &mut Vec<ImageLine<'a, T>>,
+     hunk: &Hunk<'a, T>,
++    unambiguous:bool,
+ ) -> Result<(), ()> {
+     // Find position
+     let pos = find_position(image, hunk).ok_or(())?;
++    //println!("preFound pos: {:?}", pos);
+ 
+     // update image
+     image.splice(
+@@ -130,6 +148,13 @@ fn apply_hunk<'a, T: PartialEq + ?Sized>(
+         post_image(hunk.lines()).map(ImageLine::Patched),
+     );
+ 
++    if unambiguous {
++        if let Some(_pos2)=find_position(image, hunk) {
++            // hunk cannot be unambiguously applied! ie. it applies in more than 1 place!
++            //println!("postFound pos: {:?}", pos2);
++            return Err(());
++        }
++    }
+     Ok(())
+ }
+ 
+diff --git a/src/diff/mod.rs b/src/diff/mod.rs
+index a456c41..d07e2cb 100644
+--- a/src/diff/mod.rs
++++ b/src/diff/mod.rs
+@@ -45,6 +45,7 @@ where
+ #[derive(Debug)]
+ pub struct DiffOptions {
+     compact: bool,
++    unambiguous: bool,
+     context_len: usize,
+ }
+ 
+@@ -56,6 +57,7 @@ impl DiffOptions {
+     pub fn new() -> Self {
+         Self {
+             compact: true,
++            unambiguous: true,
+             context_len: 3,
+         }
+     }
+@@ -95,14 +97,80 @@ impl DiffOptions {
+ 
+     /// Produce a Patch between two texts based on the configured options
+     pub fn create_patch<'a>(&self, original: &'a str, modified: &'a str) -> Patch<'a, str> {
++        let mut patch:Patch<str>;
++        let mut context_len=self.context_len;
+         let mut classifier = Classifier::default();
+         let (old_lines, old_ids) = classifier.classify_lines(original);
+         let (new_lines, new_ids) = classifier.classify_lines(modified);
+ 
+         let solution = self.diff_slice(&old_ids, &new_ids);
+ 
+-        let hunks = to_hunks(&old_lines, &new_lines, &solution, self.context_len);
+-        Patch::new(Some("original"), Some("modified"), hunks)
++        loop {
++
++            let hunks = to_hunks(&old_lines, &new_lines, &solution, context_len);
++            //doneFIXME: try each hunk independently, if it succeeds applying more than once TODO: increase context only for that hunk(somehow) while regenerating the patch!
++            patch=Patch::new(Some("original"), Some("modified"), hunks);
++            if !self.unambiguous {
++                break;
++            }
++            let patched=crate::apply(original, &patch, /*unambiguous:*/true);
++            if patched.is_err() {
++                context_len+=1;
++                const MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE:usize=30;
++                if context_len>MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE {
++                    panic!("!! Failed to disambiguately generate patch due to reached max context length of '{}' and the patch was still ambiguous!", MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE);
++                    /* The correct word is "disambiguately."
++
++- **Disambiguate** is the verb meaning to make something clear by removing ambiguity.
++- **Disambiguation** is the noun form, referring to the process of removing ambiguity.
++- **Disambiguately** is the adverb form, describing an action done in a way that removes ambiguity.
++
++So, you would use "disambiguately" when describing an action performed in a manner that clarifies or removes ambiguity.
++                    */
++                }
++            } else {
++                // it applied, unambiguously
++                break;
++            }
++
++//
++////            let mut image: Vec<_> = LineIter::new(original)
++////                .map(crate::apply::ImageLine::Unpatched)
++////                .collect();
++////
++////            for (i, hunk) in patch.hunks().iter().enumerate() {
++////                apply_hunk(&mut image, hunk).map_err(|_| ApplyError(i + 1))?;
++////            }
++////
++////            Ok(image.into_iter().map(ImageLine::into_inner).collect())
++//
++//            if let Ok(mod_str)=patched {
++//                //try to reapply the generated patch again, should fail completely, FIXME: but not incompletely!
++//                if crate::apply(&mod_str, &patch).is_err() {
++//                    //it's a reapply attempt that failed, so the patch is unambiguous
++//                    //succeeded=false;
++//                    break;
++//                } else {
++//                    //reapply succeeded which means hunk was applied to the wrong place, ie. to another spot in the file, so retry with +1 to context length(lines)
++//                    //succeeded=true;
++//                    //prev_patch=Some(patch);
++//                    context_len+=1;
++//                    const MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE:usize=15;
++//                    if context_len>MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE {
++//                        panic!("!! Failed to disambiguately generate patch due to reached max context length of '{}'", MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE);
++//                    }
++//                }
++//            } else {
++//                //failed to apply
++//                //if self.context_len == context_len {
++//                    panic!("!! The first generated patch (with context length '{}') didn't apply, which should never happen!", context_len);
++//                //} else {
++//                    //it's a reapply attempt that failed, so the patch is unambiguous
++//                //    break;
++//                //}
++//            }
++        } //loop
++        return patch;
+     }
+ 
+     /// Create a patch between two potentially non-utf8 texts

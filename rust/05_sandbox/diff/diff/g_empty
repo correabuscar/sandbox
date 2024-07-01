@@ -4,4 +4,4 @@ set -e
 export RUST_BACKTRACE=1
 #cargo clean
 cargo build
-cargo run workspace.rs.original workspace.rs.PATCHED >le.patch
+cargo run workspace.rs.original workspace.rs.original >empty.patch

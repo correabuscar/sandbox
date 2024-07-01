@@ -3,5 +3,8 @@ name = "diff"
 version = "0.1.0"
 edition = "2021"
 
+exclude = [ "./empty.patch", "./workspace.rs*", "./le.patch", "./WIP_diffy_patch" ]
+
 [dependencies]
-diffy = "0.4.0"
+#diffy = { version="0.4.0" }
+diffy = { version="0.4.0", path="/home/user/1tmp/diffy/" }
