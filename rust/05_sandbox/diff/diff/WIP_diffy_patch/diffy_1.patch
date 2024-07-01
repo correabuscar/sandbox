@@ -1,7 +1,7 @@
 to be applied on diffy commit b36b9818ab8111ebe498670368d798431a9e82d7
 aka 0.4.0 diffy!
 diff --git a/src/apply.rs b/src/apply.rs
-index 9b971cf..6f8853e 100644
+index 9b971cf..4cef78f 100644
 --- a/src/apply.rs
 +++ b/src/apply.rs
 @@ -86,28 +86,60 @@ impl<T: ?Sized> Clone for ImageLine<'_, T> {
@@ -24,7 +24,7 @@ index 9b971cf..6f8853e 100644
 +            apply_hunk(&mut fresh_image, hunk, unambiguous).map_err(|_| ApplyError(i + 1))?;
 +        }
 +    }
-+    //if ambiguous, or unambiguous and the above succeeded, then the below cannot fail!
++    //if unambiguous and the above 'if for' succeeded, then the below cannot fail!
      for (i, hunk) in patch.hunks().iter().enumerate() {
 -        apply_hunk(&mut image, hunk).map_err(|_| ApplyError(i + 1))?;
 +        let res=apply_hunk(&mut image, hunk, unambiguous).map_err(|_| ApplyError(i + 1));
@@ -55,7 +55,7 @@ index 9b971cf..6f8853e 100644
 +            apply_hunk(&mut fresh_image, hunk, unambiguous).map_err(|_| ApplyError(i + 1))?;
 +        }
 +    }
-+    //if ambiguous, or unambiguous and the above succeeded, then the below cannot fail!
++    //if unambiguous and the above 'if for' succeeded, then the below cannot fail!
      for (i, hunk) in patch.hunks().iter().enumerate() {
 -        apply_hunk(&mut image, hunk).map_err(|_| ApplyError(i + 1))?;
 +        let res=apply_hunk(&mut image, hunk, unambiguous).map_err(|_| ApplyError(i + 1));
