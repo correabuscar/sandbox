@@ -13,4 +13,3 @@
      }
 
      pub fn emit_lints(&self, pkg: &Package, path: &Path) -> CargoResult<()> {
-

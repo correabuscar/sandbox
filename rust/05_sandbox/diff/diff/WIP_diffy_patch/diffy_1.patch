@@ -1,3 +1,5 @@
+to be applied on diffy commit b36b9818ab8111ebe498670368d798431a9e82d7
+aka 0.4.0 diffy!
 diff --git a/src/apply.rs b/src/apply.rs
 index 9b971cf..6f8853e 100644
 --- a/src/apply.rs
@@ -140,7 +142,7 @@ index 9b971cf..6f8853e 100644
  
  fn pre_image_line_count<T: ?Sized>(lines: &[Line<'_, T>]) -> usize {
 diff --git a/src/diff/mod.rs b/src/diff/mod.rs
-index a456c41..0be42d0 100644
+index a456c41..571af0e 100644
 --- a/src/diff/mod.rs
 +++ b/src/diff/mod.rs
 @@ -45,9 +45,12 @@ where
@@ -164,7 +166,7 @@ index a456c41..0be42d0 100644
              context_len: 3,
          }
      }
-@@ -93,16 +97,86 @@ impl DiffOptions {
+@@ -93,16 +97,85 @@ impl DiffOptions {
          solution.into_iter().map(Diff::from).collect()
      }
  
@@ -182,7 +184,6 @@ index a456c41..0be42d0 100644
 -        let hunks = to_hunks(&old_lines, &new_lines, &solution, self.context_len);
 -        Patch::new(Some("original"), Some("modified"), hunks)
 +        loop {
-+
 +            let hunks = to_hunks(&old_lines, &new_lines, &solution, context_len);
 +            //eprintln!("Hunks: {:?}, original: '{}', mod: '{}'", hunks, original, modified);
 +            //doneFIXME: try each hunk independently, if it succeeds applying more than once TODO: increase context only for that hunk(somehow) while regenerating the patch!
@@ -224,7 +225,7 @@ index a456c41..0be42d0 100644
 +////            Ok(image.into_iter().map(ImageLine::into_inner).collect())
 +//
 +//            if let Ok(mod_str)=patched {
-+//                //try to reapply the generated patch again, should fail completely, FIXME: but not incompletely!
++//                //try to reapply the generated patch again, should fail completely, doneFIXME: but not incompletely!
 +//                if crate::apply(&mod_str, &patch).is_err() {
 +//                    //it's a reapply attempt that failed, so the patch is unambiguous
 +//                    //succeeded=false;
@@ -253,7 +254,7 @@ index a456c41..0be42d0 100644
      }
  
      /// Create a patch between two potentially non-utf8 texts
-@@ -111,14 +185,41 @@ impl DiffOptions {
+@@ -111,14 +184,41 @@ impl DiffOptions {
          original: &'a [u8],
          modified: &'a [u8],
      ) -> Patch<'a, [u8]> {
@@ -271,7 +272,7 @@ index a456c41..0be42d0 100644
 +        loop {
 +            let hunks = to_hunks(&old_lines, &new_lines, &solution, context_len);
 +            patch=Patch::new(Some(&b"original"[..]), Some(&b"modified"[..]), hunks);
-+            if !self.unambiguous {
++            if !self.unambiguous || original.is_empty() || modified.is_empty() {
 +                break;
 +            }
 +            let patched=crate::apply_bytes(original, &patch, /*unambiguous:*/true);
