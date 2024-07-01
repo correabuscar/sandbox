@@ -1,6 +1,8 @@
 to be applied on diffy commit b36b9818ab8111ebe498670368d798431a9e82d7
 aka 0.4.0 diffy!
 
+referenced here: https://github.com/bmwill/diffy/issues/31
+
 diff --git a/src/apply.rs b/src/apply.rs
 index 9b971cf..7fed1fe 100644
 --- a/src/apply.rs
