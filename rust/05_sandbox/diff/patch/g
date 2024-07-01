@@ -1,0 +1,12 @@
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+set -e
+export RUST_BACKTRACE=1
+cargo clean
+cargo build
+cargo run workspace.rs.original le.patch workspace.rs.FRESHLY_PATCHED
+cargo run workspace.rs.FRESHLY_PATCHED le.patch workspace.rs.FRESHLY_PATCHED_AGAIN
+cargo run workspace.rs.FRESHLY_PATCHED_AGAIN le.patch workspace.rs.FRESHLY_PATCHED_AGAIN2
+#cargo run workspace.rs.FRESHLY_PATCHED_AGAIN2 le.patch workspace.rs.FRESHLY_PATCHED_AGAIN3
+#^ that one finally fails!
+

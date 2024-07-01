@@ -1,0 +1,7 @@
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+set -e
+export RUST_BACKTRACE=1
+cargo clean
+cargo build
+cargo run workspace.rs.original workspace.rs.PATCHED >le.patch
