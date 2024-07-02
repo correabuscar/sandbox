@@ -13,6 +13,6 @@ fn main() {
     let file2 = fs::read_to_string(&args[2]).expect("Failed to read file2");
 
     let patch = create_patch(&file1, &file2);
-    println!("{}", patch);
+    print!("{}", patch);
 }
 
