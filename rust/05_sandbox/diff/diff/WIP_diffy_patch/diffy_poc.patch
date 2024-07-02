@@ -4,10 +4,10 @@ aka 0.4.0 diffy!
 referenced here: https://github.com/bmwill/diffy/issues/31
 
 diff --git a/src/apply.rs b/src/apply.rs
-index 9b971cf..59ac550 100644
+index 9b971cf..692feaa 100644
 --- a/src/apply.rs
 +++ b/src/apply.rs
-@@ -86,28 +86,60 @@ impl<T: ?Sized> Clone for ImageLine<'_, T> {
+@@ -86,28 +86,70 @@ impl<T: ?Sized> Clone for ImageLine<'_, T> {
  ///     I will protect those who cannot protect themselves.
  /// ";
  ///
@@ -15,7 +15,11 @@ index 9b971cf..59ac550 100644
 +/// assert_eq!(apply(base_image, &patch, false).unwrap(), expected);
  /// ```
 -pub fn apply(base_image: &str, patch: &Patch<'_, str>) -> Result<String, ApplyError> {
-+pub fn apply(base_image: &str, patch: &Patch<'_, str>, unambiguous: bool) -> Result<String, ApplyError> {
++pub fn apply(
++    base_image: &str,
++    patch: &Patch<'_, str>,
++    unambiguous: bool,
++) -> Result<String, ApplyError> {
      let mut image: Vec<_> = LineIter::new(base_image)
          .map(ImageLine::Unpatched)
          .collect();
@@ -23,15 +27,16 @@ index 9b971cf..59ac550 100644
 +    if unambiguous {
 +        for (i, hunk) in patch.hunks().iter().enumerate() {
 +            //apply each hunk independently, on the original file.
-+            let mut fresh_image=image.clone();
-+            apply_hunk(&mut fresh_image, hunk, /*unambiguous:*/true).map_err(|_| ApplyError(i + 1))?;
++            let mut fresh_image = image.clone();
++            apply_hunk(&mut fresh_image, hunk, /*unambiguous:*/ true)
++                .map_err(|_| ApplyError(i + 1))?;
 +        }
 +    }
 +    //if unambiguous and the above 'if for' succeeded, then the below cannot fail!
      for (i, hunk) in patch.hunks().iter().enumerate() {
 -        apply_hunk(&mut image, hunk).map_err(|_| ApplyError(i + 1))?;
-+        let res=apply_hunk(&mut image, hunk, unambiguous).map_err(|_| ApplyError(i + 1));
-+        if let Err(e)=res {
++        let res = apply_hunk(&mut image, hunk, unambiguous).map_err(|_| ApplyError(i + 1));
++        if let Err(e) = res {
 +            if !unambiguous {
 +                return Err(e);
 +            } else {
@@ -46,7 +51,11 @@ index 9b971cf..59ac550 100644
  
  /// Apply a non-utf8 `Patch` to a base image
 -pub fn apply_bytes(base_image: &[u8], patch: &Patch<'_, [u8]>) -> Result<Vec<u8>, ApplyError> {
-+pub fn apply_bytes(base_image: &[u8], patch: &Patch<'_, [u8]>, unambiguous:bool) -> Result<Vec<u8>, ApplyError> {
++pub fn apply_bytes(
++    base_image: &[u8],
++    patch: &Patch<'_, [u8]>,
++    unambiguous: bool,
++) -> Result<Vec<u8>, ApplyError> {
      let mut image: Vec<_> = LineIter::new(base_image)
          .map(ImageLine::Unpatched)
          .collect();
@@ -54,15 +63,16 @@ index 9b971cf..59ac550 100644
 +    if unambiguous {
 +        for (i, hunk) in patch.hunks().iter().enumerate() {
 +            //apply each hunk independently, on the original file.
-+            let mut fresh_image=image.clone();
-+            apply_hunk(&mut fresh_image, hunk, /*unambiguous:*/true).map_err(|_| ApplyError(i + 1))?;
++            let mut fresh_image = image.clone();
++            apply_hunk(&mut fresh_image, hunk, /*unambiguous:*/ true)
++                .map_err(|_| ApplyError(i + 1))?;
 +        }
 +    }
 +    //if unambiguous and the above 'if for' succeeded, then the below cannot fail!
      for (i, hunk) in patch.hunks().iter().enumerate() {
 -        apply_hunk(&mut image, hunk).map_err(|_| ApplyError(i + 1))?;
-+        let res=apply_hunk(&mut image, hunk, unambiguous).map_err(|_| ApplyError(i + 1));
-+        if let Err(e)=res {
++        let res = apply_hunk(&mut image, hunk, unambiguous).map_err(|_| ApplyError(i + 1));
++        if let Err(e) = res {
 +            if !unambiguous {
 +                return Err(e);
 +            } else {
@@ -73,26 +83,26 @@ index 9b971cf..59ac550 100644
      }
  
      Ok(image
-@@ -120,9 +152,12 @@ pub fn apply_bytes(base_image: &[u8], patch: &Patch<'_, [u8]>) -> Result<Vec<u8>
+@@ -120,9 +162,12 @@ pub fn apply_bytes(base_image: &[u8], patch: &Patch<'_, [u8]>) -> Result<Vec<u8>
  fn apply_hunk<'a, T: PartialEq + ?Sized>(
      image: &mut Vec<ImageLine<'a, T>>,
      hunk: &Hunk<'a, T>,
-+    unambiguous:bool,
++    unambiguous: bool,
  ) -> Result<(), ()> {
      // Find position
 -    let pos = find_position(image, hunk).ok_or(())?;
 +    // this errs out even if, unambiguous==true and hunk cannot be unambiguously applied! ie. if it applies in more than 1 place!
-+    let pos = find_position(image, hunk,unambiguous).ok_or(())?;
++    let pos = find_position(image, hunk, unambiguous).ok_or(())?;
 +    //println!("preFound pos: {:?}", pos);
  
      // update image
      image.splice(
-@@ -130,6 +165,14 @@ fn apply_hunk<'a, T: PartialEq + ?Sized>(
+@@ -130,6 +175,14 @@ fn apply_hunk<'a, T: PartialEq + ?Sized>(
          post_image(hunk.lines()).map(ImageLine::Patched),
      );
  
 +    if unambiguous {
-+        if let Some(_pos2)=find_position(image, hunk, /*unambiguous:*/true) {
++        if let Some(_pos2) = find_position(image, hunk, /*unambiguous:*/ true) {
 +            // if we got here, we didn't have any other position to apply the hunk, before applying it!
 +            // but now that we've applied it, a new pos was created, due to applying it!
 +            //panic!("postFound pos: {:?} which means the hunk we just applied created a new position for itself within itself; or find_position() is coded wrongly!", pos2);
@@ -102,15 +112,15 @@ index 9b971cf..59ac550 100644
      Ok(())
  }
  
-@@ -142,6 +185,7 @@ fn apply_hunk<'a, T: PartialEq + ?Sized>(
+@@ -142,6 +195,7 @@ fn apply_hunk<'a, T: PartialEq + ?Sized>(
  fn find_position<T: PartialEq + ?Sized>(
      image: &[ImageLine<T>],
      hunk: &Hunk<'_, T>,
-+    unambiguous:bool,
++    unambiguous: bool,
  ) -> Option<usize> {
      // In order to avoid searching through positions which are out of bounds of the image,
      // clamp the starting position based on the length of the image
-@@ -152,9 +196,29 @@ fn find_position<T: PartialEq + ?Sized>(
+@@ -152,9 +206,29 @@ fn find_position<T: PartialEq + ?Sized>(
      let backward = (0..pos).rev();
      let forward = pos + 1..image.len();
  
@@ -123,7 +133,7 @@ index 9b971cf..59ac550 100644
 +            .chain(interleave(backward, forward))
 +            .find(|&pos| match_fragment(image, hunk.lines(), pos))
 +    } else {
-+        let elements:Vec<usize>=iter::once(pos)
++        let elements: Vec<usize> = iter::once(pos)
 +            .chain(interleave(backward, forward))
 +            .filter(|&pos| match_fragment(image, hunk.lines(), pos))
 +            .collect();
@@ -144,7 +154,7 @@ index 9b971cf..59ac550 100644
  
  fn pre_image_line_count<T: ?Sized>(lines: &[Line<'_, T>]) -> usize {
 diff --git a/src/diff/mod.rs b/src/diff/mod.rs
-index a456c41..0816b08 100644
+index a456c41..038a1ad 100644
 --- a/src/diff/mod.rs
 +++ b/src/diff/mod.rs
 @@ -45,9 +45,12 @@ where
@@ -155,7 +165,7 @@ index a456c41..0816b08 100644
      context_len: usize,
  }
  
-+const MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE:usize=30;
++const MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE: usize = 30;
 +
  impl DiffOptions {
      /// Construct a new `DiffOptions` with default settings
@@ -168,15 +178,12 @@ index a456c41..0816b08 100644
              context_len: 3,
          }
      }
-@@ -93,16 +97,48 @@ impl DiffOptions {
-         solution.into_iter().map(Diff::from).collect()
-     }
+@@ -95,14 +99,45 @@ impl DiffOptions {
  
-+
      /// Produce a Patch between two texts based on the configured options
      pub fn create_patch<'a>(&self, original: &'a str, modified: &'a str) -> Patch<'a, str> {
-+        let mut patch:Patch<str>;
-+        let mut context_len=self.context_len;
++        let mut patch: Patch<str>;
++        let mut context_len = self.context_len;
          let mut classifier = Classifier::default();
          let (old_lines, old_ids) = classifier.classify_lines(original);
          let (new_lines, new_ids) = classifier.classify_lines(modified);
@@ -189,26 +196,26 @@ index a456c41..0816b08 100644
 +            let hunks = to_hunks(&old_lines, &new_lines, &solution, context_len);
 +            //eprintln!("Hunks: {:?}, original: '{}', mod: '{}'", hunks, original, modified);
 +            //doneFIXME: try each hunk independently, if it succeeds applying more than once TODO: increase context only for that hunk(somehow) while regenerating the patch!
-+            patch=Patch::new(Some("original"), Some("modified"), hunks);
++            patch = Patch::new(Some("original"), Some("modified"), hunks);
 +            if !self.unambiguous || original.is_empty() || modified.is_empty() {
 +                // if ambiguous, or
 +                // if either inputs are empty
 +                // trying to disambiguate will fail and reach MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE
 +                break;
 +            }
-+            let patched=crate::apply(original, &patch, /*unambiguous:*/true);
++            let patched = crate::apply(original, &patch, /*unambiguous:*/ true);
 +            if patched.is_err() {
-+                context_len+=1;
-+                if context_len>MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE {
++                context_len += 1;
++                if context_len > MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE {
 +                    panic!("!! Failed to disambiguately generate patch due to reached max context length of '{}' and the patch was still ambiguous!", MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE);
 +                    /* The correct word is "disambiguately."
 +
-+- **Disambiguate** is the verb meaning to make something clear by removing ambiguity.
-+- **Disambiguation** is the noun form, referring to the process of removing ambiguity.
-+- **Disambiguately** is the adverb form, describing an action done in a way that removes ambiguity.
++                    - **Disambiguate** is the verb meaning to make something clear by removing ambiguity.
++                    - **Disambiguation** is the noun form, referring to the process of removing ambiguity.
++                    - **Disambiguately** is the adverb form, describing an action done in a way that removes ambiguity.
 +
-+So, you would use "disambiguately" when describing an action performed in a manner that clarifies or removes ambiguity.
-+                    */
++                    So, you would use "disambiguately" when describing an action performed in a manner that clarifies or removes ambiguity.
++                                        */
 +                }
 +            } else {
 +                // it applied, unambiguously
@@ -219,12 +226,12 @@ index a456c41..0816b08 100644
      }
  
      /// Create a patch between two potentially non-utf8 texts
-@@ -111,14 +147,33 @@ impl DiffOptions {
+@@ -111,14 +146,33 @@ impl DiffOptions {
          original: &'a [u8],
          modified: &'a [u8],
      ) -> Patch<'a, [u8]> {
-+        let mut patch:Patch<'a, [u8]>;
-+        let mut context_len=self.context_len;
++        let mut patch: Patch<'a, [u8]>;
++        let mut context_len = self.context_len;
 +
          let mut classifier = Classifier::default();
          let (old_lines, old_ids) = classifier.classify_lines(original);
@@ -236,27 +243,27 @@ index a456c41..0816b08 100644
 -        Patch::new(Some(&b"original"[..]), Some(&b"modified"[..]), hunks)
 +        loop {
 +            let hunks = to_hunks(&old_lines, &new_lines, &solution, context_len);
-+            patch=Patch::new(Some(&b"original"[..]), Some(&b"modified"[..]), hunks);
++            patch = Patch::new(Some(&b"original"[..]), Some(&b"modified"[..]), hunks);
 +            if !self.unambiguous || original.is_empty() || modified.is_empty() {
 +                break;
 +            }
-+            let patched=crate::apply_bytes(original, &patch, /*unambiguous:*/true);
++            let patched = crate::apply_bytes(original, &patch, /*unambiguous:*/ true);
 +            if patched.is_err() {
-+                context_len+=1;
-+                if context_len>MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE {
++                context_len += 1;
++                if context_len > MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE {
 +                    panic!("!! Failed to disambiguately generate patch due to reached max context length of '{}' and the patch was still ambiguous!", MAX_CONTEXT_LENGTH_TO_DISAMBIGUATE);
 +                }
 +            } else {
 +                // it applied, unambiguously
 +                break;
 +            }
-+        }//loop
++        } //loop
 +        return patch;
      }
  
      pub(crate) fn diff_slice<'a, T: PartialEq>(
 diff --git a/src/diff/tests.rs b/src/diff/tests.rs
-index 9ac8fa7..c239786 100644
+index 9ac8fa7..ae67d4e 100644
 --- a/src/diff/tests.rs
 +++ b/src/diff/tests.rs
 @@ -336,9 +336,9 @@ macro_rules! assert_patch {
@@ -275,7 +282,7 @@ index 9ac8fa7..c239786 100644
  +The door of all subtleties!
  ";
      opts.set_context_len(0);
-+    opts.unambiguous=false;
++    opts.unambiguous = false;
      assert_patch!(opts, lao, tzu, expected);
 +    let expected_unambiguous = "\
 +--- original
@@ -295,7 +302,7 @@ index 9ac8fa7..c239786 100644
 ++The door of all subtleties!
 +";
 +
-+    opts.unambiguous=true;
++    opts.unambiguous = true;
 +    assert_patch!(opts, lao, tzu, expected_unambiguous);
  
      let expected = "\
