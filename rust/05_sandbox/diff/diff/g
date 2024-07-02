@@ -10,6 +10,7 @@ if diff -qup good_way.patch le.patch; then
 else
   if diff -qup bad.patch le.patch; then
     echo "The generated patch is NOT correct!" >&2
+    exit 2
   else
     echo "The generated patch is something NEW, different from expected correct and expected incorrect!" >&2
   fi

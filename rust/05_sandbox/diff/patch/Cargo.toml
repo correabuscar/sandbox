@@ -4,4 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-diffy = "0.4.0"
+#uncomment this for bad way:
+#diffy = "0.4.0"
+#uncomment this for p.o.c. good way:
+diffy = { version="0.4.0", path="/home/user/1tmp/diffy/" }

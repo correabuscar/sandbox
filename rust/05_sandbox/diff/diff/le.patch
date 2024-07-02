@@ -1,6 +1,7 @@
 --- original
 +++ modified
-@@ -1187,6 +1187,10 @@
+@@ -1186,8 +1186,12 @@
+                     self.gctx.shell().warn(msg)?
                  }
              }
          }
@@ -11,3 +12,4 @@
          Ok(())
      }
 
+     pub fn emit_lints(&self, pkg: &Package, path: &Path) -> CargoResult<()> {
