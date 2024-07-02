@@ -12,6 +12,8 @@ dependencies = [
 [[package]]
 name = "diffy"
 version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d3041965b7a63e70447ec818a46b1e5297f7fcae3058356d226c02750c4e6cb"
 dependencies = [
  "nu-ansi-term",
 ]

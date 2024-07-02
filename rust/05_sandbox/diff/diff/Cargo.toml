@@ -7,6 +7,6 @@ exclude = [ "./empty.patch", "./workspace.rs*", "./le.patch", "./WIP_diffy_patch
 
 [dependencies]
 #uncomment this for bad way:
-#diffy = { version="0.4.0" }
+diffy = { version="0.4.0" }
 #uncomment this for p.o.c. good way:
-diffy = { version="0.4.0", path="/home/user/1tmp/diffy/" }
+#diffy = { version="0.4.0", path="/home/user/1tmp/diffy/" }
