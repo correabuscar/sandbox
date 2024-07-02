@@ -4,6 +4,7 @@ set -e
 export RUST_BACKTRACE=1
 cargo clean
 cargo build
+set -vxe
 cargo run workspace.rs.original le.patch workspace.rs.FRESHLY_PATCHED
 cargo run workspace.rs.FRESHLY_PATCHED le.patch workspace.rs.FRESHLY_PATCHED_AGAIN
 cargo run workspace.rs.FRESHLY_PATCHED_AGAIN le.patch workspace.rs.FRESHLY_PATCHED_AGAIN2
