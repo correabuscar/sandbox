@@ -4,10 +4,21 @@ set -e
 export RUST_BACKTRACE=1
 cargo clean
 cargo build
-set -vxe
+#set -vx
+set +e
 cargo run workspace.rs.original le.patch workspace.rs.FRESHLY_PATCHED
-cargo run workspace.rs.FRESHLY_PATCHED le.patch workspace.rs.FRESHLY_PATCHED_AGAIN
-cargo run workspace.rs.FRESHLY_PATCHED_AGAIN le.patch workspace.rs.FRESHLY_PATCHED_AGAIN2
-#cargo run workspace.rs.FRESHLY_PATCHED_AGAIN2 le.patch workspace.rs.FRESHLY_PATCHED_AGAIN3
-#^ that one finally fails!
+cargo run workspace.rs.FRESHLY_PATCHED le.patch workspace.rs.FRESHLY_PATCHED_AGAIN; ec="$?"
+if test "$ec" == 0; then
+  echo "That's a fail, it shouldn't have applied again!" >&2
+  cargo run workspace.rs.FRESHLY_PATCHED_AGAIN le.patch workspace.rs.FRESHLY_PATCHED_AGAIN2; ec="$?"
+  if test "$ec" == 0; then
+    echo "That's a fail, it shouldn't have applied again!" >&2
+  else
+    echo "That's correct! Patch failed to apply again in a wrong place!" >&2
+  fi
+  #cargo run workspace.rs.FRESHLY_PATCHED_AGAIN2 le.patch workspace.rs.FRESHLY_PATCHED_AGAIN3
+  #^ that one finally fails!
+else
+  echo "That's correct! Patch failed to apply again in a wrong place!" >&2
+fi
 

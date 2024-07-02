@@ -4,4 +4,13 @@ set -e
 export RUST_BACKTRACE=1
 #cargo clean
 cargo build
-cargo run workspace.rs.original workspace.rs.PATCHED >le.patch
+cargo run workspace.rs.original_real workspace.rs.PATCHED_real >le.patch
+if diff -qup good_way.patch le.patch; then
+  echo "The generated patch is correct!" >&2
+else
+  if diff -qup bad.patch le.patch; then
+    echo "The generated patch is NOT correct!" >&2
+  else
+    echo "The generated patch is something NEW, different from expected correct and expected incorrect!" >&2
+  fi
+fi
