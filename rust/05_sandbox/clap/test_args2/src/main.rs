@@ -10,6 +10,7 @@ struct Args {
 
     #[arg(
         short = 'U',
+        //short='u', //this overwrites the prev. short=
         long,
         default_value_t = 3,
         value_name = "NUM",
