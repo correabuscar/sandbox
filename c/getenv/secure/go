@@ -1,0 +1,9 @@
+#!/bin/bash
+export DEBUG=yeh
+gcc -Wall -Wextra -std=c11 a.c && ./a.out
+
+echo "and when suid root"
+sudo chown root:root ./a.out
+sudo chmod u+s ./a.out
+./a.out
+rm -vf -- ./a.out
