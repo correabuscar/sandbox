@@ -8,4 +8,14 @@ cargo build
 set +e
 cargo run
 cargo run -- --help
-cargo run -- --debug -d
+cargo run -- -u91
+#cargo run -- -u=91 #no good
+cargo run -- -u
+cargo run -- -u 83
+cargo run -- -U 12
+cargo run -- -U21
+#cargo run -- -U-21 #no negatives
+#cargo run -- -U=21 #no good
+#cargo run -- --unified 34 #no good! 34 is a free arg because it's optional!
+cargo run -- --unified=43
+#cargo run -- --debug -d
