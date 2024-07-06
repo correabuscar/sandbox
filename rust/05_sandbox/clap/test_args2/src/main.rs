@@ -42,7 +42,12 @@ fn main() {
         //use clap::crate_name;
         //let executable_name = crate_name!();
         //relative path here:
-        let executable_name = std::env::args().next().unwrap_or_else(|| "unknown".to_string());
+        let executable_name:String = resolve_realpath(std::env::args().next().unwrap_or_else(|| "unknown".to_string())).expect("can't realpath").into_os_string().into_string().expect("non utf8");
+//        let executable_name:&str = match std::env::args().next() {
+//            //.unwrap_or_else(|| "unknown".to_string());
+//            Some(exe) => resolve_realpath(exe.clone()).expect(&format!("can realpath $0 aka '{}'",exe)).to_str().unwrap_or(&exe),
+//            None => "unknown",
+//        };
         //absolute path here:
         let exe_name_abs_path=std::env::current_exe().expect("why would this fail");
         assert_eq!(exe_name_abs_path.to_string_lossy(), executable_name, "discrepancy detected, likely the path or exe name aren't UTF-8 ! FIXME: handle this case");
