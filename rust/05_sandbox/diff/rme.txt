@@ -1,0 +1,4 @@
+don't rename the dirs:
+./diff
+./patch
+

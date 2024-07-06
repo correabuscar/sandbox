@@ -7,45 +7,67 @@ cargo build
 #set -vx
 set +e
 exe="$(realpath -- ./target/debug/both_as_diff_patch_replacements)"
+ln -frs "$exe" ./diff
+ln -frs "$exe" ./patch
+diff="$(realpath --no-symlinks -- ./diff)"
+patch="$(realpath --no-symlinks -- ./patch)"
 pushd "../diff"
-"$exe" workspace.rs.original_real workspace.rs.PATCHED_real > /tmp/le.patch
+"$diff" workspace.rs.original_real workspace.rs.PATCHED_real > /tmp/le.patch
 if diff -qup good_way.patch /tmp/le.patch; then
+  tput setaf 2 >&2
   echo "The generated patch is correct!" >&2
+  tput sgr0 >&2
 else
   if diff -qup bad.patch /tmp/le.patch; then
+    tput setaf 1 >&2
     echo "The generated patch is NOT correct!" >&2
+    tput sgr0 >&2
     exit 2
   else
+    tput setaf 3 >&2
     echo "The generated patch is something NEW, different from expected correct and expected incorrect!" >&2
+    tput sgr0 >&2
     cat /tmp/le.patch
   fi
 fi
-exit 0
+#exit 0
+popd
+pushd "../patch"
 
-
-"$exe" workspace.rs.original /tmp/le.patch workspace.rs.FRESHLY_PATCHED
-"$exe" workspace.rs.FRESHLY_PATCHED /tmp/le.patch workspace.rs.FRESHLY_PATCHED_AGAIN; ec="$?"
+"$patch" workspace.rs.original /tmp/le.patch workspace.rs.FRESHLY_PATCHED
+"$patch" workspace.rs.FRESHLY_PATCHED /tmp/le.patch workspace.rs.FRESHLY_PATCHED_AGAIN; ec="$?"
 if test "$ec" == 0; then
+  tput setaf 1 >&2
   echo "That's a fail, it shouldn't have applied again! The patch itself is ambiguous!" >&2
-  "$exe" workspace.rs.FRESHLY_PATCHED_AGAIN /tmp/le.patch workspace.rs.FRESHLY_PATCHED_AGAIN2; ec="$?"
+  tput sgr0 >&2
+  "$patch" workspace.rs.FRESHLY_PATCHED_AGAIN /tmp/le.patch workspace.rs.FRESHLY_PATCHED_AGAIN2; ec="$?"
   if test "$ec" == 0; then
+    tput setaf 1 >&2
     echo "That's a fail, it shouldn't have applied again! The patch itself is ambiguous!" >&2
     echo "Now let's try again but this time with unambiguous apply!" >&2
   else
+    tput setaf 2 >&2
     echo "That's correct! Patch failed to apply again in a wrong place!" >&2
   fi
 
   #cargo run workspace.rs.FRESHLY_PATCHED_AGAIN2 le.patch workspace.rs.FRESHLY_PATCHED_AGAIN3
   #^ that one finally fails!
 else
+  tput setaf 2 >&2
   echo "That's correct! Patch failed to apply again in a wrong place!" >&2
   echo "Now let's try again but this time with an ambiguous patch and an unambiguous apply!" >&2
 fi
+tput sgr0
 
-"$exe" workspace.rs.original /tmp/bad.patch workspace.rs.FRESHLY_PATCHED true ; ec="$?"
+"$patch" workspace.rs.original /tmp/bad.patch workspace.rs.FRESHLY_PATCHED true ; ec="$?"
 if test "$ec" != 0; then
+  tput setaf 2 >&2
   echo "That's correct, applying an ambiguous patch unambiguously, failed as it should!" >&2
+  tput sgr0
+  exit 0
 else
+  tput setaf 1 >&2
   echo "Incorrect, unambiguously applying the ambiguous patch should not have succeeded!" >&2
+  tput sgr0
   exit "$ec"
 fi

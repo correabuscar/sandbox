@@ -4,3 +4,9 @@ however it won't be fully implementing all that jaz but instead rely on the orig
 
 its primary function is to generate and apply only unambiguous patches/hunks!
 anything else it would delegate to the originals
+
+superseeds but uses the files from:
+../diff/
+../patch/
+
+(so don't rename those dirs)
