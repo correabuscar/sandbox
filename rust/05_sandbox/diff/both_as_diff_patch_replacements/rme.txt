@@ -1,0 +1,6 @@
+this exe is supposed to be called as 'diff' or as 'patch' to serve that purpose
+and is supposed to be a replacement for the real gnu 'diff' and 'patch' commands
+however it won't be fully implementing all that jaz but instead rely on the original commands for the rest of the function
+
+its primary function is to generate and apply only unambiguous patches/hunks!
+anything else it would delegate to the originals

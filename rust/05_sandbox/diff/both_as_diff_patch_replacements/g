@@ -1,0 +1,51 @@
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+set -e
+export RUST_BACKTRACE=1
+#cargo clean
+cargo build
+#set -vx
+set +e
+exe="$(realpath -- ./target/debug/both_as_diff_patch_replacements)"
+pushd "../diff"
+"$exe" workspace.rs.original_real workspace.rs.PATCHED_real > /tmp/le.patch
+if diff -qup good_way.patch /tmp/le.patch; then
+  echo "The generated patch is correct!" >&2
+else
+  if diff -qup bad.patch /tmp/le.patch; then
+    echo "The generated patch is NOT correct!" >&2
+    exit 2
+  else
+    echo "The generated patch is something NEW, different from expected correct and expected incorrect!" >&2
+    cat /tmp/le.patch
+  fi
+fi
+exit 0
+
+
+"$exe" workspace.rs.original /tmp/le.patch workspace.rs.FRESHLY_PATCHED
+"$exe" workspace.rs.FRESHLY_PATCHED /tmp/le.patch workspace.rs.FRESHLY_PATCHED_AGAIN; ec="$?"
+if test "$ec" == 0; then
+  echo "That's a fail, it shouldn't have applied again! The patch itself is ambiguous!" >&2
+  "$exe" workspace.rs.FRESHLY_PATCHED_AGAIN /tmp/le.patch workspace.rs.FRESHLY_PATCHED_AGAIN2; ec="$?"
+  if test "$ec" == 0; then
+    echo "That's a fail, it shouldn't have applied again! The patch itself is ambiguous!" >&2
+    echo "Now let's try again but this time with unambiguous apply!" >&2
+  else
+    echo "That's correct! Patch failed to apply again in a wrong place!" >&2
+  fi
+
+  #cargo run workspace.rs.FRESHLY_PATCHED_AGAIN2 le.patch workspace.rs.FRESHLY_PATCHED_AGAIN3
+  #^ that one finally fails!
+else
+  echo "That's correct! Patch failed to apply again in a wrong place!" >&2
+  echo "Now let's try again but this time with an ambiguous patch and an unambiguous apply!" >&2
+fi
+
+"$exe" workspace.rs.original /tmp/bad.patch workspace.rs.FRESHLY_PATCHED true ; ec="$?"
+if test "$ec" != 0; then
+  echo "That's correct, applying an ambiguous patch unambiguously, failed as it should!" >&2
+else
+  echo "Incorrect, unambiguously applying the ambiguous patch should not have succeeded!" >&2
+  exit "$ec"
+fi

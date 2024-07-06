@@ -1,5 +1,6 @@
 // initially from tutorial: https://docs.rs/clap/latest/clap/_derive/_tutorial/chapter_0/index.html
 use clap::Parser;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -27,12 +28,24 @@ struct Args {
     show_c_function: bool,
 }
 
+fn resolve_realpath<P: AsRef<Path>>(path: P) -> Option<PathBuf> {
+    // Attempt to canonicalize the path to resolve symlinks and get absolute path
+    match std::fs::canonicalize(path) {
+        Ok(abs_path) => Some(abs_path),
+        Err(_) => None,
+    }
+}
+
 fn main() {
     let args = Args::parse();
     if args.debug > 0 {
         //use clap::crate_name;
         //let executable_name = crate_name!();
+        //relative path here:
         let executable_name = std::env::args().next().unwrap_or_else(|| "unknown".to_string());
+        //absolute path here:
+        let exe_name_abs_path=std::env::current_exe().expect("why would this fail");
+        assert_eq!(exe_name_abs_path.to_string_lossy(), executable_name, "discrepancy detected, likely the path or exe name aren't UTF-8 ! FIXME: handle this case");
         println!("Executable name: {}", executable_name);
         eprintln!("{args:?}");
     }
