@@ -7,4 +7,6 @@ edition = "2021"
 #uncomment this for bad way:
 #diffy = { version="0.4.0" }
 #uncomment this for p.o.c. good way:
-diffy = { version="0.4.0", path="/home/user/1tmp/diffy/" }
+#diffy = { version="0.4.0", path="/home/user/1tmp/diffy/" }
+# same as ^ but on github:
+diffy = { version="0.4.0", git="https://github.com/correabuscar/diffy", branch="unambiguous" }

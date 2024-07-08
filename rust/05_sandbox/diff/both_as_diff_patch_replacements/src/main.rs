@@ -34,7 +34,7 @@ where
 {
     exec(HARDCODED_PATCH_EXE, args);
 }
-/// returns exit code, if any
+/// returns exit code, or panics if exe got killed by signal!
 fn exec<I,S>(exe:&str, args: I) -> i32
 where
     I: IntoIterator<Item = S>,
