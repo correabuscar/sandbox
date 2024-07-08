@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 
 
 
+/// resolving symlinks, can't be turned off!
 fn resolve_realpath<P: AsRef<Path>>(path: P) -> Option<PathBuf> {
     // Attempt to canonicalize the path to resolve symlinks and get absolute path
     match std::fs::canonicalize(path) {

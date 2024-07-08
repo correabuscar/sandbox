@@ -38,11 +38,12 @@ fn main() {
         Some(cl) => cl.parse::<i32>().expect(&format!("Context length '{}' isn't an i32 number.", cl)),
         None => 3,
     };
-    println!("Context length: {}", context_length);
+    eprintln!("Context length: {}", context_length);
     if context_length < 0 {
         panic!("negative context length given");
     }
-    println!("Free: {} {:?}",matches.free.len(), matches.free);
+    eprintln!("Free: {} {:?}",matches.free.len(), matches.free);
+    assert_eq!(matches.free.len(), 0, "Expected no free args!");
 //    let input = if !matches.free.is_empty() {
 //        matches.free[0].clone()
 //    } else {

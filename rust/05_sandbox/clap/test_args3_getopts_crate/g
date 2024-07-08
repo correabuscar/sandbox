@@ -1,21 +1,63 @@
 #!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
 
-set -e
+function ensure_success() {
+  local ec="$?"
+  if test "$ec" != "0"; then
+    tput setaf 1
+    echo "Should NOT have failed!" >&2
+    tput sgr0
+    exit 2
+  else
+    tput setaf 2
+    echo "Success was expected on that one!" >&2
+    tput sgr0
+  fi
+}
+function ensure_fail() {
+  local ec="$?"
+  if test "$ec" != "101"; then
+    tput setaf 1
+    echo "Should've failed!" >&2
+    tput sgr0
+    exit 2
+  else
+    tput setaf 2
+    echo "Failure was expected on that one!" >&2
+    tput sgr0
+  fi
+}
+
+#set -e
 export RUST_BACKTRACE=1
 #cargo clean
 cargo build
+ensure_success
 #set -vx
-set +e
+#set +e
 cargo run
+ensure_success
 cargo run -- --help
+ensure_success
 cargo run -- -u91
-#cargo run -- -u=91 #no good
+ensure_success
+cargo run -- -u=91 #no good
+ensure_fail
 cargo run -- -u
+ensure_success
 cargo run -- -u 83
+ensure_success
 cargo run -- -U 12
+ensure_success
 cargo run -- -U21
-#cargo run -- -U-21 #no negatives
-#cargo run -- -U=21 #no good
-#cargo run -- --unified 34 #no good! 34 is a free arg because it's optional!
+ensure_success
+cargo run -- -U-21 #no negatives
+ensure_fail
+cargo run -- -U=21  #no good
+ensure_fail
+cargo run -- --unified 34 #no good! 34 is a free arg because it's optional!
+ensure_fail
 cargo run -- --unified=43
+ensure_success
 #cargo run -- --debug -d
+
+echo "All done!"
