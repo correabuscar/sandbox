@@ -17,6 +17,42 @@ fn resolve_realpath<P: AsRef<Path>>(path: P) -> Option<PathBuf> {
     }
 }
 
+const HARDCODED_DIFF_EXE:&str ="/usr/bin/diff";
+const HARDCODED_PATCH_EXE:&str ="/usr/bin/patch";
+
+fn exec_diff<I,S>(args: I)
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<std::ffi::OsStr> + std::fmt::Debug,
+{
+    exec(HARDCODED_DIFF_EXE, args);
+}
+fn exec_patch<I,S>(args: I)
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<std::ffi::OsStr> + std::fmt::Debug,
+{
+    exec(HARDCODED_PATCH_EXE, args);
+}
+/// returns exit code, if any
+fn exec<I,S>(exe:&str, args: I) -> i32
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<std::ffi::OsStr> + std::fmt::Debug,
+{
+     // Convert the iterator into a vector to count the number of arguments
+    let args: Vec<S> = args.into_iter().collect();
+    let num_args = args.len();
+    let cmd_res=std::process::Command::new(exe).args(&args).output();
+    let out=cmd_res.expect(&format!("Failed to start executable '{}' with '{}' args '{:?}'", exe, num_args, args));
+    let stdout=String::from_utf8_lossy(&out.stdout);
+    let stderr=String::from_utf8_lossy(&out.stderr);
+    print!("{}", stdout);
+    eprint!("{}", stderr);
+    let exit_status=out.status;
+    exit_status.code().expect(&format!("The execution of the following failed due to being killed by a signal(can't determine which tho), exe '{}' with '{}' args '{:?}'", exe, num_args, args))
+}
+
 fn main() {
     let exe_name_as_called:String = std::env::args().next().unwrap_or_else(|| "unknown".to_string());
     let realpath_of_exe_name_as_called:String = resolve_realpath(std::env::args().next().unwrap_or_else(|| "unknown".to_string())).expect("can't realpath").into_os_string().into_string().expect("non utf8");
@@ -30,7 +66,8 @@ fn main() {
             let args: Vec<String> = env::args().collect();
             if args.len() != 3 {
                 eprintln!("Usage: diff <file1> <file2>");
-                std::process::exit(1);
+                exec_diff(["--help"]);
+                std::process::exit(2);
             }
 
             let file1 = fs::read_to_string(&args[1]).expect("Failed to read file1");
@@ -50,7 +87,8 @@ fn main() {
             if args.len() > 5 || args.len() < 4 {
                 eprintln!("Usage: patch <original_file> <patch_file> <output_file> true/false");
                 eprintln!("true/false is for unambiguous");
-                std::process::exit(1);
+                exec_patch(["--help"]);
+                std::process::exit(2);
             }
             #[allow(unused_variables)]
             let unambiguous:bool;
