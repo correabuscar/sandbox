@@ -5,6 +5,7 @@ version = 3
 [[package]]
 name = "getopts"
 version = "0.2.21"
+source = "git+https://github.com/correabuscar/getopts?branch=patch-1#f10460995abe04c692b3c3036e1e280d99349e93"
 dependencies = [
  "unicode-width",
 ]

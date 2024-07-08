@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 #getopts = "0.2.21" #5 years old
-getopts = { path="/home/user/1tmp/getopts" }
+#getopts = { path="/home/user/1tmp/getopts" }
+getopts = { version="0.2.21", git="https://github.com/correabuscar/getopts", branch="patch-1" }
