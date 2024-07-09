@@ -1,0 +1,13 @@
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+set -e
+cargo test
+cargo run
+TEADEBUG=0 cargo run
+TEADEBUG=1p cargo run
+TEADEBUG=1 cargo run
+TEADEBUG=2 cargo run
+TEADEBUG=3 cargo run
+TEADEBUG=55 cargo run
+TEADEBUG=99 cargo run
+echo "All done"
