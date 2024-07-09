@@ -7,6 +7,7 @@ name = "both_as_diff_patch_replacements"
 version = "0.1.0"
 dependencies = [
  "diffy",
+ "getopts",
 ]
 
 [[package]]
@@ -18,6 +19,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "getopts"
+version = "0.2.21"
+source = "git+https://github.com/correabuscar/getopts?branch=patch-1#f10460995abe04c692b3c3036e1e280d99349e93"
+dependencies = [
+ "unicode-width",
+]
+
+[[package]]
 name = "nu-ansi-term"
 version = "0.50.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -25,6 +34,12 @@ checksum = "dd2800e1520bdc966782168a627aa5d1ad92e33b984bf7c7615d31280c83ff14"
 dependencies = [
  "windows-sys",
 ]
+
+[[package]]
+name = "unicode-width"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0336d538f7abc86d282a4189614dfaa90810dfc2c6f6427eaf88e16311dd225d"
 
 [[package]]
 name = "windows-sys"

@@ -12,7 +12,13 @@ ln -frs "$exe" ./patch
 diff="$(realpath --no-symlinks -- ./diff)"
 patch="$(realpath --no-symlinks -- ./patch)"
 pushd "../diff"
-"$diff" workspace.rs.original_real workspace.rs.PATCHED_real > /tmp/le.patch
+"$diff" workspace.rs.original_real workspace.rs.PATCHED_real > /tmp/le.patch  ; ec="$?"
+if test "$ec" != 0; then
+  tput setaf 1 >&2
+  echo "$diff failed with non-0 exit code '$ec'" >&2
+  tput sgr0 >&2
+  exit "$ec"
+fi
 if diff -qup good_way.patch /tmp/le.patch; then
   tput setaf 2 >&2
   echo "The generated patch is correct!" >&2
@@ -46,8 +52,15 @@ if test "$ec" == 0; then
     echo "That's a fail, it shouldn't have applied again! The patch itself is ambiguous!" >&2
     echo "Now let's try again but this time with unambiguous apply!" >&2
   else
-    tput setaf 2 >&2
-    echo "That's correct! Patch failed to apply again in a wrong place!" >&2
+    if test "$ec" == "1"; then
+      tput setaf 2 >&2
+      echo "That's correct! Patch failed to apply again in a wrong place!" >&2
+    else
+      tput setaf 1 >&2
+      echo "Unexpected exit code, '$ec'" >&2
+      tput sgr0
+      exit "$ec"
+    fi
   fi
 
   #cargo run workspace.rs.FRESHLY_PATCHED_AGAIN2 le.patch workspace.rs.FRESHLY_PATCHED_AGAIN3
@@ -60,14 +73,20 @@ fi
 tput sgr0
 
 "$patch" workspace.rs.original /tmp/bad.patch workspace.rs.FRESHLY_PATCHED true ; ec="$?"
-if test "$ec" != 0; then
+if test "$ec" == 2; then
   tput setaf 2 >&2
   echo "That's correct, applying an ambiguous patch unambiguously, failed as it should!" >&2
   tput sgr0
+  echo "All done."
   exit 0
 else
   tput setaf 1 >&2
-  echo "Incorrect, unambiguously applying the ambiguous patch should not have succeeded!" >&2
+  if test "$ec" == 0; then
+    echo "Incorrect, unambiguously applying the ambiguous patch should not have succeeded! exit code:$ec" >&2
+  else
+    echo "Incorrect, exit code: '$ec' is neither 0 nor 2" >&2
+  fi
   tput sgr0
   exit "$ec"
 fi
+
