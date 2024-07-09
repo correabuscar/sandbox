@@ -92,6 +92,8 @@ fn main() -> ExitCode {
 //        // Exit with a specific exit code (2) during panic
 //        std::process::exit(2); //2 means trouble in diff/patch cmdlines
 //    }));
+    std::rt::EXIT_CODE_ON_PANIC.store(2, std::sync::atomic::Ordering::Relaxed);
+    //exit code 2 means trouble in diff/patch cmdlines
     std::panic::update_hook(move |prev, info| { // E0658: use of unstable library feature 'panic_update_hook'
         //println!("Print custom message and execute panic handler as usual");
         prev(info);
@@ -103,8 +105,6 @@ fn main() -> ExitCode {
         // Manually flush stderr, else any printed that didn't end in newline won't be seen!
         //std::io::stderr().flush().unwrap();
         //XXX: using std::process::exit() does call rt::cleanup which flushes stdout/stderr! however it won't run destructors like drop() for Foo, but if you use /patches/portage/dev-lang/rust.reused/2300_rust_exitcode_on_panic.patch then you can set the exit code that panic uses (was 101) by doing this:
-        std::rt::EXIT_CODE_ON_PANIC.store(2, std::sync::atomic::Ordering::Relaxed);
-        //exit code 2 means trouble in diff/patch cmdlines
         //std::process::exit(2);
     });
     let args: Vec<String> = env::args().collect();
@@ -172,7 +172,7 @@ fn main() -> ExitCode {
             }
 
             let original_file = fs::read(&args[1]).expect("Failed to read original file");
-            let patch_file = fs::read(&args[2]).expect("Failed to read patch file");
+            let patch_file = fs::read(&args[2]).expect(&format!("Failed to read patch file: '{}'", &args[2]));
 
             let original_str = str::from_utf8(&original_file).expect("Failed to convert original file to string");
             let patch_str = str::from_utf8(&patch_file).expect("Failed to convert patch file to string");
@@ -180,7 +180,10 @@ fn main() -> ExitCode {
             let patch = Patch::from_str(patch_str).expect("Failed to parse patch file");
             let patched_str = apply(original_str, &patch
                 ,unambiguous
-            ).expect("Failed to apply patch");
+            ).unwrap_or_else(|e| {
+                std::rt::EXIT_CODE_ON_PANIC.store(1, std::sync::atomic::Ordering::Relaxed);
+                panic!("Failed to apply patch, '{}'",e);
+            });
 
             fs::write(&args[3], patched_str.as_bytes()).expect("Failed to write output file");
             return ExitCode::SUCCESS;

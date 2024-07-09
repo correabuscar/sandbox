@@ -1,8 +1,10 @@
 #!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
 
 set -e
-export RUST_BACKTRACE=1
-#cargo clean
+#export RUST_BACKTRACE=1
+export RUST_BACKTRACE=0
+#unset RUST_BACKTRACE
+#cargo clean #needed else won't detect same rustc version changes because it doesn't look at exe timestamp
 cargo build
 #set -vx
 set +e
@@ -72,8 +74,8 @@ else
 fi
 tput sgr0
 
-"$patch" workspace.rs.original /tmp/bad.patch workspace.rs.FRESHLY_PATCHED true ; ec="$?"
-if test "$ec" == 2; then
+"$patch" workspace.rs.original bad.patch workspace.rs.FRESHLY_PATCHED true ; ec="$?"
+if test "$ec" == 1; then
   tput setaf 2 >&2
   echo "That's correct, applying an ambiguous patch unambiguously, failed as it should!" >&2
   tput sgr0
@@ -84,7 +86,7 @@ else
   if test "$ec" == 0; then
     echo "Incorrect, unambiguously applying the ambiguous patch should not have succeeded! exit code:$ec" >&2
   else
-    echo "Incorrect, exit code: '$ec' is neither 0 nor 2" >&2
+    echo "Incorrect, exit code: '$ec' is neither 0 nor 1" >&2
   fi
   tput sgr0
   exit "$ec"
