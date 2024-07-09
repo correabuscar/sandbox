@@ -1,0 +1,5 @@
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+unset RUST_BACKTRACE
+cargo run
+echo "exit code: $?"
