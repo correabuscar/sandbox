@@ -83,8 +83,9 @@ build_process_tree() {
 build_process_tree "$$" ""
 
 # Print the process tree
-echo "Our callers tree:"
+str="Our callers tree:"$'\n'
 for line in "${process_tree[@]}"; do
-    echo "$line"
+    #echo "$line"
+    str+="${line}"$'\n'
 done
-
+echo -n "$str"
