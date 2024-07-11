@@ -126,6 +126,13 @@ fn main() -> ExitCode {
         "diff" => {
             opts.opt("u", "unified", "output NUM (default 3) lines of unified contex", "NUM", HasArg::Maybe, Occur::Multi);
             opts.opt("U", "unified", "output NUM (default 3) lines of unified contex", "NUM", HasArg::Maybe, Occur::Multi);
+            opts.opt("c", "context", "output NUM (default 3) lines of copied contex", "NUM", HasArg::Maybe, Occur::Multi);
+            opts.opt("C", "context", "output NUM (default 3) lines of copied contex", "NUM", HasArg::Maybe, Occur::Multi);
+            opts.opt("e", "ed", "output an ed script", "", HasArg::No, Occur::Multi);
+            opts.opt("n", "rcs", "output an RCS format script", "", HasArg::No, Occur::Multi);
+            opts.opt("", "normal", "output a normal diff (the default)", "", HasArg::No, Occur::Multi);
+            opts.opt("q", "brief", "report only when files differ (doesn't output a patch thus doesn't try to gen.unambiguous hunks)", "", HasArg::No, Occur::Multi);
+            opts.opt("s", "report-identical-files", "report only when two files are the same (doesn't output a patch thus doesn't try to gen.unambiguous hunks)", "", HasArg::No, Occur::Multi);
             opts.optflag("h", "help", "print this help text");
             let matches = match opts.parse(&args[1..]) {
                 Ok(m) => { m }
@@ -141,10 +148,33 @@ fn main() -> ExitCode {
                 return ExitCode::SUCCESS;
             }
             //let args: Vec<String> = env::args().collect();
-            if args.len() != 3 {
+            if matches.free.len() != 2 {
                 print_usage_diff(exe_name, opts);
                 return ExitCode::from(2);
             }
+            let u_last = *matches.opt_positions("u").last().unwrap_or(&0);
+            let c_last = *matches.opt_positions("c").last().unwrap_or(&0);
+            let norm_last= *matches.opt_positions("normal").last().unwrap_or(&0);
+            if [u_last, c_last, norm_last].iter().filter(|&x| *x > 0).count() > 1 {
+                panic!("conflicting output style options");
+            }
+            let last_diff_type = if u_last > c_last {
+                "Unified diff"
+            } else if c_last > 0 {
+                "Context diff"
+            } else {
+                "No diff type specified, assuming --normal"
+            };
+            eprintln!("{}", last_diff_type);//FIXME: make this an enum?
+            let context_length = match matches.opt_strs("u").last() { //this catches the uppercase -U too! unclear why, maybe due to --unified being same?
+                Some(cl) => cl.parse::<i32>().expect(&format!("Context length '{}' isn't an i32 number.", cl)),
+                None => 3,
+            };
+            eprintln!("Context length: {}", context_length);
+            if context_length < 0 {
+                panic!("negative context length given");
+            }
+            eprintln!("Free: {} {:?}",matches.free.len(), matches.free);
 
             let file1 = fs::read_to_string(&args[1]).expect("Failed to read file1");
             let file2 = fs::read_to_string(&args[2]).expect("Failed to read file2");
