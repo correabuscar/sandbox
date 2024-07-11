@@ -67,14 +67,20 @@ fn print_usage_diff(exe: &str, opts: Options) {
     exec_diff(["--help"]);
 }
 
-struct Foo;
+const TEST_CUSTOM_EXIT_CODE:i32=82;
+
+struct Foo(bool);
 impl Drop for Foo {
     fn drop(&mut self) {
-        eprintln!("cleaning up stuff(u should see this even during panics)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        //eprintln!("cleaning up stuff(u should see this even during panics)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        if self.0 {
+            std::rt::EXIT_CODE_ON_PANIC.store(TEST_CUSTOM_EXIT_CODE, std::sync::atomic::Ordering::Relaxed); // if rustc errors on this, it's because it's not patched with /patches/portage/dev-lang/rust.reused/2300_rust_exitcode_on_panic.patch
+        }
     }
 }
+
 fn main() -> ExitCode {
-    let _f = Foo;// to see if dropped on panic!
+    let _f = Foo(false);// to see if dropped on panic!
     // Set the RUST_BACKTRACE environment variable to enable backtrace
     if std::env::var("RUST_BACKTRACE").is_err() {
         std::env::set_var("RUST_BACKTRACE", "1");
@@ -92,20 +98,19 @@ fn main() -> ExitCode {
 //        // Exit with a specific exit code (2) during panic
 //        std::process::exit(2); //2 means trouble in diff/patch cmdlines
 //    }));
-    std::rt::EXIT_CODE_ON_PANIC.store(2, std::sync::atomic::Ordering::Relaxed);
+    std::rt::EXIT_CODE_ON_PANIC.store(2, std::sync::atomic::Ordering::Relaxed); // if rustc errors on this, it's because it's not patched with /patches/portage/dev-lang/rust.reused/2300_rust_exitcode_on_panic.patch
     //exit code 2 means trouble in diff/patch cmdlines
     std::panic::update_hook(move |prev, info| { // E0658: use of unstable library feature 'panic_update_hook'
         //println!("Print custom message and execute panic handler as usual");
         prev(info);
         //println!("fooooooooooooo");//yes this is reached
         //FIXME: was cleanup executed tho?! not if I exit here! but anyway the cleanup func is https://github.com/rust-lang/rust/blob/59a4f02f836f74c4cf08f47d76c9f6069a2f8276/library/std/src/rt.rs#L105 and executed by line 146 below.
-        // Manually flush stdout, else any printed that didn't end in newline won't be seen!
         //use std::io::Write;//else can't see: no method named `flush` found for struct `Stdout` in the current scope: method not found in `Stdout`
         //std::io::stdout().flush().unwrap();
-        // Manually flush stderr, else any printed that didn't end in newline won't be seen!
         //std::io::stderr().flush().unwrap();
         //XXX: using std::process::exit() does call rt::cleanup which flushes stdout/stderr! however it won't run destructors like drop() for Foo, but if you use /patches/portage/dev-lang/rust.reused/2300_rust_exitcode_on_panic.patch then you can set the exit code that panic uses (was 101) by doing this:
         //std::process::exit(2);
+        //XXX: letting this fall thru allows it to exit with the exit code we set in std::rt::EXIT_CODE_ON_PANIC
     });
     let args: Vec<String> = env::args().collect();
 
@@ -188,6 +193,10 @@ fn main() -> ExitCode {
             fs::write(&args[3], patched_str.as_bytes()).expect("Failed to write output file");
             return ExitCode::SUCCESS;
         }, //patch
+        "test_drops_and_exit_code_on_panic" => {
+            let _change_it=Foo(true);//will change exit code on drop()
+            panic!("induced to to see if drop() destructors get executed on panic and thus custom exit code '{}' is set on panic exit; reminder, without patching rustc you can't have custom exit code upon panic", TEST_CUSTOM_EXIT_CODE);
+        },
         anything_else => {
             panic!("unrecognized self name '{}'", anything_else);
         }

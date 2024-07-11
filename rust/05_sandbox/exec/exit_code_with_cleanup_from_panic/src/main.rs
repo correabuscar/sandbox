@@ -26,7 +26,7 @@ fn main() -> ExitCode {
         /// set the exit code (override the 101 one!)
         std::rt::EXIT_CODE_ON_PANIC.store(21, std::sync::atomic::Ordering::Relaxed);
         //std::process::exit(20);//XXX: this calls rt::cleanup() to flush, internally! it just doesn't call the drop()/destructors for Foo for example!
-        //FIXME: was cleanup executed tho?! the drop() isn't if I exit here! but anyway the cleanup func is https://github.com/rust-lang/rust/blob/59a4f02f836f74c4cf08f47d76c9f6069a2f8276/library/std/src/rt.rs#L105 and executed by line 146 below. But something still flushes stdout/stderr even if I exit here!
+        //ahwellFIXME: was cleanup executed tho?! the drop() isn't if I exit here! but anyway the cleanup func is https://github.com/rust-lang/rust/blob/59a4f02f836f74c4cf08f47d76c9f6069a2f8276/library/std/src/rt.rs#L105 and executed by line 146 below. But something still flushes stdout/stderr even if I exit here!(it's exit() itself which calls rt::cleanup() )
     });
     let _f = Foo;
     print!("!!!!!! no eol print");//still gets printed(even w/o the flushes from above!), even tho after the panic! interesting! so maybe cleanup() from library/std/src/rt.rs does get executed?

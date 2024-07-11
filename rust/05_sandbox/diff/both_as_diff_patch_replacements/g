@@ -11,6 +11,18 @@ set +e
 exe="$(realpath -- ./target/debug/both_as_diff_patch_replacements)"
 ln -frs "$exe" ./diff
 ln -frs "$exe" ./patch
+ln -frs "$exe" ./test_drops_and_exit_code_on_panic
+./test_drops_and_exit_code_on_panic ; ec="$?"
+if test "$ec" != "82"; then
+  tput setaf 1 >&2
+  echo "Failed, exit code 82, not '$ec', was expected." >&2
+  tput sgr0 >&2
+  exit "$ec"
+else
+  tput setaf 2 >&2
+  echo "That worked, exit code '$ec', continuing..." >&2
+  tput sgr0 >&2
+fi
 diff="$(realpath --no-symlinks -- ./diff)"
 patch="$(realpath --no-symlinks -- ./patch)"
 pushd "../diff"
