@@ -1,0 +1,120 @@
+From 1f7800f1809d77edae97dc24d96815595d68f929 Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Thu, 11 Apr 2024 00:25:43 +0200
+Subject: [PATCH 1/4] make KEY_F() function a const fn
+
+so that it can be used like this:
+pub const KEY_F15: i32 = ncurses::KEY_F(15);
+which is what pancurses uses.
+---
+ src/lib.rs | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/lib.rs b/src/lib.rs
+index 06facde..5cb0c95 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -1769,7 +1769,8 @@ pub fn setsyx(y: &mut i32, x: &mut i32)
+   }
+ }
+ 
+-pub fn KEY_F(n: u8) -> i32
++#[inline]
++pub const fn KEY_F(n: u8) -> i32
+ {
+   assert!(n < 16);
+   KEY_F0 + n as i32
+
+From 67b1222fcd998870f57856c61aba09d55c016da0 Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Thu, 11 Apr 2024 00:29:05 +0200
+Subject: [PATCH 2/4] prefix with KEY_ the keypad keys A1,A3,B2,C1,C3
+
+or else they aren't defined.
+(regression)
+---
+ src/genconstants.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/src/genconstants.c b/src/genconstants.c
+index f79e2d1..b3a7160 100644
+--- a/src/genconstants.c
++++ b/src/genconstants.c
+@@ -107,20 +107,20 @@ int main() {
+ 	PCONST(i32, KEY_ENTER);
+ 	PCONST(i32, KEY_PRINT);
+ 	PCONST(i32, KEY_LL);
+-#ifdef A1
+-	PCONST(i32, A1);
++#ifdef KEY_A1
++	PCONST(i32, KEY_A1);
+ #endif
+-#ifdef A3
+-	PCONST(i32, A3);
++#ifdef KEY_A3
++	PCONST(i32, KEY_A3);
+ #endif
+-#ifdef B2
+-	PCONST(i32, B2);
++#ifdef KEY_B2
++	PCONST(i32, KEY_B2);
+ #endif
+-#ifdef C1
+-	PCONST(i32, C1);
++#ifdef KEY_C1
++	PCONST(i32, KEY_C1);
+ #endif
+-#ifdef C3
+-	PCONST(i32, C3);
++#ifdef KEY_C3
++	PCONST(i32, KEY_C3);
+ #endif
+ 	PCONST(i32, KEY_BTAB);
+ 	PCONST(i32, KEY_BEG);
+
+From 09c68dba591a61bd4c8e6c90b3d0e66bfeca13fc Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Thu, 11 Apr 2024 00:30:14 +0200
+Subject: [PATCH 3/4] define A_ITALIC if it's defined in header
+
+(regression)
+---
+ src/genconstants.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/genconstants.c b/src/genconstants.c
+index b3a7160..44987ae 100644
+--- a/src/genconstants.c
++++ b/src/genconstants.c
+@@ -278,6 +278,9 @@ int main() {
+ 	PCONSTU(crate::ll::chtype, A_NORMAL);
+ 	PCONSTU(crate::ll::chtype, A_STANDOUT);
+ 	PCONSTU(crate::ll::chtype, A_UNDERLINE);
++#ifdef A_ITALIC
++	PCONSTU(crate::ll::chtype, A_ITALIC);
++#endif
+ 	PCONSTU(crate::ll::chtype, A_REVERSE);
+ 	PCONSTU(crate::ll::chtype, A_BLINK);
+ 	PCONSTU(crate::ll::chtype, A_DIM);
+
+From 6a036bbaae4034fb37eaeb999e65ddfec19602ed Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Thu, 6 Jun 2024 07:59:10 +0200
+Subject: [PATCH 4/4] increase version to reflect the changes
+
+---
+ Cargo.toml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Cargo.toml b/Cargo.toml
+index a2b2d6f..8e93a0f 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -1,6 +1,6 @@
+ [package]
+ name = "ncurses"
+-version = "6.0.0"
++version = "6.0.1"
+ authors = [ "contact@jeaye.com" ]
+ description = "A very thin wrapper around the ncurses TUI library"
+ documentation = "https://github.com/jeaye/ncurses-rs"
