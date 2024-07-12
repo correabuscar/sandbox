@@ -128,10 +128,14 @@ fn main() -> ExitCode {
             opts.opt("U", "unified", "output NUM (default 3) lines of unified contex", "NUM", HasArg::Maybe, Occur::Multi);
             opts.opt("c", "context", "output NUM (default 3) lines of copied contex", "NUM", HasArg::Maybe, Occur::Multi);
             opts.opt("C", "context", "output NUM (default 3) lines of copied contex", "NUM", HasArg::Maybe, Occur::Multi);
+            opts.opt("p", "show-c-function", "show which C function each change is in", "", HasArg::No, Occur::Multi);
             opts.opt("e", "ed", "output an ed script", "", HasArg::No, Occur::Multi);
             opts.opt("n", "rcs", "output an RCS format script", "", HasArg::No, Occur::Multi);
             opts.opt("", "normal", "output a normal diff (the default)", "", HasArg::No, Occur::Multi);
+            opts.opt("", "label", "use LABEL instead of file name and timestamp (can be repeated)", "LABEL", HasArg::Yes, Occur::Multi);
+            opts.opt("y", "side-by-side", "output in two columns", "", HasArg::No, Occur::Multi);
             opts.opt("q", "brief", "report only when files differ (doesn't output a patch thus doesn't try to gen.unambiguous hunks)", "", HasArg::No, Occur::Multi);
+            opts.opt("W", "width", "output at most NUM (default 130) print columns", "NUM", HasArg::Yes, Occur::Optional);//real 'diff' won't allow two -W unless they've same NUM, but we simplify by not allowing two -W
             opts.opt("s", "report-identical-files", "report only when two files are the same (doesn't output a patch thus doesn't try to gen.unambiguous hunks)", "", HasArg::No, Occur::Multi);
             opts.optflag("h", "help", "print this help text");
             let matches = match opts.parse(&args[1..]) {
@@ -150,8 +154,22 @@ fn main() -> ExitCode {
             //let args: Vec<String> = env::args().collect();
             if matches.free.len() != 2 {
                 print_usage_diff(exe_name, opts);
-                return ExitCode::from(2);
+                panic!("Missing the two files to compare, or maybe one of them was accidentally taken as an arg to some earlier option, if you forgot that arg.");
+                //return ExitCode::from(2);
             }
+            let file1_name=matches.free[0].clone();
+            let file2_name=matches.free[1].clone();
+            if matches.opt_count("label") > 2 {
+                panic!("too many file label options");
+            }
+            let labels=matches.opt_strs("label");
+            let label1=if labels.len() >= 1 {
+                &labels[0]
+            } else { &file1_name };
+            let label2=if labels.len() == 2 {
+                &labels[1]
+            } else { &file2_name };
+            eprintln!("Ignoring labels '{}' '{}'", label1, label2);
             //XXX: should fit isize because $ getconf ARG_MAX shows "2097152" aka 2MiB ...
             let u_last:isize = matches.opt_positions("u").last().map_or(-1, |v| *v as isize);
             //eprintln!("{}",u_last);//pos can be 0 because it's index
@@ -178,8 +196,9 @@ fn main() -> ExitCode {
             }
             eprintln!("Free: {} {:?}",matches.free.len(), matches.free);
 
-            let file1 = fs::read_to_string(&args[1]).expect("Failed to read file1");
-            let file2 = fs::read_to_string(&args[2]).expect("Failed to read file2");
+            let file1 = fs::read_to_string(file1_name.clone()).unwrap_or_else(|e| panic!("Failed to read file1 '{}' (pwd='{}'), error: '{}'", &file1_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
+            let file2 = fs::read_to_string(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}' (pwd='{}'), error: '{}'", &file2_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
+            //let file2 = fs::read_to_string(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}', error: '{}'", &file2_name, e));
 
             let patch = create_patch(&file1, &file2);
             let color: bool = false;
