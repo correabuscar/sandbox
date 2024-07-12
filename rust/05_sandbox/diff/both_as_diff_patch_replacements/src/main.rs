@@ -200,13 +200,16 @@ fn main() -> ExitCode {
             let file2 = fs::read(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}' (pwd='{}'), error: '{}'", &file2_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
             //let file2 = fs::read_to_string(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}', error: '{}'", &file2_name, e));
 
+            //TODO: maybe just have diffy get us the correct context length for unambiguity and delegate the patch making to original gnu 'diff' command with that context! But the problem is that's difficult to find out where to insert the new --unified=CONTEXTLENGTH_NUM in the original args due to possibly '--' or args coming after the 2 file names; or, just use getopts to understand all args and only pass the overrides to the original 'diff'; so `diff -u1 -u2 -u3 file1 file2 -u4`  will pass `diff -u4 file1 file2` only but this means all args must be understood via getopts crate here. And then if using 'diffy' to make the patch, must allow for --label to work, and -p is currently not possible.
             let patch = create_patch_bytes(&file1, &file2);
             let stdout = std::io::stdout(); // Get the handle to the standard output
             let mut handle = stdout.lock(); // Lock the handle for writing
-
-            use std::io::Write;
-            handle.write_all(patch.to_bytes().as_slice()).unwrap(); // Write the byte slice to the standard output
-            handle.flush().unwrap(); // Flush the output buffer to ensure all data is written
+            std::io::Write::write_all(&mut handle,
+            //use std::io::Write;
+            //handle.write_all(
+                patch.to_bytes().as_slice()).unwrap(); // Write the byte slice to the standard output
+            //handle.flush().unwrap(); // Flush the output buffer to ensure all data is written
+            std::io::Write::flush(&mut handle).unwrap();
             drop(handle);
             //let color: bool = false;
             //if color {
