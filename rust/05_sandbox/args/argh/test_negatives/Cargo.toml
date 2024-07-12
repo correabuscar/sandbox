@@ -1,0 +1,8 @@
+[package]
+name = "test_negatives"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+#argh="0.1.12"
+argh= { path = "/home/user/1tmp/argh/argh" }
