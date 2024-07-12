@@ -152,10 +152,12 @@ fn main() -> ExitCode {
                 print_usage_diff(exe_name, opts);
                 return ExitCode::from(2);
             }
-            let u_last = *matches.opt_positions("u").last().unwrap_or(&0);
-            let c_last = *matches.opt_positions("c").last().unwrap_or(&0);
-            let norm_last= *matches.opt_positions("normal").last().unwrap_or(&0);
-            if [u_last, c_last, norm_last].iter().filter(|&x| *x > 0).count() > 1 {
+            //XXX: should fit isize because $ getconf ARG_MAX shows "2097152" aka 2MiB ...
+            let u_last:isize = matches.opt_positions("u").last().map_or(-1, |v| *v as isize);
+            //eprintln!("{}",u_last);//pos can be 0 because it's index
+            let c_last = matches.opt_positions("c").last().map_or(-1, |v| *v as isize);
+            let norm_last= matches.opt_positions("normal").last().map_or(-1, |v| *v as isize);
+            if [u_last, c_last, norm_last].iter().filter(|&x| *x > -1).count() > 1 {
                 panic!("conflicting output style options");
             }
             let last_diff_type = if u_last > c_last {
@@ -166,7 +168,7 @@ fn main() -> ExitCode {
                 "No diff type specified, assuming --normal"
             };
             eprintln!("{}", last_diff_type);//FIXME: make this an enum?
-            let context_length = match matches.opt_strs("u").last() { //this catches the uppercase -U too! unclear why, maybe due to --unified being same?
+            let context_length = match matches.opt_strs("unified").last() { //this catches the uppercase -U too! unclear why, maybe due to --unified being same? and it matches the --unified as well, for what's worth. so either "u" or "unified" here is same.
                 Some(cl) => cl.parse::<i32>().expect(&format!("Context length '{}' isn't an i32 number.", cl)),
                 None => 3,
             };
