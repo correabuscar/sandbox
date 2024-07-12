@@ -1,8 +1,8 @@
 #![feature(panic_update_hook)]
 #![feature(rt)] // for std::rt::EXIT_CODE_ON_PANIC, needs: /patches/portage/dev-lang/rust.reused/2300_rust_exitcode_on_panic.patch
 
-use diffy::create_patch;
-use diffy::PatchFormatter;
+use diffy::create_patch_bytes;
+//use diffy::PatchFormatter;
 use diffy::{Patch, apply};
 use std::str;
 use std::env;
@@ -196,18 +196,25 @@ fn main() -> ExitCode {
             }
             eprintln!("Free: {} {:?}",matches.free.len(), matches.free);
 
-            let file1 = fs::read_to_string(file1_name.clone()).unwrap_or_else(|e| panic!("Failed to read file1 '{}' (pwd='{}'), error: '{}'", &file1_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
-            let file2 = fs::read_to_string(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}' (pwd='{}'), error: '{}'", &file2_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
+            let file1 = fs::read(file1_name.clone()).unwrap_or_else(|e| panic!("Failed to read file1 '{}' (pwd='{}'), error: '{}'", &file1_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
+            let file2 = fs::read(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}' (pwd='{}'), error: '{}'", &file2_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
             //let file2 = fs::read_to_string(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}', error: '{}'", &file2_name, e));
 
-            let patch = create_patch(&file1, &file2);
-            let color: bool = false;
-            if color {
-                let f = PatchFormatter::new().with_color();
-                print!("{}", f.fmt_patch(&patch));
-            } else {
-                print!("{}", patch);
-            }
+            let patch = create_patch_bytes(&file1, &file2);
+            let stdout = std::io::stdout(); // Get the handle to the standard output
+            let mut handle = stdout.lock(); // Lock the handle for writing
+
+            use std::io::Write;
+            handle.write_all(patch.to_bytes().as_slice()).unwrap(); // Write the byte slice to the standard output
+            handle.flush().unwrap(); // Flush the output buffer to ensure all data is written
+            drop(handle);
+            //let color: bool = false;
+            //if color {
+            //    let f = PatchFormatter::new().with_color();
+            //    print!("{}", f.fmt_patch(&patch));
+            //} else {
+            //    print!("{}", patch);
+            //}
             return ExitCode::SUCCESS;
         }, //diff
         "patch" => {
