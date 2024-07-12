@@ -204,12 +204,15 @@ fn main() -> ExitCode {
             let patch = create_patch_bytes(&file1, &file2);
             let stdout = std::io::stdout(); // Get the handle to the standard output
             let mut handle = stdout.lock(); // Lock the handle for writing
-            std::io::Write::write_all(&mut handle,
+            let handle_ref = &mut handle;
+            //std::io::Write::write_all(&mut handle,
+            std::io::Write::write_all(handle_ref,
             //use std::io::Write;
             //handle.write_all(
                 patch.to_bytes().as_slice()).unwrap(); // Write the byte slice to the standard output
             //handle.flush().unwrap(); // Flush the output buffer to ensure all data is written
-            std::io::Write::flush(&mut handle).unwrap();
+            //std::io::Write::flush(&mut handle).unwrap();
+            std::io::Write::flush(handle_ref).unwrap();
             drop(handle);
             //let color: bool = false;
             //if color {
