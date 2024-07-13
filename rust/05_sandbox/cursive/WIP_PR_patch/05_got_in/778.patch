@@ -1,0 +1,155 @@
+From d4247f804339a9adfeb7fe3b383e1d69bac9d51b Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Thu, 11 Apr 2024 10:43:43 +0200
+Subject: [PATCH 1/3] make it work with ncurses-rs >=6.0.1
+
+which means that ncurses-rs already has the
+needed changes in this PR:
+https://github.com/jeaye/ncurses-rs/pull/220
+and/or from this PR:
+https://github.com/jeaye/ncurses-rs/pull/218
+---
+ cursive/Cargo.toml               |  2 +-
+ cursive/src/backends/curses/n.rs | 34 ++++++++++++++++----------------
+ 2 files changed, 18 insertions(+), 18 deletions(-)
+
+diff --git a/cursive/Cargo.toml b/cursive/Cargo.toml
+index 1428b128..6a39c4ba 100644
+--- a/cursive/Cargo.toml
++++ b/cursive/Cargo.toml
+@@ -34,7 +34,7 @@ version = "2"
+ [dependencies.ncurses]
+ features = ["wide"]
+ optional = true
+-version = "5.99.0"
++version = "6.0.1"
+ 
+ [dependencies.pancurses]
+ features = ["wide"]
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index 17750b79..16cd65e7 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -357,28 +357,28 @@ impl backend::Backend for Backend {
+ 
+     fn set_effect(&self, effect: Effect) {
+         let style = match effect {
+-            Effect::Reverse => ncurses::A_REVERSE(),
+-            Effect::Simple => ncurses::A_NORMAL(),
+-            Effect::Dim => ncurses::A_DIM(),
+-            Effect::Bold => ncurses::A_BOLD(),
+-            Effect::Blink => ncurses::A_BLINK(),
+-            Effect::Italic => ncurses::A_ITALIC(),
+-            Effect::Strikethrough => ncurses::A_NORMAL(),
+-            Effect::Underline => ncurses::A_UNDERLINE(),
++            Effect::Reverse => ncurses::A_REVERSE,
++            Effect::Simple => ncurses::A_NORMAL,
++            Effect::Dim => ncurses::A_DIM,
++            Effect::Bold => ncurses::A_BOLD,
++            Effect::Blink => ncurses::A_BLINK,
++            Effect::Italic => ncurses::A_ITALIC,
++            Effect::Strikethrough => ncurses::A_NORMAL,
++            Effect::Underline => ncurses::A_UNDERLINE,
+         };
+         ncurses::attron(style);
+     }
+ 
+     fn unset_effect(&self, effect: Effect) {
+         let style = match effect {
+-            Effect::Reverse => ncurses::A_REVERSE(),
+-            Effect::Simple => ncurses::A_NORMAL(),
+-            Effect::Dim => ncurses::A_DIM(),
+-            Effect::Bold => ncurses::A_BOLD(),
+-            Effect::Blink => ncurses::A_BLINK(),
+-            Effect::Italic => ncurses::A_ITALIC(),
+-            Effect::Strikethrough => ncurses::A_NORMAL(),
+-            Effect::Underline => ncurses::A_UNDERLINE(),
++            Effect::Reverse => ncurses::A_REVERSE,
++            Effect::Simple => ncurses::A_NORMAL,
++            Effect::Dim => ncurses::A_DIM,
++            Effect::Bold => ncurses::A_BOLD,
++            Effect::Blink => ncurses::A_BLINK,
++            Effect::Italic => ncurses::A_ITALIC,
++            Effect::Strikethrough => ncurses::A_NORMAL,
++            Effect::Underline => ncurses::A_UNDERLINE,
+         };
+         ncurses::attroff(style);
+     }
+@@ -533,7 +533,7 @@ fn initialize_keymap() -> HashMap<i32, Event> {
+     }
+ 
+     // Ncurses provides a F1 variable, but no modifiers
+-    add_fn(ncurses::KEY_F1, Event::Key, &mut map);
++    add_fn(ncurses::KEY_F(1), Event::Key, &mut map);
+     add_fn(277, Event::Shift, &mut map);
+     add_fn(289, Event::Ctrl, &mut map);
+     add_fn(301, Event::CtrlShift, &mut map);
+
+From c02de5b4ab3de0a10041502e65a1ac4263b52cfb Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Thu, 11 Apr 2024 18:38:29 +0200
+Subject: [PATCH 2/3] get rid of a warning when using newterm
+
+newterm https://github.com/jeaye/ncurses-rs/blob/3aa22bc279e4929e3ab69d49f75a18eda3e431e9/src/lib.rs#L1023-L1029
+CString::new https://doc.rust-lang.org/std/ffi/struct.CString.html#method.new
+
+bubble up this newterm error
+
+as suggested here: https://github.com/gyscos/cursive/pull/778#discussion_r1617327653
+
+Co-authored-by: Alexandre Bury <alexandre.bury@gmail.com>
+
+preserve original error in the panic report
+
+otherwise, we'd not know why ncurses-rs newterm errored
+
+directly include the variable name in the format! expression
+
+as suggested here: https://github.com/gyscos/cursive/pull/778#discussion_r1617636632
+
+Co-authored-by: Alexandre Bury <alexandre.bury@gmail.com>
+---
+ cursive/src/backends/curses/n.rs | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index 16cd65e7..3a3410b3 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -110,7 +110,10 @@ impl Backend {
+             let path = CString::new(output_path).unwrap();
+             unsafe { libc::fopen(path.as_ptr(), mode.as_ptr()) }
+         };
+-        ncurses::newterm(None, output, input);
++        ncurses::newterm(None, output, input).map_err(|e| {
++            io::Error::new(io::ErrorKind::Other, format!("could not call newterm: {e}"))
++        })?;
++
+         // Enable keypad (like arrows)
+         ncurses::keypad(ncurses::stdscr(), true);
+ 
+
+From 0bd373d31e3a7ca821a27f596f03f74e2299ce70 Mon Sep 17 00:00:00 2001
+From: correabuscar <correabuscar+githubcommits@gmail.com>
+Date: Wed, 5 Jun 2024 18:08:21 +0200
+Subject: [PATCH 3/3] get rid of unused warning for addstr
+
+---
+ cursive/src/backends/curses/n.rs | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/cursive/src/backends/curses/n.rs b/cursive/src/backends/curses/n.rs
+index 3a3410b3..4ac2f308 100644
+--- a/cursive/src/backends/curses/n.rs
++++ b/cursive/src/backends/curses/n.rs
+@@ -405,7 +405,9 @@ impl backend::Backend for Backend {
+     }
+ 
+     fn print(&self, text: &str) {
+-        ncurses::addstr(text);
++        // &str is assured it doesn't contain any \0 aka nuls here due to PR 786
++        // thus we can ignore the return value and avoid warning: unused `Result` that must be used
++        let _ = ncurses::addstr(text);
+     }
+ }
+ 
