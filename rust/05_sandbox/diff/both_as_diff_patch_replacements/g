@@ -26,7 +26,7 @@ fi
 diff="$(realpath --no-symlinks -- ./diff)"
 patch="$(realpath --no-symlinks -- ./patch)"
 pushd "../diff"
-"$diff" workspace.rs.original_real workspace.rs.PATCHED_real > /tmp/le.patch  ; ec="$?"
+"$diff" -up workspace.rs.original_real workspace.rs.PATCHED_real > /tmp/le.patch  ; ec="$?"
 if test "$ec" != 0; then
   tput setaf 1 >&2
   echo "$diff failed with non-0 exit code '$ec'" >&2

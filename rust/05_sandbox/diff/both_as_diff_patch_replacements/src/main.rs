@@ -69,7 +69,7 @@ fn print_usage_diff(exe: &str, opts: Options) {
 
 const TEST_CUSTOM_EXIT_CODE:i32=82;
 
-struct Foo(bool);
+struct Foo(bool);//true if it should change exit code on drop
 impl Drop for Foo {
     fn drop(&mut self) {
         //eprintln!("cleaning up stuff(u should see this even during panics)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -189,11 +189,14 @@ fn get_callers_tree() -> Vec<u8> {
     output
 }
 
-fn show_all_args<S>(exe_name:&str, the_args: &[S])
+fn show_all_args<S>(exe_name:&str, the_args: &[S], save_to_file:bool)
     where S: AsRef<str> + std::fmt::Debug
 {
     let text=format!("exe name:'{}', passed args({}):{:?}\n", exe_name, the_args.len(), the_args);
     eprint!("{}", text);
+    if !save_to_file {
+        return;
+    }
     let log_file:&str=&format!("/var/log/{}.unhandled_args.log", exe_name);
     // Open a file in append mode
     let mut file = std::fs::OpenOptions::new()
@@ -218,6 +221,13 @@ fn show_all_args<S>(exe_name:&str, the_args: &[S])
         panic!("Can't write/append the last delimiter line text to file '{}', error: '{}'", log_file, e)
     );
     drop(file);
+}
+
+fn insert_sorted(list: &mut Vec<usize>, value: usize) {
+    // Find the insertion point using binary search
+    let pos = list.binary_search(&value).unwrap_or_else(|e| e);
+    // Insert the value at the correct position
+    list.insert(pos, value);
 }
 
 fn main() -> ExitCode {
@@ -245,14 +255,23 @@ fn main() -> ExitCode {
         //println!("Print custom message and execute panic handler as usual");
         prev(info);
         //println!("fooooooooooooo");//yes this is reached
-        //FIXME: was cleanup executed tho?! not if I exit here! but anyway the cleanup func is https://github.com/rust-lang/rust/blob/59a4f02f836f74c4cf08f47d76c9f6069a2f8276/library/std/src/rt.rs#L105 and executed by line 146 below.
+        //XXX: was cleanup executed tho?! NOT if I exit here! but anyway the cleanup func is https://github.com/rust-lang/rust/blob/59a4f02f836f74c4cf08f47d76c9f6069a2f8276/library/std/src/rt.rs#L105 and executed by line 146 below.
         //use std::io::Write;//else can't see: no method named `flush` found for struct `Stdout` in the current scope: method not found in `Stdout`
         //std::io::stdout().flush().unwrap();
         //std::io::stderr().flush().unwrap();
         //XXX: using std::process::exit() does call rt::cleanup which flushes stdout/stderr! however it won't run destructors like drop() for Foo, but if you use /patches/portage/dev-lang/rust.reused/2300_rust_exitcode_on_panic.patch then you can set the exit code that panic uses (was 101) by doing this:
         //std::process::exit(2);
         //XXX: letting this fall thru allows it to exit with the exit code we set in std::rt::EXIT_CODE_ON_PANIC
+        let args: Vec<String> = env::args().collect();
+
+        let exe_name_as_called= &args[0];
+        let exe_name=Path::new(&exe_name_as_called).file_stem().and_then(|stem| stem.to_str()).expect("basename");
+        //let _ = std::panic::catch_unwind(|| show_all_args(exe_name, &args[1..], true));//no effect, i'm already in a panic
+        if ["diff", "patch"].contains(&exe_name) {
+            show_all_args(exe_name, &args[1..], true);
+        }
     });
+
     let args: Vec<String> = env::args().collect();
 
     let exe_name_as_called:String = std::env::args().next().unwrap_or_else(|| "unknown".to_string());
@@ -265,6 +284,7 @@ fn main() -> ExitCode {
     let mut opts = Options::new();
     match exe_name {
         "diff" => {
+            opts.opt("u", "unified", "output NUM (default 3) lines of unified contex", "", HasArg::No, Occur::Multi);
             opts.opt("u", "unified", "output NUM (default 3) lines of unified contex", "NUM", HasArg::Maybe, Occur::Multi);
             opts.opt("U", "unified", "output NUM (default 3) lines of unified contex", "NUM", HasArg::Maybe, Occur::Multi);
             opts.opt("c", "context", "output NUM (default 3) lines of copied contex", "NUM", HasArg::Maybe, Occur::Multi);
@@ -284,7 +304,7 @@ fn main() -> ExitCode {
                 Ok(m) => { m }
                 Err(f) => {
                     print_usage_diff(exe_name, opts);
-                    show_all_args(exe_name, the_args);
+                    show_all_args(exe_name, the_args, true);
                     panic!("{}", f.to_string());
                 }
             };
@@ -297,14 +317,14 @@ fn main() -> ExitCode {
             //let args: Vec<String> = env::args().collect();
             if matches.free.len() != 2 {
                 print_usage_diff(exe_name, opts);
-                show_all_args(exe_name, the_args);
+                show_all_args(exe_name, the_args, true);
                 panic!("Missing the two files to compare, or maybe one of them was accidentally taken as an arg to some earlier option, if you forgot that arg.");
                 //return ExitCode::from(2);
             }
             let file1_name=matches.free[0].clone();
             let file2_name=matches.free[1].clone();
             if matches.opt_count("label") > 2 {
-                show_all_args(exe_name, the_args);
+                show_all_args(exe_name, the_args, true);
                 panic!("too many file label options");
             }
             let labels=matches.opt_strs("label");
@@ -314,34 +334,87 @@ fn main() -> ExitCode {
             let label2=if labels.len() == 2 {
                 &labels[1]
             } else { &file2_name };
-            eprintln!("Ignoring labels '{}' '{}'", label1, label2);
-            //XXX: should fit isize because $ getconf ARG_MAX shows "2097152" aka 2MiB ...
-            let u_last:isize = matches.opt_positions("u").last().map_or(-1, |v| *v as isize);
-            //eprintln!("{}",u_last);//pos can be 0 because it's index
-            let c_last = matches.opt_positions("c").last().map_or(-1, |v| *v as isize);
-            let norm_last= matches.opt_positions("normal").last().map_or(-1, |v| *v as isize);
-            if [u_last, c_last, norm_last].iter().filter(|&x| *x > -1).count() > 1 {
-                show_all_args(exe_name, the_args);
-                panic!("conflicting output style options");
+            if matches.opt_present("label") {//FIXME: later, labels will be used actually!
+                eprintln!("Ignoring labels '{}' '{}'", label1, label2);
             }
-            let last_diff_type = if u_last > c_last {
-                "Unified diff"
-            } else if c_last > 0 {
-                "Context diff"
+            if matches.opt_present("p") {
+                eprintln!("Ignoring --show-c-function aka -p");
+            }
+            //an array of args that choose a type of output, but only one of which can be chosen, else they'd be conflicting!
+            const DEE_SIZE:usize=6;
+            let array_of_output_types:[&str; DEE_SIZE]=["u","c","normal","e","n","y"];
+            //let array_of_pos_of_the_args=[-1; array_of_output_types.len()];
+            //XXX: should fit isize because $ getconf ARG_MAX shows "2097152" aka 2MiB ...
+            //let mut array_of_pos_of_the_args:[isize;DEE_SIZE]=[-1; DEE_SIZE];
+            //let mut vec_of_last_poses_sorted:Vec<usize>=Vec::with_capacity(DEE_SIZE);
+            //assert_eq!(array_of_pos_of_the_args.len(), array_of_output_types.len());
+            assert_eq!(array_of_output_types.len(), DEE_SIZE);
+            //FIXME: need a better way, HashSet? Vec?
+            let mut highest_pos:isize=-1; // the highest position of one of the output_type args! is the overriding one!
+            let mut overridden_output_type_is:&str="normal";//by default
+            let mut count_of_found_types=0;
+            for index in 0..DEE_SIZE {
+                let current_output_type=array_of_output_types[index];
+                if let Some(last_pos)=matches.opt_positions(current_output_type).last() {
+                    //as isize;//.map_or(-1, |v| *v as isize);
+                    //array_of_pos_of_the_args[index]= *last_pos as isize;
+                    //vec_of_last_poses.push(*last_pos);
+                    let deref:isize=*last_pos as isize;
+                    //insert_sorted(&mut vec_of_last_poses_sorted, *last_pos);
+                    assert_ne!(highest_pos, deref,"cannot be the same as next arg's pos which is at least higher by 1");
+                    if highest_pos < deref {
+                        highest_pos=deref;
+                        overridden_output_type_is=current_output_type;
+                    }
+                    count_of_found_types+=1;
+                //} else {
+                }
+            }
+            //if vec_of_last_poses_sorted.len() > 1 {
+            if count_of_found_types > 1 {
+                show_all_args(exe_name, the_args, true);
+                panic!("conflicting output style options");
             } else {
-                "No diff type specified, assuming --normal"
-            };
-            eprintln!("{}", last_diff_type);//FIXME: make this an enum?
+                if highest_pos >= 0 {
+                    // XXX: position of the arg isn't the same as argv[position], for example: `./diff -a --has_arg 1 -b` has the `-b` at position 2, because `--has_arg 1` is considered one position, and position is 0-based, so it's seeing 3 args at positions 0,1, and 2.
+                    //eprintln!("Arg at position '{}' overrides output type to '{}'", highest_pos, overridden_output_type_is);
+                    eprintln!("Arg at position '{}' (which is 0-based and eg. `--foo 99` is 1 arg) overrides output type to '{}'", highest_pos, overridden_output_type_is);
+                } else {
+                    eprintln!("No output type overriding args, defaulting to '{}'", overridden_output_type_is);
+                }
+            }
+            //let u_last:isize = matches.opt_positions("u").last().map_or(-1, |v| *v as isize);
+            ////eprintln!("{}",u_last);//pos can be 0 because it's index
+            //let c_last = matches.opt_positions("c").last().map_or(-1, |v| *v as isize);
+            //let norm_last= matches.opt_positions("normal").last().map_or(-1, |v| *v as isize);
+            //if [u_last, c_last, norm_last].iter().filter(|&x| *x > -1).count() > 1 {
+            //let last_diff_type = if u_last > c_last {
+            //let last_diff_type:&str=overridden_output_type_is;
+//                "Unified diff"
+//            } else if c_last > 0 {
+//                "Context diff"
+//            } else {
+//                "No diff type specified, assuming --normal"
+//            };
+            //eprintln!("{}", last_diff_type);//obsoleteFIXME: make this an enum?
+            //eprintln!("{}", overridden_output_type_is);
             let context_length = match matches.opt_strs("unified").last() { //this catches the uppercase -U too! unclear why, maybe due to --unified being same? and it matches the --unified as well, for what's worth. so either "u" or "unified" here is same.
                 Some(cl) => cl.parse::<i32>().expect(&format!("Context length '{}' isn't an i32 number.", cl)),
                 None => 3,
             };
             eprintln!("Context length: {}", context_length);
             if context_length < 0 {
-                show_all_args(exe_name, the_args);
+                show_all_args(exe_name, the_args, true);
                 panic!("negative context length given");
             }
             eprintln!("Free: {} {:?}",matches.free.len(), matches.free);
+            if overridden_output_type_is != "u" {
+                show_all_args(exe_name, the_args, true);
+                panic!("Unsupported output type via rust, TODO: maybe delegate to real '{}' ?", exe_name);
+            } else {
+                //ok
+                show_all_args(exe_name, the_args, false);
+            }
 
             let file1 = fs::read(file1_name.clone()).unwrap_or_else(|e| panic!("Failed to read file1 '{}' (pwd='{}'), error: '{}'", &file1_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
             let file2 = fs::read(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}' (pwd='{}'), error: '{}'", &file2_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
