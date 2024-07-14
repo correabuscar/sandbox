@@ -454,9 +454,39 @@ fn main() -> ExitCode {
                 show_all_args(exe_name, the_args, false);
             }
 
-            let file1 = fs::read(file1_name.clone()).unwrap_or_else(|e| panic!("Failed to read file1 '{}' (pwd='{}'), error: '{}'", &file1_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
-            let file2 = fs::read(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}' (pwd='{}'), error: '{}'", &file2_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
+            //let file1 = fs::read(file1_name.clone()).unwrap_or_else(|e| panic!("Failed to read file1 '{}' (pwd='{}'), error: '{}'", &file1_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
+            let file1 = if file1_name == "-" {
+                let mut buffer = Vec::new();
+                use std::io::Read;
+                std::io::stdin().read_to_end(&mut buffer).unwrap_or_else(|e| panic!("Failed to read from stdin, error: '{}'", e));
+                buffer
+            } else {
+                fs::read(file1_name.clone()).unwrap_or_else(|e| {
+                    panic!(
+                        "Failed to read file1 '{}' (pwd='{}'), error: '{}'",
+                        &file1_name,
+                        env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()),
+                        e
+                    )
+                })
+            };
+            //let file2 = fs::read(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}' (pwd='{}'), error: '{}'", &file2_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
             //let file2 = fs::read_to_string(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}', error: '{}'", &file2_name, e));
+            let file2 = if file2_name == "-" {
+                let mut buffer = Vec::new();
+                use std::io::Read;
+                std::io::stdin().read_to_end(&mut buffer).unwrap_or_else(|e| panic!("Failed to read from stdin, error: '{}'", e));
+                buffer
+            } else {
+                fs::read(file2_name.clone()).unwrap_or_else(|e| {
+                    panic!(
+                        "Failed to read file2 '{}' (pwd='{}'), error: '{}'",
+                        &file2_name,
+                        env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()),
+                        e
+                    )
+                })
+            };
 
             //TODO: maybe just have diffy get us the correct context length for unambiguity and delegate the patch making to original gnu 'diff' command with that context length(aka lines of context)! But the problem is that's difficult to find out where to insert the new --unified=CONTEXTLENGTH_NUM in the original args due to possibly '--' or args coming after the 2 file names; or, just use getopts to understand all args and only pass the overrides to the original 'diff'; so `diff -u1 -u2 -u3 file1 file2 -u4`  will pass `diff -u4 file1 file2` only but this means all args must be understood via getopts crate here. Another thing is, that it might be better to use diffy due to rust safety. And then if using 'diffy' to make the patch, must allow for --label to work, and -p is currently not possible and for some reason gnu 'diff' does get it right, most of the time, for rust too.
             let patch = create_patch_bytes(&file1, &file2);
