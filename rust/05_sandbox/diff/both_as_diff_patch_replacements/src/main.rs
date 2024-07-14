@@ -223,12 +223,12 @@ fn show_all_args<S>(exe_name:&str, the_args: &[S], save_to_file:bool)
     drop(file);
 }
 
-fn insert_sorted(list: &mut Vec<usize>, value: usize) {
-    // Find the insertion point using binary search
-    let pos = list.binary_search(&value).unwrap_or_else(|e| e);
-    // Insert the value at the correct position
-    list.insert(pos, value);
-}
+//fn insert_sorted(list: &mut Vec<usize>, value: usize) {
+//    // Find the insertion point using binary search
+//    let pos = list.binary_search(&value).unwrap_or_else(|e| e);
+//    // Insert the value at the correct position
+//    list.insert(pos, value);
+//}
 
 fn main() -> ExitCode {
     let _f = Foo(false);// to see if dropped on panic!
@@ -284,7 +284,7 @@ fn main() -> ExitCode {
     let mut opts = Options::new();
     match exe_name {
         "diff" => {
-            opts.opt("u", "unified", "output NUM (default 3) lines of unified contex", "", HasArg::No, Occur::Multi);
+            //opts.opt("u", "unified", "output NUM (default 3) lines of unified contex", "", HasArg::No, Occur::Multi);
             opts.opt("u", "unified", "output NUM (default 3) lines of unified contex", "NUM", HasArg::Maybe, Occur::Multi);
             opts.opt("U", "unified", "output NUM (default 3) lines of unified contex", "NUM", HasArg::Maybe, Occur::Multi);
             opts.opt("c", "context", "output NUM (default 3) lines of copied contex", "NUM", HasArg::Maybe, Occur::Multi);
@@ -315,10 +315,16 @@ fn main() -> ExitCode {
                 return ExitCode::SUCCESS;
             }
             //let args: Vec<String> = env::args().collect();
-            if matches.free.len() != 2 {
+            let hm=matches.free.len();
+            if hm != 2 {
                 print_usage_diff(exe_name, opts);
                 show_all_args(exe_name, the_args, true);
-                panic!("Missing the two files to compare, or maybe one of them was accidentally taken as an arg to some earlier option, if you forgot that arg.");
+                let extra=if hm<2 {
+                    "Missing the two files to compare, or maybe one of them was accidentally taken as an arg to some earlier option, if you forgot that arg.".to_string()
+                } else {
+                    format!("Too many files to compare, expecting exactly 2, got {}",hm)
+                };
+                panic!("{}", extra);
                 //return ExitCode::from(2);
             }
             let file1_name=matches.free[0].clone();
@@ -398,9 +404,25 @@ fn main() -> ExitCode {
 //            };
             //eprintln!("{}", last_diff_type);//obsoleteFIXME: make this an enum?
             //eprintln!("{}", overridden_output_type_is);
+            eprintln!("{:?}", matches.opt_strs("unified"));
+            const DEFAULT_CONTEXT_LENGTH_WHEN_UNSPECIFIED:i32=3;
             let context_length = match matches.opt_strs("unified").last() { //this catches the uppercase -U too! unclear why, maybe due to --unified being same? and it matches the --unified as well, for what's worth. so either "u" or "unified" here is same.
-                Some(cl) => cl.parse::<i32>().expect(&format!("Context length '{}' isn't an i32 number.", cl)),
-                None => 3,
+                Some(cl) => {
+                    let res= cl.parse::<i32>();
+                    match res {
+                        Ok(lines) => {
+                            lines
+                        },
+                        Err(e) => {
+                            //FIXME: this is lame hack to allow -up because getopts can't allow it, it expects -uNUM
+                            if !["p"].contains(&cl.as_str()) {
+                                panic!("Context length '{}' isn't an i32 number, error: '{}'", cl, e);
+                            }
+                            DEFAULT_CONTEXT_LENGTH_WHEN_UNSPECIFIED
+                        }
+                    }//match
+                },
+                None => DEFAULT_CONTEXT_LENGTH_WHEN_UNSPECIFIED,
             };
             eprintln!("Context length: {}", context_length);
             if context_length < 0 {
