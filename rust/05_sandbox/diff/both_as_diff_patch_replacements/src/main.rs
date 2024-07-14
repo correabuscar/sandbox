@@ -245,6 +245,8 @@ fn show_all_args<S>(exe_name:&str, the_args: &[S], save_to_file:bool)
 //    // Insert the value at the correct position
 //    list.insert(pos, value);
 //}
+
+/// assumes filename '-' is stdin, else it's the exact given filename
 fn read_buffer_from_file(file_name:&str) -> Vec<u8> {
     if file_name == "-" {
         let mut buffer = Vec::new();
@@ -278,7 +280,7 @@ fn main() -> ExitCode {
 //        // Get the default panic hook and invoke it
 //        default_hook(panic_info);
 //
-//        // FIXME: how about cleanup and exit with exit code 2 instead of 101?
+//        // doneFIXME: how about cleanup and exit with exit code 2 instead of 101?
 //        // Exit with a specific exit code (2) during panic
 //        std::process::exit(2); //2 means trouble in diff/patch cmdlines
 //    }));
@@ -382,31 +384,22 @@ fn main() -> ExitCode {
             //an array of args that choose a type of output, but only one of which can be chosen, else they'd be conflicting!
             const DEE_SIZE:usize=6;
             let array_of_output_types:[&str; DEE_SIZE]=["u","c","normal","e","n","y"];
-            //let array_of_pos_of_the_args=[-1; array_of_output_types.len()];
-            //XXX: should fit isize because $ getconf ARG_MAX shows "2097152" aka 2MiB ...
-            //let mut array_of_pos_of_the_args:[isize;DEE_SIZE]=[-1; DEE_SIZE];
-            //let mut vec_of_last_poses_sorted:Vec<usize>=Vec::with_capacity(DEE_SIZE);
-            //assert_eq!(array_of_pos_of_the_args.len(), array_of_output_types.len());
             assert_eq!(array_of_output_types.len(), DEE_SIZE);
-            //FIXME: need a better way, HashSet? Vec?
+            //mehFIXME: need a better way, HashSet? Vec?
+            //XXX: should fit isize because $ getconf ARG_MAX shows "2097152" aka 2MiB ...
             let mut highest_pos:isize=-1; // the highest position of one of the output_type args! is the overriding one!
             let mut overridden_output_type_is:&str="normal";//by default
             let mut count_of_found_types=0;
             for index in 0..DEE_SIZE {
                 let current_output_type=array_of_output_types[index];
                 if let Some(last_pos)=matches.opt_positions(current_output_type).last() {
-                    //as isize;//.map_or(-1, |v| *v as isize);
-                    //array_of_pos_of_the_args[index]= *last_pos as isize;
-                    //vec_of_last_poses.push(*last_pos);
                     let deref:isize=*last_pos as isize;
-                    //insert_sorted(&mut vec_of_last_poses_sorted, *last_pos);
                     assert_ne!(highest_pos, deref,"cannot be the same as next arg's pos which is at least higher by 1");
                     if highest_pos < deref {
                         highest_pos=deref;
                         overridden_output_type_is=current_output_type;
                     }
                     count_of_found_types+=1;
-                //} else {
                 }
             }
             //if vec_of_last_poses_sorted.len() > 1 {
@@ -416,28 +409,12 @@ fn main() -> ExitCode {
             } else {
                 if highest_pos >= 0 {
                     // XXX: position of the arg isn't the same as argv[position], for example: `./diff -a --has_arg 1 -b` has the `-b` at position 2, because `--has_arg 1` is considered one position, and position is 0-based, so it's seeing 3 args at positions 0,1, and 2.
-                    //eprintln!("Arg at position '{}' overrides output type to '{}'", highest_pos, overridden_output_type_is);
                     eprintln!("Arg at position '{}' (which is 0-based and eg. `--foo 99` is 1 arg) overrides output type to '{}'", highest_pos, overridden_output_type_is);
                 } else {
                     eprintln!("No output type overriding args, defaulting to '{}'", overridden_output_type_is);
                 }
             }
-            //let u_last:isize = matches.opt_positions("u").last().map_or(-1, |v| *v as isize);
-            ////eprintln!("{}",u_last);//pos can be 0 because it's index
-            //let c_last = matches.opt_positions("c").last().map_or(-1, |v| *v as isize);
-            //let norm_last= matches.opt_positions("normal").last().map_or(-1, |v| *v as isize);
-            //if [u_last, c_last, norm_last].iter().filter(|&x| *x > -1).count() > 1 {
-            //let last_diff_type = if u_last > c_last {
-            //let last_diff_type:&str=overridden_output_type_is;
-//                "Unified diff"
-//            } else if c_last > 0 {
-//                "Context diff"
-//            } else {
-//                "No diff type specified, assuming --normal"
-//            };
-            //eprintln!("{}", last_diff_type);//obsoleteFIXME: make this an enum?
-            //eprintln!("{}", overridden_output_type_is);
-            eprintln!("{:?}", matches.opt_strs("unified"));
+            //eprintln!("{:?}", matches.opt_strs("unified"));
             const DEFAULT_CONTEXT_LENGTH_WHEN_UNSPECIFIED:i32=3;
             let context_length = match matches.opt_strs("unified").last() { //this catches the uppercase -U too! unclear why, maybe due to --unified being same? and it matches the --unified as well, for what's worth. so either "u" or "unified" here is same.
                 Some(cl) => {
@@ -474,38 +451,6 @@ fn main() -> ExitCode {
             //let file1 = fs::read(file1_name.clone()).unwrap_or_else(|e| panic!("Failed to read file1 '{}' (pwd='{}'), error: '{}'", &file1_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
             let file1_buf:Vec<u8>=read_buffer_from_file(&file1_name);
             let file2_buf:Vec<u8>=read_buffer_from_file(&file2_name);
-//            let file1 = if file1_name == "-" {
-//                let mut buffer = Vec::new();
-//                use std::io::Read;
-//                std::io::stdin().read_to_end(&mut buffer).unwrap_or_else(|e| panic!("Failed to read from stdin, error: '{}'", e));
-//                buffer
-//            } else {
-//                fs::read(file1_name.clone()).unwrap_or_else(|e| {
-//                    panic!(
-//                        "Failed to read file1 '{}' (pwd='{}'), error: '{}'",
-//                        &file1_name,
-//                        env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()),
-//                        e
-//                    )
-//                })
-//            };
-//            //let file2 = fs::read(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}' (pwd='{}'), error: '{}'", &file2_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
-//            //let file2 = fs::read_to_string(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}', error: '{}'", &file2_name, e));
-//            let file2 = if file2_name == "-" {
-//                let mut buffer = Vec::new();
-//                use std::io::Read;
-//                std::io::stdin().read_to_end(&mut buffer).unwrap_or_else(|e| panic!("Failed to read from stdin, error: '{}'", e));
-//                buffer
-//            } else {
-//                fs::read(file2_name.clone()).unwrap_or_else(|e| {
-//                    panic!(
-//                        "Failed to read file2 '{}' (pwd='{}'), error: '{}'",
-//                        &file2_name,
-//                        env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()),
-//                        e
-//                    )
-//                })
-//            };
 
             //TODO: maybe just have diffy get us the correct context length for unambiguity and delegate the patch making to original gnu 'diff' command with that context length(aka lines of context)! But the problem is that's difficult to find out where to insert the new --unified=CONTEXTLENGTH_NUM in the original args due to possibly '--' or args coming after the 2 file names; or, just use getopts to understand all args and only pass the overrides to the original 'diff'; so `diff -u1 -u2 -u3 file1 file2 -u4`  will pass `diff -u4 file1 file2` only but this means all args must be understood via getopts crate here. Another thing is, that it might be better to use diffy due to rust safety. And then if using 'diffy' to make the patch, must allow for --label to work, and -p is currently not possible and for some reason gnu 'diff' does get it right, most of the time, for rust too.
             let patch = create_patch_bytes(&file1_buf, &file2_buf);
@@ -521,6 +466,7 @@ fn main() -> ExitCode {
             //std::io::Write::flush(&mut handle).unwrap();
             std::io::Write::flush(handle_ref).unwrap();
             drop(handle);
+            //TODO: allow --color[=WHEN],  maybe pipe to colordiff ? else it seems to need utf8 string
             //let color: bool = false;
             //if color {
             //    let f = PatchFormatter::new().with_color();
