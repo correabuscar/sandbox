@@ -197,6 +197,22 @@ fn show_all_args<S>(exe_name:&str, the_args: &[S], save_to_file:bool)
     if !save_to_file {
         return;
     }
+
+    //doneTODO: maybe lock so multiple threads can't call this at same time?
+    // Define a static mutex that is shared across all calls to this function
+    use std::sync::Mutex;
+    static FUNCTION_MUTEX: Mutex<()> = Mutex::new(());
+    // Lock the mutex before executing the function
+    let _guard = FUNCTION_MUTEX.lock().unwrap();
+
+    use std::sync::atomic::{AtomicBool, Ordering};
+    static ALREADY_SAVED:AtomicBool=AtomicBool::new(false);
+    if ALREADY_SAVED.load(Ordering::Relaxed) {
+        return;
+    } else {
+        ALREADY_SAVED.store(true, Ordering::Relaxed);
+    }
+
     let log_file:&str=&format!("/var/log/{}.unhandled_args.log", exe_name);
     // Open a file in append mode
     let mut file = std::fs::OpenOptions::new()
