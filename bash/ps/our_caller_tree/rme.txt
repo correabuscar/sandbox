@@ -1,0 +1,3 @@
+for in-rust version of this, see:
+/home/user/sandbox/rust/05_sandbox/diff/both_as_diff_patch_replacements/
+should be in main.rs via ./e

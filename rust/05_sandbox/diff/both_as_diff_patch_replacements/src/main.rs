@@ -79,6 +79,147 @@ impl Drop for Foo {
     }
 }
 
+
+fn read_cmdline_args(pid: u32) -> Vec<Vec<u8>> {
+    use std::fs::File;
+    use std::io::Read;
+    let path = format!("/proc/{}/cmdline", pid);
+    let mut file = File::open(&path).unwrap_or_else(|e| panic!("Couldn't open file '{}', error: '{}'", &path, e));
+
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer).unwrap_or_else(|e| panic!("Couldn't read from opened file '{}', error: '{}'", &path, e));
+
+    let buf_len:usize=buffer.len();
+    if buf_len <= 0 { // < kept in case it changes type to eg. isize in the future!
+        panic!("Read no chars from file '{}'", path);
+    }
+    let without_last_element:usize=buf_len-1;
+    // Split the buffer by null characters into arguments
+    // but split will add an extra empty element if the last char is \0 which is always is
+    let args: Vec<Vec<u8>> = buffer[..without_last_element]
+        .split(|&b| b == b'\0')
+        //.filter(|slice| !slice.is_empty())
+        .map(|slice| {
+            let mut arg = Vec::with_capacity(slice.len() + 2); // +2 for single quotes
+
+            // Append single quote
+            arg.push(b'\'');
+            // Append argument slice
+            arg.extend(slice);
+            // Append single quote
+            arg.push(b'\'');
+
+            arg
+        }).collect();
+
+    return args;
+}
+
+fn find_parent_pid(pid: u32) -> u32 {
+    use std::fs::File;
+    use std::io::{BufRead, BufReader};
+    // Construct the path to the stat file
+    let path = format!("/proc/{}/stat", pid);
+    let file = File::open(&path).unwrap_or_else(|e| panic!("Couldn't open file '{}', error: '{}'", &path, e));
+    let reader = BufReader::new(file);
+
+    // Read the first line (which should be the only line in stat)
+    // Attempt to read the first line and handle errors
+    let line = match reader.lines().next() {
+        Some(Ok(line)) => line,
+        Some(Err(e)) => panic!("Error reading line from file '{}', error: '{}'", path, e),
+        None => panic!("Empty file: '{}'", path),
+    };
+
+    // Split the line by spaces into fields
+    let fields: Vec<&str> = line.split_whitespace().collect();
+
+    // Parse the fourth field as u32 (which is the PPID)
+    if let Some(ppid_str) = fields.get(3) {
+        match ppid_str.parse::<u32>() {
+            Ok(ppid) => return ppid,
+            Err(e) => panic!("Couldn't parse the 4th whitespace-separated field as u32 in file '{}', error: '{}'", path, e),
+        };
+    } else {
+        panic!("Couldn't read the 4th whitespace-separated field in file '{}'", path);
+    }
+}
+
+fn get_callers_tree() -> Vec<u8> {
+    const EXPECTED_INITIAL_DEPTH:usize=15;
+    use std::collections::HashSet;
+    fn recurser(pid:u32, processed_pids: &mut HashSet<u32>, indent: &mut String, output: &mut Vec<u8>) {
+        /* $ sysctl kernel.pid_max
+           kernel.pid_max = 4194304
+        */
+        if processed_pids.contains(&pid) {
+            eprintln!("Avoided infinite loop for pid '{}' due to bad coding!(this msg is from rust binary, not the bash script)", pid);
+            return;
+        } else {
+            processed_pids.insert(pid);
+        }
+        let args_of_pid=read_cmdline_args(pid);
+        let how_many_args=args_of_pid.len();
+        output.extend(format!("{}'{}'-'{}'-", indent, pid, how_many_args).bytes());
+        let mut count=0;
+        for each in args_of_pid {
+            count+=1;
+            output.extend(each);
+            if count<how_many_args {
+                output.extend(b" ");
+            }
+        }
+        output.extend(b"\n");
+        let parent_pid=find_parent_pid(pid);
+        if parent_pid > 0 {
+            indent.push(' ');
+            recurser(parent_pid, processed_pids, indent, output);
+        }//else well we were already at root pid, likely pid 1, so no other pid is its parent!
+    }
+
+    //let output:String = String::with_capacity(1024).push_str(" Our callers:\n");
+    let mut output: Vec<u8> = Vec::with_capacity(1024);
+    output.extend(b" Our callers:\n");
+    //let processed_pids: Vec<u32>=Vec::with_capacity(EXPECTED_INITIAL_DEPTH);
+    let mut processed_pids: HashSet<u32> = HashSet::with_capacity(EXPECTED_INITIAL_DEPTH);
+    let mut indent:String=String::with_capacity(1+EXPECTED_INITIAL_DEPTH);
+    indent.push(' ');//because 'Our callers' has an indent for 1 already.
+    indent.push(' ');//start from indent 1
+    recurser(std::process::id(), &mut processed_pids, &mut indent, &mut output);
+    output
+}
+
+fn show_all_args<S>(exe_name:&str, the_args: &[S])
+    where S: AsRef<str> + std::fmt::Debug
+{
+    let text=format!("exe name:'{}', passed args({}):{:?}\n", exe_name, the_args.len(), the_args);
+    eprint!("{}", text);
+    let log_file:&str=&format!("/var/log/{}.unhandled_args.log", exe_name);
+    // Open a file in append mode
+    let mut file = std::fs::OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(log_file).unwrap_or_else(|e| panic!("Can't create or append to file '{}', error: '{}'", log_file, e));
+    // Write to file
+    std::io::Write::write_all(&mut file, text.as_bytes()).unwrap_or_else(|e|
+        panic!("Can't write/append the first text to file '{}', error: '{}'", log_file, e)
+    );
+    std::io::Write::write_all(&mut file, &get_callers_tree()).unwrap_or_else(|e|
+        panic!("Can't write/append the callers tree to file '{}', error: '{}'", log_file, e)
+    );
+    //let mut long_delim_line=String::with_capacity(80);//"=".repeat(79);
+    let mut line = String::with_capacity(80);
+    for _ in 0..79 {
+        line.push('=');
+    }
+    line.push('\n');
+    //long_delim_line.push('\n');
+    std::io::Write::write_all(&mut file, line.as_bytes()).unwrap_or_else(|e|
+        panic!("Can't write/append the last delimiter line text to file '{}', error: '{}'", log_file, e)
+    );
+    drop(file);
+}
+
 fn main() -> ExitCode {
     let _f = Foo(false);// to see if dropped on panic!
     // Set the RUST_BACKTRACE environment variable to enable backtrace
@@ -138,11 +279,13 @@ fn main() -> ExitCode {
             opts.opt("W", "width", "output at most NUM (default 130) print columns", "NUM", HasArg::Yes, Occur::Optional);//real 'diff' won't allow two -W unless they've same NUM, but we simplify by not allowing two -W
             opts.opt("s", "report-identical-files", "report only when two files are the same (doesn't output a patch thus doesn't try to gen.unambiguous hunks)", "", HasArg::No, Occur::Multi);
             opts.optflag("h", "help", "print this help text");
-            let matches = match opts.parse(&args[1..]) {
+            let the_args=&args[1..];
+            let matches = match opts.parse(the_args) {
                 Ok(m) => { m }
                 Err(f) => {
                     print_usage_diff(exe_name, opts);
-                    panic!("{}", f.to_string())
+                    show_all_args(exe_name, the_args);
+                    panic!("{}", f.to_string());
                 }
             };
             if matches.opt_present("h") {
@@ -154,12 +297,14 @@ fn main() -> ExitCode {
             //let args: Vec<String> = env::args().collect();
             if matches.free.len() != 2 {
                 print_usage_diff(exe_name, opts);
+                show_all_args(exe_name, the_args);
                 panic!("Missing the two files to compare, or maybe one of them was accidentally taken as an arg to some earlier option, if you forgot that arg.");
                 //return ExitCode::from(2);
             }
             let file1_name=matches.free[0].clone();
             let file2_name=matches.free[1].clone();
             if matches.opt_count("label") > 2 {
+                show_all_args(exe_name, the_args);
                 panic!("too many file label options");
             }
             let labels=matches.opt_strs("label");
@@ -176,6 +321,7 @@ fn main() -> ExitCode {
             let c_last = matches.opt_positions("c").last().map_or(-1, |v| *v as isize);
             let norm_last= matches.opt_positions("normal").last().map_or(-1, |v| *v as isize);
             if [u_last, c_last, norm_last].iter().filter(|&x| *x > -1).count() > 1 {
+                show_all_args(exe_name, the_args);
                 panic!("conflicting output style options");
             }
             let last_diff_type = if u_last > c_last {
@@ -192,6 +338,7 @@ fn main() -> ExitCode {
             };
             eprintln!("Context length: {}", context_length);
             if context_length < 0 {
+                show_all_args(exe_name, the_args);
                 panic!("negative context length given");
             }
             eprintln!("Free: {} {:?}",matches.free.len(), matches.free);
@@ -200,7 +347,7 @@ fn main() -> ExitCode {
             let file2 = fs::read(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}' (pwd='{}'), error: '{}'", &file2_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
             //let file2 = fs::read_to_string(file2_name.clone()).unwrap_or_else(|e| panic!("Failed to read file2 '{}', error: '{}'", &file2_name, e));
 
-            //TODO: maybe just have diffy get us the correct context length for unambiguity and delegate the patch making to original gnu 'diff' command with that context! But the problem is that's difficult to find out where to insert the new --unified=CONTEXTLENGTH_NUM in the original args due to possibly '--' or args coming after the 2 file names; or, just use getopts to understand all args and only pass the overrides to the original 'diff'; so `diff -u1 -u2 -u3 file1 file2 -u4`  will pass `diff -u4 file1 file2` only but this means all args must be understood via getopts crate here. And then if using 'diffy' to make the patch, must allow for --label to work, and -p is currently not possible.
+            //TODO: maybe just have diffy get us the correct context length for unambiguity and delegate the patch making to original gnu 'diff' command with that context length(aka lines of context)! But the problem is that's difficult to find out where to insert the new --unified=CONTEXTLENGTH_NUM in the original args due to possibly '--' or args coming after the 2 file names; or, just use getopts to understand all args and only pass the overrides to the original 'diff'; so `diff -u1 -u2 -u3 file1 file2 -u4`  will pass `diff -u4 file1 file2` only but this means all args must be understood via getopts crate here. Another thing is, that it might be better to use diffy due to rust safety. And then if using 'diffy' to make the patch, must allow for --label to work, and -p is currently not possible and for some reason gnu 'diff' does get it right, most of the time, for rust too.
             let patch = create_patch_bytes(&file1, &file2);
             let stdout = std::io::stdout(); // Get the handle to the standard output
             let mut handle = stdout.lock(); // Lock the handle for writing
