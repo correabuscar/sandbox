@@ -265,12 +265,30 @@ fn read_buffer_from_file(file_name:&str) -> Vec<u8> {
     }
 }
 
+fn panic_if_file_does_not_exist(file_name:&str) {
+    if file_name != "-" {
+        if !Path::new(&file_name).exists() {
+            panic!(
+                "File '{}' doesn't exist?! (pwd='{}')",
+                &file_name,
+                env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()),
+            )
+        }
+    }
+}
+
 fn main() -> ExitCode {
-    let _f = Foo(false);// to see if dropped on panic!
     // Set the RUST_BACKTRACE environment variable to enable backtrace
     if std::env::var("RUST_BACKTRACE").is_err() {
         std::env::set_var("RUST_BACKTRACE", "1");
+        /* "Even though this function is currently not marked as unsafe, it needs to be because invoking it can cause undefined behaviour. The function will be marked unsafe in a future version of Rust. This is tracked in rust#27970.
+
+           This function is safe to call in a single-threaded program.
+
+           In multi-threaded programs, you must ensure that are no other threads concurrently writing or reading(!) from the environment through functions other than the ones in this module. You are responsible for figuring out how to achieve this, but we strongly suggest not using set_var or remove_var in multi-threaded programs at all." - src: https://doc.rust-lang.org/std/env/fn.set_var.html#safety
+           */
     }
+    let _f = Foo(false);// to see if dropped on panic!
     // Set a custom panic hook
 //    let default_hook = std::panic::take_hook();
 //    std::panic::set_hook(Box::new(|panic_info| {
@@ -449,6 +467,9 @@ fn main() -> ExitCode {
             }
 
             //let file1 = fs::read(file1_name.clone()).unwrap_or_else(|e| panic!("Failed to read file1 '{}' (pwd='{}'), error: '{}'", &file1_name, std::env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()), e));
+            //test before reading because first arg may be '-' which means it will pause and wait for stdin (in worst case), even tho second file doesn't exist!
+            panic_if_file_does_not_exist(&file1_name);
+            panic_if_file_does_not_exist(&file2_name);
             let file1_buf:Vec<u8>=read_buffer_from_file(&file1_name);
             let file2_buf:Vec<u8>=read_buffer_from_file(&file2_name);
 
