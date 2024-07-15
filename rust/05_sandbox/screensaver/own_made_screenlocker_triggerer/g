@@ -1,0 +1,10 @@
+#!/bin/bash
+
+#XXX: not this: else it will use xdg-screensaver from system PATH not from our /swcode/ path!
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+#use this way or else 'cargo run' will use system-safe PATH because it's a wrapper that uses this shebang:
+#!/usr/bin/env -S PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:${PATH}" bash
+
+cargo build
+./target/debug/own_made_screenlocker_triggerer "$@"

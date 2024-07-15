@@ -35,32 +35,118 @@ fn main() {
         }
 
         let lock_duration = Duration::from_secs(5 * 60); // 5 minutes
-        const BLANK_THIS_MANY_SECONDS_BEFORE_LOCKING:u64=10;
-        let blank_duration = Duration::from_secs(lock_duration.as_secs() - BLANK_THIS_MANY_SECONDS_BEFORE_LOCKING); // 5 secs before 5mins are up, blank!
+        //let lock_duration = Duration::from_secs(23); // temp tests
+        //const BLANK_THIS_MANY_SECONDS_BEFORE_LOCKING:u64=10;
+        const RETRY_TIME_ON_FAIL : Duration=Duration::from_secs(5); // retry to blank or lock if either or both failed to run, after this much delay.
+        const BLANK_THIS_MUCH_TIME_BEFORE_LOCKING : Duration=Duration::from_secs(10);
+        //assert!(lock_duration > Duration::from_secs(BLANK_THIS_MUCH_TIME_BEFORE_LOCKING));
+        assert!(lock_duration > BLANK_THIS_MUCH_TIME_BEFORE_LOCKING);
+        let blank_duration: Duration = lock_duration - BLANK_THIS_MUCH_TIME_BEFORE_LOCKING;
+        assert!(blank_duration <= lock_duration);
+        //TODO: handle when they're the same value, better.
 
+        if let Some(paths) = std::env::var_os("PATH") {
+            let paths = std::env::split_paths(&paths);
+            for path in paths {
+                println!("Path: {:?}", path);
+            }
+        } else {
+            println!("PATH variable not found in environment.");
+        }
+
+        //needed to prevent re-blanking and re-locking while already blanked/locked
+        let mut last_idle_duration:Duration=Duration::from_millis(0);
+        let mut is_blanked=false;
+        let mut is_locked=false;
         loop {
-            let idle_time = get_idle_time(display);
+            let idle_time_ms:u64 = get_idle_time(display);
+            let idle_duration = Duration::from_millis(idle_time_ms);
+            if idle_duration < last_idle_duration {
+                // was idle and now isn't anymore.
+                logger("no longer idle (but this could've been a while ago, while we were sleeping here)");
+                is_locked=false;
+                is_blanked=false;
+            }
+            //FIXME: the next idle_duration gotten above via get_idle_time() might(?) be higher than the saved one here due to the below sleep(), see if this is true or not, else it might think it's still locked! Maybe save this only after the sleeps? or i dno, add the sleep() to it? unclear, must think.
+            last_idle_duration=idle_duration;
 
-            if idle_time >= blank_duration.as_millis() as u64 {
+            //if idle_time_ms >= blank_duration.as_millis() as u64 {
+            if !is_blanked && idle_duration >= blank_duration {
                 let s:String=format!("No activity detected for '{}' minutes '{}' seconds. Blanking the screen... press a key to unblank, it's not locked yet!",
                     blank_duration.as_secs()/60, blank_duration.as_secs() % 60);
                 logger(&s);
-                if let Err(e) = Command::new("blank").status() {
-                    let s=format!("Failed to execute command 'blank', error: {}", e);
-                    logger(&s);
-                }
+                //TODO: dedup the cmd execution and return the bool for is_blanked/is_locked
+                match Command::new("blank").status() { // this blanks and exits, doesn't hang around until non-idle!
+                    Ok(exit_status) => {
+                        is_blanked=exit_status.success();
+                        if !is_blanked {
+                            if let Some(code)=exit_status.code() {
+                                let s=format!("Failed to blank, process exited with exit code: '{}'", code);
+                                logger(&s);
+                            }
+                        }
+                    },
+                    Err(e) => {
+                        let s=format!("Failed to execute command 'blank', error: {}", e);
+                        logger(&s);
+                    },
+                }//match
             }
 
-            if idle_time >= lock_duration.as_millis() as u64 {
+            //if idle_time_ms >= lock_duration.as_millis() as u64 {
+            if !is_locked && idle_duration >= lock_duration {
                 let s=format!("No activity detected for '{}' minutes '{}' seconds. Locking the screen...", lock_duration.as_secs()/60, lock_duration.as_secs() % 60);
                 logger(&s);
-                if let Err(e) = Command::new("xdg-screensaver").arg("lock").status() {
-                    let s=format!("Failed to execute 'xdg-screensaver lock', error: {}", e);
-                    logger(&s);
-                }
+                // this currently locks and hangs until unlocked, then exits, because it's using 'alock'
+                match Command::new("xdg-screensaver").arg("lock").status() {
+                    Ok(exit_status) => {
+                        is_locked=exit_status.success();
+                        if !is_locked {
+                            if let Some(code)=exit_status.code() {
+                                let s=format!("Failed to lock via 'xdg-screensaver lock', it exited with exit code: '{}'", code);
+                                logger(&s);
+                            }
+                        }
+                    },
+                    Err(e) => {
+                        let s=format!("Failed to execute command 'xdg-screensaver lock', error: {}", e);
+                        logger(&s);
+                    },
+                }//match
             }
 
-            thread::sleep(Duration::from_secs(1)); // Check every N seconds
+            if idle_duration < blank_duration {
+                // if there's more time until the time to blank, wait that amount of time, this would be slightly over by some ms due to the code between get_idle_time() call and the thread::sleep below.
+                let duration_difference = blank_duration - idle_duration;
+
+                let total_seconds = duration_difference.as_secs();
+                let hours = total_seconds / 3600;
+                let minutes = (total_seconds % 3600) / 60;
+                let seconds = total_seconds % 60;
+                eprintln!("Sleeping for {:02}:{:02}:{:02} h:m:s while waiting for minimum time to blank", hours, minutes, seconds);
+                //eprintln!("Sleeping for {:?}.", duration_difference); // this is seconds
+                //thread::sleep(Duration::from_secs(1)); // Check every N seconds
+                thread::sleep(duration_difference);
+            } else {
+                //if blanked or locked, we would need to wait at least this amount until next blank
+                //if idle_duration > lock_duration {
+                if is_locked {
+                    eprintln!("Sleeping for {:?} while locked, the minimum time to blank if were just un-idled!", blank_duration);
+                    //already locked, so wait at least this long until a potential re-blank would be needed
+                    thread::sleep(blank_duration);
+                //} else {
+                } else if is_blanked {
+                    //FIXME: if locking failed but blanking succeeded(before), we get here and wait this long until lock retry!
+                    eprintln!("Sleeping for {:?} while blanked, the minimum time to wait until it's time to lock!", BLANK_THIS_MUCH_TIME_BEFORE_LOCKING);
+                    //this is just a blank, thus only few seconds left until a lock is needed:
+                    thread::sleep(BLANK_THIS_MUCH_TIME_BEFORE_LOCKING);
+                } else {
+                    // we're here if we tried to blank but failed (eg. to execute the 'blank' cmd)
+                    // but also if we tried to lock after that, and that failed too!
+                    eprintln!("Sleeping for {:?} before continuing...", RETRY_TIME_ON_FAIL);
+                    thread::sleep(RETRY_TIME_ON_FAIL);
+                }
+            }
         }
 
         // xlib::XCloseDisplay(display); // Unreachable code warning, display never closes in loop

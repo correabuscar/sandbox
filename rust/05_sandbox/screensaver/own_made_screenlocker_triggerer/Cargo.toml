@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 # Exclude the specified subdirectory
-exclude = ["home_dir"]
+exclude = ["home_dir", "g", "e"]
 
 [profile.dev]
 opt-level=3
