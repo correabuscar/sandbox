@@ -63,7 +63,7 @@ fn main() {
             let idle_duration = Duration::from_millis(idle_time_ms);
             if idle_duration < last_idle_duration {
                 // was idle and now isn't anymore.
-                logger("no longer idle (but this could've been a while ago, while we were sleeping here)");
+                eprintln!("no longer idle (but this could've been a while ago, while we were sleeping here)");
                 is_locked=false;
                 is_blanked=false;
             }
