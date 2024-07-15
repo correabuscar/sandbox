@@ -312,7 +312,7 @@ fn main() -> ExitCode {
         //use std::io::Write;//else can't see: no method named `flush` found for struct `Stdout` in the current scope: method not found in `Stdout`
         //std::io::stdout().flush().unwrap();
         //std::io::stderr().flush().unwrap();
-        //XXX: using std::process::exit() does call rt::cleanup which flushes stdout/stderr! however it won't run destructors like drop() for Foo, but if you use /patches/portage/dev-lang/rust.reused/2300_rust_exitcode_on_panic.patch then you can set the exit code that panic uses (was 101) by doing this:
+        //XXX: using std::process::exit() does call rt::cleanup which flushes stdout/stderr! however it won't run destructors like drop() for Foo (but it will run atexit handlers that drop() LocalKey ie. TLS static vars see: https://github.com/rust-lang/rust/issues/127637#issuecomment-2224867407 ), but if you use /patches/portage/dev-lang/rust.reused/2300_rust_exitcode_on_panic.patch then you can set the exit code that panic uses (was 101) by doing this: std::rt::EXIT_CODE_ON_PANIC.store(2, std::sync::atomic::Ordering::Relaxed);
         //std::process::exit(2);
         //XXX: letting this fall thru allows it to exit with the exit code we set in std::rt::EXIT_CODE_ON_PANIC
         let args: Vec<String> = env::args().collect();
@@ -321,6 +321,8 @@ fn main() -> ExitCode {
         let exe_name=Path::new(&exe_name_as_called).file_stem().and_then(|stem| stem.to_str()).expect("basename");
         //let _ = std::panic::catch_unwind(|| show_all_args(exe_name, &args[1..], true));//no effect, i'm already in a panic
         if ["diff", "patch"].contains(&exe_name) {
+            //FIXME: if this panics it's a double panic, and can't catch_unwind() it because this is panic handler so we're inside a panic already so double panic will be seen before catching it!
+            // this will panic if for example the log file in /var/log/ wasn't already: created and chmod a+w on it!
             show_all_args(exe_name, &args[1..], true);
         }
     });
