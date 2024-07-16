@@ -25,6 +25,8 @@ fn resolve_realpath<P: AsRef<Path>>(path: P) -> Option<PathBuf> {
     }
 }
 
+const DIFF_EXE_BASENAME :&str = "diff";
+const PATCH_EXE_BASENAME :&str = "patch";
 const HARDCODED_DIFF_EXE:&str ="/usr/bin/diff";
 const HARDCODED_PATCH_EXE:&str ="/usr/bin/patch";
 
@@ -320,7 +322,7 @@ fn main() -> ExitCode {
         let exe_name_as_called= &args[0];
         let exe_name=Path::new(&exe_name_as_called).file_stem().and_then(|stem| stem.to_str()).expect("basename");
         //let _ = std::panic::catch_unwind(|| show_all_args(exe_name, &args[1..], true));//no effect, i'm already in a panic
-        if ["diff", "patch"].contains(&exe_name) {
+        if [DIFF_EXE_BASENAME, PATCH_EXE_BASENAME].contains(&exe_name) {
             //FIXME: if this panics it's a double panic, and can't catch_unwind() it because this is panic handler so we're inside a panic already so double panic will be seen before catching it!
             // this will panic if for example the log file in /var/log/ wasn't already: created and chmod a+w on it!
             show_all_args(exe_name, &args[1..], true);
@@ -338,7 +340,7 @@ fn main() -> ExitCode {
 
     let mut opts = Options::new();
     match exe_name {
-        "diff" => {
+        DIFF_EXE_BASENAME => {
             //opts.opt("u", "unified", "output NUM (default 3) lines of unified contex", "", HasArg::No, Occur::Multi);
             opts.opt("u", "unified", "output NUM (default 3) lines of unified contex", "NUM", HasArg::Maybe, Occur::Multi);
             opts.opt("U", "unified", "output NUM (default 3) lines of unified contex", "NUM", HasArg::Maybe, Occur::Multi);
@@ -499,10 +501,10 @@ fn main() -> ExitCode {
             //}
             return ExitCode::SUCCESS;
         }, //diff
-        "patch" => {
+        PATCH_EXE_BASENAME => {
             let args: Vec<String> = env::args().collect();
             if args.len() > 5 || args.len() < 4 {
-                eprintln!("Usage: patch <original_file> <patch_file> <output_file> true/false");
+                eprintln!("Usage: {} <original_file> <patch_file> <output_file> true/false", PATCH_EXE_BASENAME);
                 eprintln!("true/false is for unambiguous");
                 exec_patch(["--help"]);
                 return ExitCode::from(2);
