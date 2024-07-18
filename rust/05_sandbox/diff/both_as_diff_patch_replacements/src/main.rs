@@ -1,7 +1,7 @@
 #![feature(panic_update_hook)]
 #![feature(rt)] // for std::rt::EXIT_CODE_ON_PANIC, needs: /patches/portage/dev-lang/rust.reused/2300_rust_exitcode_on_panic.patch
 
-use diffy::create_patch_bytes;
+//use diffy::create_patch_bytes;
 //use diffy::PatchFormatter;
 use diffy::{Patch, apply};
 use std::str;
@@ -342,6 +342,8 @@ fn main() -> ExitCode {
     match exe_name {
         DIFF_EXE_BASENAME => {
             //opts.opt("u", "unified", "output NUM (default 3) lines of unified contex", "", HasArg::No, Occur::Multi);
+            opts.opt("", "unambiguous", "output a unified patch whose hunks can only be applied in one place even if applied independently, but also if applied normally", "", HasArg::No, Occur::Multi);
+            opts.opt("", "ambiguous", "this is the old normal way: output a patch(not necessarifly unified) whose hunks can possibly be applied in more than 1 spot", "", HasArg::No, Occur::Multi);
             opts.opt("u", "unified", "output NUM (default 3) lines of unified contex", "NUM", HasArg::Maybe, Occur::Multi);
             opts.opt("U", "unified", "output NUM (default 3) lines of unified contex", "NUM", HasArg::Maybe, Occur::Multi);
             opts.opt("c", "context", "output NUM (default 3) lines of copied contex", "NUM", HasArg::Maybe, Occur::Multi);
@@ -365,6 +367,21 @@ fn main() -> ExitCode {
                     panic!("{}", f.to_string());
                 }
             };
+            let quiet=matches.opt_present("h");
+            let mut unambiguous=!quiet;//default assumed, for unambiguous
+            let pos_of_ambi:isize=matches.opt_positions("ambiguous").last().map_or(-1, |v| *v as isize);
+            let pos_of_unambi:isize=matches.opt_positions("unambiguous").last().map_or(-1, |v| *v as isize);
+            if pos_of_ambi > pos_of_unambi {
+                //--ambiguous was specified last, or only!
+                unambiguous=false;
+            } else if pos_of_unambi > pos_of_ambi {
+                //--unambiguous was specified last, or only it!
+                unambiguous=true;
+            } else {
+                //both unspecified
+                assert_eq!(pos_of_ambi, -1);
+                assert_eq!(pos_of_unambi, -1);
+            }
             if matches.opt_present("h") {
                 print_usage_diff(exe_name, opts);
                 //assert_eq!(ExitCode::SUCCESS, 0);//binary operation `==` cannot be applied to type `ExitCode`
@@ -478,28 +495,38 @@ fn main() -> ExitCode {
             let file2_buf:Vec<u8>=read_buffer_from_file(&file2_name);
 
             //TODO: maybe just have diffy get us the correct context length for unambiguity and delegate the patch making to original gnu 'diff' command with that context length(aka lines of context)! But the problem is that's difficult to find out where to insert the new --unified=CONTEXTLENGTH_NUM in the original args due to possibly '--' or args coming after the 2 file names; or, just use getopts to understand all args and only pass the overrides to the original 'diff'; so `diff -u1 -u2 -u3 file1 file2 -u4`  will pass `diff -u4 file1 file2` only but this means all args must be understood via getopts crate here. Another thing is, that it might be better to use diffy due to rust safety. And then if using 'diffy' to make the patch, must allow for --label to work, and -p is currently not possible and for some reason gnu 'diff' does get it right, most of the time, for rust too.
-            let patch = create_patch_bytes(&file1_buf, &file2_buf);
-            let stdout = std::io::stdout(); // Get the handle to the standard output
-            let mut handle = stdout.lock(); // Lock the handle for writing
-            let handle_ref = &mut handle;
-            //std::io::Write::write_all(&mut handle,
-            std::io::Write::write_all(handle_ref,
-            //use std::io::Write;
-            //handle.write_all(
-                patch.to_bytes().as_slice()).unwrap(); // Write the byte slice to the standard output
-            //handle.flush().unwrap(); // Flush the output buffer to ensure all data is written
-            //std::io::Write::flush(&mut handle).unwrap();
-            std::io::Write::flush(handle_ref).unwrap();
-            drop(handle);
-            //TODO: allow --color[=WHEN],  maybe pipe to colordiff ? else it seems to need utf8 string
-            //let color: bool = false;
-            //if color {
-            //    let f = PatchFormatter::new().with_color();
-            //    print!("{}", f.fmt_patch(&patch));
-            //} else {
-            //    print!("{}", patch);
-            //}
-            return ExitCode::SUCCESS;
+            //let r#do:diffy::DiffOptions=diffy::DiffOptions::new().set_unambiguous(unambiguous); // messed up Rust
+            let mut r#do:diffy::DiffOptions=diffy::DiffOptions::new();
+            r#do.set_unambiguous(unambiguous);
+            let patch = r#do.create_patch_bytes(&file1_buf, &file2_buf);
+            if !quiet {
+                let stdout = std::io::stdout(); // Get the handle to the standard output
+                let mut handle = stdout.lock(); // Lock the handle for writing
+                let handle_ref = &mut handle;
+                //std::io::Write::write_all(&mut handle,
+                std::io::Write::write_all(handle_ref,
+                    //use std::io::Write;
+                    //handle.write_all(
+                    patch.to_bytes().as_slice()).unwrap(); // Write the byte slice to the standard output
+                                                           //handle.flush().unwrap(); // Flush the output buffer to ensure all data is written
+                                                           //std::io::Write::flush(&mut handle).unwrap();
+                    std::io::Write::flush(handle_ref).unwrap();
+                    drop(handle);
+                    //TODO: allow --color[=WHEN],  maybe pipe to colordiff ? else it seems to need utf8 string
+                    //let color: bool = false;
+                    //if color {
+                    //    let f = PatchFormatter::new().with_color();
+                    //    print!("{}", f.fmt_patch(&patch));
+                    //} else {
+                    //    print!("{}", patch);
+                    //}
+            }
+            //Exit status is 0 if inputs are the same, 1 if different, 2 if trouble.
+            if patch.hunks().len() > 0 {
+                return ExitCode::from(1);
+            } else {
+                return ExitCode::SUCCESS;
+            }
         }, //diff
         PATCH_EXE_BASENAME => {
             let args: Vec<String> = env::args().collect();

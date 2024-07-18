@@ -13,7 +13,7 @@ dependencies = [
 [[package]]
 name = "diffy"
 version = "0.4.0"
-source = "git+https://github.com/correabuscar/diffy?branch=unambiguous#6c616b6980c3fc86e78c5560077aa23ce120e65f"
+source = "git+https://github.com/correabuscar/diffy?branch=unambiguous#7cac6b09f1a0b57e27589efc9d5aaf911ca3abf5"
 dependencies = [
  "nu-ansi-term",
 ]

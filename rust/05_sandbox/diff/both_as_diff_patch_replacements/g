@@ -24,26 +24,47 @@ else
   tput sgr0 >&2
 fi
 diff="$(realpath --no-symlinks -- ./diff)"
+gnudiff="/usr/bin/diff"
 patch="$(realpath --no-symlinks -- ./patch)"
+#gnupatch="/usr/bin/patch" #unused
 pushd "../diff"
 "$diff" -up workspace.rs.original_real workspace.rs.PATCHED_real > /tmp/le.patch  ; ec="$?"
-if test "$ec" != 0; then
+if test "$ec" != 1; then
   tput setaf 1 >&2
-  echo "$diff failed with non-0 exit code '$ec'" >&2
+  echo "$diff failed with non-1 exit code '$ec'" >&2
   tput sgr0 >&2
   exit "$ec"
 fi
-if diff -qup good_way.patch /tmp/le.patch; then
+"$gnudiff" -qup good_way.patch /tmp/le.patch; ec1="$?"
+"$diff" -qup good_way.patch /tmp/le.patch; ec="$?"
+if test "$ec" != "$ec1"; then
+  tput setaf 1 >&2
+  echo "Exit code for gnudiff($ec1) aka '$gnudiff' vs our diffy diff($ec) aka '$diff' are different! Should be same!" >&2
+  tput sgr0 >&2
+  exit 2
+fi
+if test "$ec" == "0"; then
+  # it's same as good patch
   tput setaf 2 >&2
   echo "The generated patch is correct!" >&2
   tput sgr0 >&2
 else
-  if diff -qup bad.patch /tmp/le.patch; then
+  "$gnudiff" -qup bad.patch /tmp/le.patch; ec1="$?"
+  "$diff" -qup bad.patch /tmp/le.patch; ec="$?"
+  if test "$ec" != "$ec1"; then
+    tput setaf 1 >&2
+    echo "Exit code for gnudiff($ec1) aka '$gnudiff' vs our diffy diff($ec) aka '$diff' are different! Should be same!" >&2
+    tput sgr0 >&2
+    exit 2
+  fi
+  if test "$ec" == "0"; then
+    #it's equal to bad patch
     tput setaf 1 >&2
     echo "The generated patch is NOT correct!" >&2
     tput sgr0 >&2
     exit 2
   else
+    #different than expected bad and expected good, so it's a new thing!
     tput setaf 3 >&2
     echo "The generated patch is something NEW, different from expected correct and expected incorrect!" >&2
     tput sgr0 >&2
