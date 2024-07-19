@@ -367,7 +367,7 @@ fn main() -> ExitCode {
                     panic!("{}", f.to_string());
                 }
             };
-            let quiet=matches.opt_present("h");
+            let quiet=matches.opt_present("q");
             let mut unambiguous=!quiet;//default assumed, for unambiguous
             let pos_of_ambi:isize=matches.opt_positions("ambiguous").last().map_or(-1, |v| *v as isize);
             let pos_of_unambi:isize=matches.opt_positions("unambiguous").last().map_or(-1, |v| *v as isize);
@@ -520,6 +520,8 @@ fn main() -> ExitCode {
                     //} else {
                     //    print!("{}", patch);
                     //}
+            } else {
+                eprintln!("quiet");
             }
             //Exit status is 0 if inputs are the same, 1 if different, 2 if trouble.
             if patch.hunks().len() > 0 {
