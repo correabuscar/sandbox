@@ -8,6 +8,7 @@ use std::str;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use getopts::{Options, Occur, HasArg};
 use std::process::ExitCode;
@@ -74,11 +75,34 @@ const TEST_CUSTOM_EXIT_CODE:i32=82;
 struct Foo(bool);//true if it should change exit code on drop
 impl Drop for Foo {
     fn drop(&mut self) {
-        //eprintln!("cleaning up stuff(u should see this even during panics)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        //prdebug!("cleaning up stuff(u should see this even during panics)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         if self.0 {
             std::rt::EXIT_CODE_ON_PANIC.store(TEST_CUSTOM_EXIT_CODE, std::sync::atomic::Ordering::Relaxed); // if rustc errors on this, it's because it's not patched with /patches/portage/dev-lang/rust.reused/2300_rust_exitcode_on_panic.patch
         }
     }
+}
+
+static DEBUG:AtomicBool=AtomicBool::new(false);
+
+fn init_debug() {
+    let debug=std::env::var("DEBUG").map_or(false, |v| v != "0");
+    DEBUG.store(debug, Ordering::Relaxed);
+}
+
+macro_rules! prdebug {
+    ($($arg:tt)*) => {
+        if DEBUG.load(Ordering::Relaxed) {
+            eprintln!($($arg)*);
+        }
+    };
+}
+
+macro_rules! prdebug_no_ln {
+    ($($arg:tt)*) => {
+        if DEBUG.load(Ordering::Relaxed) {
+            eprint!($($arg)*);
+        }
+    };
 }
 
 
@@ -155,7 +179,7 @@ fn get_callers_tree() -> Vec<u8> {
            kernel.pid_max = 4194304
         */
         if processed_pids.contains(&pid) {
-            eprintln!("Avoided infinite loop for pid '{}' due to bad coding!(this msg is from rust binary, not the bash script)", pid);
+            prdebug!("Avoided infinite loop for pid '{}' due to bad coding!(this msg is from rust binary, not the bash script)", pid);
             return;
         } else {
             processed_pids.insert(pid);
@@ -195,7 +219,7 @@ fn show_all_args<S>(exe_name:&str, the_args: &[S], save_to_file:bool)
     where S: AsRef<str> + std::fmt::Debug
 {
     let text=format!("exe name:'{}', passed args({}):{:?}\n", exe_name, the_args.len(), the_args);
-    eprint!("{}", text);
+    prdebug_no_ln!("{}", text);
     if !save_to_file {
         return;
     }
@@ -207,7 +231,6 @@ fn show_all_args<S>(exe_name:&str, the_args: &[S], save_to_file:bool)
     // Lock the mutex before executing the function
     let _guard = FUNCTION_MUTEX.lock().unwrap();
 
-    use std::sync::atomic::{AtomicBool, Ordering};
     static ALREADY_SAVED:AtomicBool=AtomicBool::new(false);
     if ALREADY_SAVED.load(Ordering::Relaxed) {
         return;
@@ -279,6 +302,8 @@ fn panic_if_file_does_not_exist(file_name:&str) {
     }
 }
 
+
+
 fn main() -> ExitCode {
     // Set the RUST_BACKTRACE environment variable to enable backtrace
     if std::env::var("RUST_BACKTRACE").is_err() {
@@ -290,12 +315,14 @@ fn main() -> ExitCode {
            In multi-threaded programs, you must ensure that are no other threads concurrently writing or reading(!) from the environment through functions other than the ones in this module. You are responsible for figuring out how to achieve this, but we strongly suggest not using set_var or remove_var in multi-threaded programs at all." - src: https://doc.rust-lang.org/std/env/fn.set_var.html#safety
            */
     }
+    init_debug();
+    prdebug!("debug={}",DEBUG.load(Ordering::Relaxed));
     let _f = Foo(false);// to see if dropped on panic!
     // Set a custom panic hook
 //    let default_hook = std::panic::take_hook();
 //    std::panic::set_hook(Box::new(|panic_info| {
 //        // Print the panic info
-//        eprintln!("Panic occurred: {:?}", panic_info);
+//        prdebug!("Panic occurred: {:?}", panic_info);
 //
 //        // Get the default panic hook and invoke it
 //        default_hook(panic_info);
@@ -307,9 +334,9 @@ fn main() -> ExitCode {
     std::rt::EXIT_CODE_ON_PANIC.store(2, std::sync::atomic::Ordering::Relaxed); // if rustc errors on this, it's because it's not patched with /patches/portage/dev-lang/rust.reused/2300_rust_exitcode_on_panic.patch
     //exit code 2 means trouble in diff/patch cmdlines
     std::panic::update_hook(move |prev, info| { // E0658: use of unstable library feature 'panic_update_hook'
-        //println!("Print custom message and execute panic handler as usual");
+        //prdebug!("Print custom message and execute panic handler as usual");
         prev(info);
-        //println!("fooooooooooooo");//yes this is reached
+        //prdebug!("fooooooooooooo");//yes this is reached
         //XXX: was cleanup executed tho?! NOT if I exit here! but anyway the cleanup func is https://github.com/rust-lang/rust/blob/59a4f02f836f74c4cf08f47d76c9f6069a2f8276/library/std/src/rt.rs#L105 and executed by line 146 below.
         //use std::io::Write;//else can't see: no method named `flush` found for struct `Stdout` in the current scope: method not found in `Stdout`
         //std::io::stdout().flush().unwrap();
@@ -336,7 +363,7 @@ fn main() -> ExitCode {
     let exe_name_abs_path=std::env::current_exe().expect("why would this fail");
     assert_eq!(exe_name_abs_path.to_string_lossy(), realpath_of_exe_name_as_called, "discrepancy detected, likely the path or exe name aren't UTF-8 ! FIXME: handle this case");
     let exe_name=Path::new(&exe_name_as_called).file_stem().and_then(|stem| stem.to_str()).expect("basename");
-    eprintln!("Executable name: {}", exe_name);
+    prdebug!("Executable name: {}", exe_name);
 
     let mut opts = Options::new();
     match exe_name {
@@ -415,10 +442,10 @@ fn main() -> ExitCode {
                 &labels[1]
             } else { &file2_name };
             if matches.opt_present("label") {//FIXME: later, labels will be used actually!
-                eprintln!("Ignoring labels '{}' '{}'", label1, label2);
+                prdebug!("Ignoring labels '{}' '{}'", label1, label2);
             }
             if matches.opt_present("p") {
-                eprintln!("Ignoring --show-c-function aka -p");
+                prdebug!("Ignoring --show-c-function aka -p");
             }
             //an array of args that choose a type of output, but only one of which can be chosen, else they'd be conflicting!
             const DEE_SIZE:usize=6;
@@ -448,12 +475,12 @@ fn main() -> ExitCode {
             } else {
                 if highest_pos >= 0 {
                     // XXX: position of the arg isn't the same as argv[position], for example: `./diff -a --has_arg 1 -b` has the `-b` at position 2, because `--has_arg 1` is considered one position, and position is 0-based, so it's seeing 3 args at positions 0,1, and 2.
-                    eprintln!("Arg at position '{}' (which is 0-based and eg. `--foo 99` is 1 arg) overrides output type to '{}'", highest_pos, overridden_output_type_is);
+                    prdebug!("Arg at position '{}' (which is 0-based and eg. `--foo 99` is 1 arg) overrides output type to '{}'", highest_pos, overridden_output_type_is);
                 } else {
-                    eprintln!("No output type overriding args, defaulting to '{}'", overridden_output_type_is);
+                    prdebug!("No output type overriding args, defaulting to '{}'", overridden_output_type_is);
                 }
             }
-            //eprintln!("{:?}", matches.opt_strs("unified"));
+            //prdebug!("{:?}", matches.opt_strs("unified"));
             const DEFAULT_CONTEXT_LENGTH_WHEN_UNSPECIFIED:i32=3;
             let context_length = match matches.opt_strs("unified").last() { //this catches the uppercase -U too! unclear why, maybe due to --unified being same? and it matches the --unified as well, for what's worth. so either "u" or "unified" here is same.
                 Some(cl) => {
@@ -473,12 +500,12 @@ fn main() -> ExitCode {
                 },
                 None => DEFAULT_CONTEXT_LENGTH_WHEN_UNSPECIFIED,
             };
-            eprintln!("Context length: {}", context_length);
+            prdebug!("Context length: {}", context_length);
             if context_length < 0 {
                 show_all_args(exe_name, the_args, true);
                 panic!("negative context length given");
             }
-            eprintln!("Free: {} {:?}",matches.free.len(), matches.free);
+            prdebug!("Free: {} {:?}",matches.free.len(), matches.free);
             if overridden_output_type_is != "u" {
                 show_all_args(exe_name, the_args, true);
                 panic!("Unsupported output type via rust, TODO: maybe delegate to real '{}' ?", exe_name);
@@ -521,7 +548,7 @@ fn main() -> ExitCode {
                     //    print!("{}", patch);
                     //}
             } else {
-                eprintln!("quiet");
+                prdebug!("quiet");
             }
             //Exit status is 0 if inputs are the same, 1 if different, 2 if trouble.
             if patch.hunks().len() > 0 {
