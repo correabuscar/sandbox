@@ -65,7 +65,7 @@ where
 }
 
 fn print_usage_diff(exe: &str, opts: Options) {
-    let brief=format!("Usage: {} <file1> <file2>", exe);
+    let brief=format!("Usage: {} [OPTION]... <file1> <file2>", exe);
     print!("{}", opts.usage(&brief));
     exec_diff(["--help"]);
 }
