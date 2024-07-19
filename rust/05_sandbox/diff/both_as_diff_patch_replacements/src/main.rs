@@ -239,12 +239,12 @@ where
         return;
     }
 
-    //doneTODO: maybe lock so multiple threads can't call this at same time?
-    // Define a static mutex that is shared across all calls to this function
-    use std::sync::Mutex;
-    static FUNCTION_MUTEX: Mutex<()> = Mutex::new(());
-    // Lock the mutex before executing the function
-    let _guard = FUNCTION_MUTEX.lock().unwrap();
+//    //doneTODO: maybe lock so multiple threads can't call this at same time?
+//    // Define a static mutex that is shared across all calls to this function
+//    use std::sync::Mutex;
+//    static FUNCTION_MUTEX: Mutex<()> = Mutex::new(());
+//    // Lock the mutex before executing the function
+//    let _guard = FUNCTION_MUTEX.lock().unwrap();
 
     static ALREADY_SAVED: AtomicBool = AtomicBool::new(false); // initial value, inited only once per process not per thread!
     if the_args.len() == 0 && HANDLED_EXE_NAMES.contains(&exe_name) {
