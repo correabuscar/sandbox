@@ -246,12 +246,22 @@ where
     // Lock the mutex before executing the function
     let _guard = FUNCTION_MUTEX.lock().unwrap();
 
-    static ALREADY_SAVED: AtomicBool = AtomicBool::new(false);
-    if (the_args.len() == 0 && HANDLED_EXE_NAMES.contains(&exe_name)) || ALREADY_SAVED.load(Ordering::Relaxed) {
+    static ALREADY_SAVED: AtomicBool = AtomicBool::new(false); // initial value, inited only once per process not per thread!
+    if the_args.len() == 0 && HANDLED_EXE_NAMES.contains(&exe_name) {
+        //don't save if no args and exe_name is 'diff' or 'patch'
         return;
-    } else {
-        ALREADY_SAVED.store(true, Ordering::Relaxed);
     }
+    match ALREADY_SAVED.compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed) {
+        Ok(prev_val) => {
+            assert_eq!(prev_val, false);
+            //fall thru, first time saving it
+        },
+        Err(prev_val) => {
+            assert_eq!(prev_val, true);
+            //second+ times, don't save again!
+            return;
+        }
+    }//match
 
     let log_file: &str = &format!("/var/log/{}.unhandled_args.log", exe_name);
     // Open a file in append mode
