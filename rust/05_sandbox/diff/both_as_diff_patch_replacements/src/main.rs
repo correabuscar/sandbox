@@ -28,6 +28,7 @@ fn resolve_realpath<P: AsRef<Path>>(path: P) -> Option<PathBuf> {
 
 const DIFF_EXE_BASENAME :&str = "diff";
 const PATCH_EXE_BASENAME :&str = "patch";
+const HANDLED_EXE_NAMES: [&str; 2]=[DIFF_EXE_BASENAME, PATCH_EXE_BASENAME];
 const HARDCODED_DIFF_EXE:&str ="/usr/bin/diff";
 const HARDCODED_PATCH_EXE:&str ="/usr/bin/patch";
 
@@ -232,7 +233,7 @@ fn show_all_args<S>(exe_name:&str, the_args: &[S], save_to_file:bool)
     let _guard = FUNCTION_MUTEX.lock().unwrap();
 
     static ALREADY_SAVED:AtomicBool=AtomicBool::new(false);
-    if ALREADY_SAVED.load(Ordering::Relaxed) {
+    if (the_args.len() == 0 && HANDLED_EXE_NAMES.contains(&exe_name)) || ALREADY_SAVED.load(Ordering::Relaxed) {
         return;
     } else {
         ALREADY_SAVED.store(true, Ordering::Relaxed);
@@ -349,7 +350,7 @@ fn main() -> ExitCode {
         let exe_name_as_called= &args[0];
         let exe_name=Path::new(&exe_name_as_called).file_stem().and_then(|stem| stem.to_str()).expect("basename");
         //let _ = std::panic::catch_unwind(|| show_all_args(exe_name, &args[1..], true));//no effect, i'm already in a panic
-        if [DIFF_EXE_BASENAME, PATCH_EXE_BASENAME].contains(&exe_name) {
+        if HANDLED_EXE_NAMES.contains(&exe_name) {
             //FIXME: if this panics it's a double panic, and can't catch_unwind() it because this is panic handler so we're inside a panic already so double panic will be seen before catching it!
             // this will panic if for example the log file in /var/log/ wasn't already: created and chmod a+w on it!
             show_all_args(exe_name, &args[1..], true);
