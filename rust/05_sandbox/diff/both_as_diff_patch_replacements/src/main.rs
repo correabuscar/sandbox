@@ -28,12 +28,12 @@ const HANDLED_EXE_NAMES: [&str; 2] = [DIFF_EXE_BASENAME, PATCH_EXE_BASENAME];
 const HARDCODED_DIFF_EXE: &str = "/usr/bin/diff";
 const HARDCODED_PATCH_EXE: &str = "/usr/bin/patch";
 
-fn exec_diff<I, S>(args: I)
+fn exec_diff<I, S>(args: I) -> i32
 where
     I: IntoIterator<Item = S>,
     S: AsRef<std::ffi::OsStr> + std::fmt::Debug,
 {
-    exec(HARDCODED_DIFF_EXE, args);
+    exec(HARDCODED_DIFF_EXE, args)
 }
 fn exec_patch<I, S>(args: I)
 where
@@ -493,6 +493,22 @@ fn main() -> ExitCode {
                 Occur::Multi,
             );
             opts.opt(
+                "D",
+                "ifdef"
+                ,"output merged file with ’#ifdef NAME’ diffs"
+                ,"NAME",
+                HasArg::Yes,
+                Occur::Optional, // aka only one ocurrence
+            );
+            opts.opt(
+                "",
+                "line-format"
+                ,"format all input lines with LFMT"
+                ,"LFMT",
+                HasArg::Yes,
+                Occur::Multi,
+            );
+            opts.opt(
                 "q",
                 "brief",
                 "report only when files differ (doesn't output a patch thus doesn't try to gen.unambiguous hunks)",
@@ -509,7 +525,312 @@ fn main() -> ExitCode {
                 Occur::Optional,
             ); //real 'diff' won't allow two -W unless they've same NUM, but we simplify by not allowing two -W
             opts.opt("s", "report-identical-files", "report only when two files are the same (doesn't output a patch thus doesn't try to gen.unambiguous hunks)", "", HasArg::No, Occur::Multi);
-            opts.optflag("h", "help", "print this help text");
+            opts.opt(
+                "",
+                "left-column",
+                "output only the left column of common lines",
+                "",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "",
+                "suppress-common-lines",
+                "do not output common lines"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "F",
+                "show-function-line"
+                ,"show the most recent line matching RE"
+                ,"RE",
+                HasArg::Yes,
+                Occur::Multi,
+            );
+            opts.opt(
+                "t",
+                "expand-tabs"
+                ,"expand tabs to spaces in output"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "T",
+                "initial-tab"
+                ,"make tabs line up by prepending a tab"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "",
+                "tabsize"
+                ,"tab stops every NUM (default 8) print columns"
+                ,"NUM",
+                HasArg::Yes,
+                Occur::Optional,//technically gnu 'diff' allows --tabsize NUM --tabsize NUM but only if NUM is same value, but we simplify by disallowing that too!
+            );
+            opts.opt(
+                "",
+                "suppress-blank-empty"
+                ,"suppress space or tab before empty output lines"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "l",
+                "paginate"
+                ,"pass output through ’pr’ to paginate it"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt( //TODO: impl. this in rust?
+                "r",
+                "recursive"
+                ,"recursively compare any subdirectories found"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "",
+                "no-dereference"
+                ,"don’t follow symbolic links"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "N",
+                "new-file"
+                ,"treat absent files as empty"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "",
+                "unidirectional-new-file"
+                ,"treat absent first files as empty"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "",
+                "ignore-file-name-case"
+                ,"ignore case when comparing file names"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "",
+                "no-ignore-file-name-case"
+                ,"consider case when comparing file names"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "x",
+                "exclude"
+                ,"exclude files that match PAT"
+                ,"PAT",
+                HasArg::Yes,
+                Occur::Multi,
+            );
+            opts.opt(
+                "X",
+                "exclude-from"
+                ,"exclude files that match any pattern in FILE"
+                ,"FILE",
+                HasArg::Yes,
+                Occur::Multi,
+            );
+            opts.opt(
+                "S",
+                "starting-file"
+                ,"start with FILE when comparing directories"
+                ,"FILE",
+                HasArg::Yes,
+                Occur::Optional, //ie. can't be encountered more than once.
+            );
+            opts.opt(
+                "",
+                "from-file"
+                ,"compare FILE1 to all operands; FILE1 can be a directory"
+                ,"FILE1",
+                HasArg::Yes,
+                Occur::Optional, //only once!
+            );
+            opts.opt(
+                "",
+                "to-file"
+                ,"compare all operands to FILE2; FILE2 can be a directory"
+                ,"FILE2",
+                HasArg::Yes,
+                Occur::Optional, //only once!
+            );
+            opts.opt(
+                "i",
+                "ignore-case"
+                ,"ignore case differences in file contents"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "E",
+                "ignore-tab-expansion"
+                ,"ignore changes due to tab expansion"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "Z",
+                "ignore-trailing-space"
+                ,"ignore white space at line end"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "b",
+                "ignore-space-change"
+                ,"ignore changes in the amount of white space"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "w", // TODO: impl. in rust?
+                "ignore-all-space"
+                ,"ignore all white spac"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "B",
+                "ignore-blank-line"
+                ,"ignore changes where lines are all blank"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "I",
+                "ignore-matching-line"
+                ,"ignore changes where all lines match RE"
+                ,"RE",
+                HasArg::Yes,
+                Occur::Multi,
+            );
+            opts.opt( //TODO: handle this in rust too, check how does rust currently handle binary only files!
+                "a",
+                "text"
+                ,"treat all files as text"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "",
+                "strip-trailing-cr"
+                ,"strip trailing carriage return on input"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            const LTYPE:[&str; 3]=["old", "new", "unchanged"];
+            //const GTYPE:[&str; 4]=["changed"] + LTYPE;
+            const GTYPE: [&str; 4] = ["changed", LTYPE[0], LTYPE[1], LTYPE[2]];
+            for each in GTYPE {
+                opts.opt(
+                    "",
+                    &format!("{}-group-format", each),
+                    &format!("format '{}' input groups with GFMT", each),
+                    "GFMT",
+                    HasArg::Yes,
+                    Occur::Optional, // aka only one ocurrence
+                );
+            }
+            for each in LTYPE {
+                opts.opt(
+                    "",
+                    &format!("{}-line-format", each),
+                    &format!("format '{}' input lines with GFMT", each),
+                    "GFMT",
+                    HasArg::Yes,
+                    Occur::Optional, // aka only one ocurrence
+                );
+            }
+            opts.opt(
+                "d",
+                "minimal" //TODO: is this diffy's compact which is true by default?
+                ,"try hard to find a smaller set of changes"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "",
+                "horizon-lines"
+                ,"keep NUM lines of the common prefix and suffix"
+                ,"NUM",
+                HasArg::Yes,
+                Occur::Multi, // like context, last overrides (not wholly true for context tho, eg. diff --unified=4 -u  will get 3, iirc)
+            );
+            opts.opt(
+                "H", //it's in source for sys-apps/diffutils-3.10 but not in man or --help
+                "speed-large-files"
+                ,"assume large files and many scattered small changes"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "h", //it's in source for sys-apps/diffutils-3.10 but not in man or --help
+                ""
+                ,"Split the files into chunks for faster processing. Usually does not change the result. This currently has no effect."
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "v",
+                "version"
+                ,"output version information and exit"
+                ,"",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt( //TODO: maybe use this from within rust too?
+                "",
+                "color"
+                ,"color output; WHEN is ’never’, ’always’, or ’auto’; plain --color means --color=’auto’"
+                ,"WHEN",
+                HasArg::Maybe,
+                Occur::Multi, //can have overrides
+            );
+            opts.opt(
+                "",
+                "palette"
+                ,"the colors to use when --color is active; PALETTE is a colon-separated list of terminfo capabilities"
+                ,"PALETTE",
+                HasArg::Yes,
+                Occur::Multi, //can have overrides
+            );
+
+            //nvmfounditTODO: unclear what '-h' or -H is in gnu 'diff' but it's not ignored or considered 'invalid option', like -Q is for example.
+            opts.optflag("", "help", "print this help text");
             let the_args = &args[1..];
             let matches = match opts.parse(the_args) {
                 Ok(m) => m,
@@ -519,6 +840,12 @@ fn main() -> ExitCode {
                     panic!("{}", f.to_string());
                 }
             };
+            if matches.opt_present("v") {
+                eprintln!("The rust version of '{}', delegating to gnu diff:", exe_name);//TODO: get our version shown here
+                let exit_code=exec_diff(the_args); //this does only show the version, not matter the args! except if --help is present then it shows --help if it's first!
+                //XXX: so adding a -v to a diff command of any kind, return exit code 0, thus can bypass and diff comparison, if say -v was part of the filename and not properly escaped that would be taken as an arg, or something else that can insert a -v
+                return ExitCode::from(exit_code as u8);
+            }
             let quiet = matches.opt_present("q");
             let mut unambiguous = !quiet; //default assumed, for unambiguous
             let pos_of_ambi: isize = matches.opt_positions("ambiguous").last().map_or(-1, |v| *v as isize);
@@ -534,7 +861,8 @@ fn main() -> ExitCode {
                 assert_eq!(pos_of_ambi, -1);
                 assert_eq!(pos_of_unambi, -1);
             }
-            if matches.opt_present("h") {
+            //TODO: find out if --help or -v is first, and whichever it is, that's the one that's in effect! first, not last!
+            if matches.opt_present("help") {
                 print_usage_diff(exe_name, opts);
                 //assert_eq!(ExitCode::SUCCESS, 0);//binary operation `==` cannot be applied to type `ExitCode`
                 //assert_eq!(ExitCode::SUCCESS, ExitCode::from(0));//same
@@ -571,8 +899,12 @@ fn main() -> ExitCode {
             }
             //an array of args that choose a type of output, but only one of which can be chosen, else they'd
             // be conflicting!
-            const DEE_SIZE: usize = 6;
-            let array_of_output_types: [&str; DEE_SIZE] = ["u", "c", "normal", "e", "n", "y"];
+            const DEE_SIZE: usize = 8+4+3;
+            //any more than 1 in this array if specified yields conflicting output style:
+            let array_of_output_types: [&str; DEE_SIZE] = ["u", "c", "normal", "e", "n", "y", "D", "line-format",
+            "changed-group-format", "new-group-format", "old-group-format", "unchanged-group-format", //TODO: these should be gotten auto, from an above array!
+            "new-line-format", "old-line-format", "unchanged-line-format", //TODO: these should be gotten auto, from an above array!
+            ];
             assert_eq!(array_of_output_types.len(), DEE_SIZE);
             //mehFIXME: need a better way, HashSet? Vec?
             //XXX: should fit isize because $ getconf ARG_MAX shows "2097152" aka 2MiB ...
@@ -643,10 +975,13 @@ fn main() -> ExitCode {
             prdebug!("Free: {} {:?}", matches.free.len(), matches.free);
             if overridden_output_type_is != "u" {
                 show_all_args(exe_name, the_args, true);
-                panic!(
-                    "Unsupported output type via rust, TODO: maybe delegate to real '{}' ?",
-                    exe_name
-                );
+                //panic!(
+                //    "Unsupported output type via rust, okTODO: maybe delegate to real '{}' ?",
+                //    exe_name
+                //);
+                eprintln!("Unsupported output type via rust, delegating to real '{}':", exe_name);
+                let exit_code=exec_diff(the_args);
+                return ExitCode::from(exit_code as u8);
             } else {
                 //ok
                 show_all_args(exe_name, the_args, false);
@@ -673,6 +1008,7 @@ fn main() -> ExitCode {
             // rust too. let r#do:diffy::DiffOptions=diffy::DiffOptions::new().
             // set_unambiguous(unambiguous); // messed up Rust
             let mut r#do: diffy::DiffOptions = diffy::DiffOptions::new();
+            r#do.set_context_len(context_length as usize);
             r#do.set_unambiguous(unambiguous);
             let patch = r#do.create_patch_bytes(&file1_buf, &file2_buf);
             if !quiet {
