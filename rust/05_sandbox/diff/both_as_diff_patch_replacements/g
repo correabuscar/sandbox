@@ -28,7 +28,7 @@ gnudiff="/usr/bin/diff"
 patch="$(realpath --no-symlinks -- ./patch)"
 #gnupatch="/usr/bin/patch" #unused
 pushd "../diff"
-"$diff" -up workspace.rs.original_real workspace.rs.PATCHED_real > /tmp/le.patch  ; ec="$?"
+"$diff" -up --label original --label modified -- workspace.rs.original_real workspace.rs.PATCHED_real > /tmp/le.patch  ; ec="$?"
 if test "$ec" != 1; then
   tput setaf 1 >&2
   echo "$diff failed with non-1 exit code '$ec'" >&2

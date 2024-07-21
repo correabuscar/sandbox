@@ -1002,7 +1002,7 @@ fn main() -> ExitCode {
             // Lists of names to remove
             // XXX: only these args are supported by this rust version of 'diff', any others and
             // we'll delegate the whole operation to gnu diff
-            let long_names_to_remove = ["label"];
+            let long_names_to_remove = ["label", "ambiguous", "unambiguous"];
             let short_names_to_remove = ['p', 'q', 'u'];
 
             let unsupported = matches.whats_left(&short_names_to_remove, &long_names_to_remove);
@@ -1053,7 +1053,7 @@ fn main() -> ExitCode {
             let mut r#do: diffy::DiffOptions = diffy::DiffOptions::new();
             r#do.set_context_len(context_length as usize);
             r#do.set_unambiguous(unambiguous);
-            let patch = r#do.create_patch_bytes(&file1_buf, &file2_buf);
+            let patch = r#do.create_patch_bytes_with_labels(&file1_buf, &file2_buf, &label1.as_bytes(), &label2.as_bytes());
             if !quiet {
                 let stdout = std::io::stdout(); // Get the handle to the standard output
                 let mut handle = stdout.lock(); // Lock the handle for writing
