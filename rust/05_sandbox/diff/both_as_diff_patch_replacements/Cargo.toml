@@ -13,3 +13,22 @@ diffy = { version="0.4.0", git="https://github.com/correabuscar/diffy", branch="
 getopts = { version="0.2.21", git="https://github.com/correabuscar/getopts", branch="used_by_me" }
 #getopts = { version="0.2.21", path="/home/user/1tmp/getopts/" }
 
+
+[profile.dev]
+opt-level = 0
+debug = true
+lto=false
+split-debuginfo = "uncompressed"
+debug-assertions = true
+overflow-checks = true
+
+
+[profile.release]
+opt-level = 3
+lto="thin"
+debug = true
+split-debuginfo = "uncompressed"
+debug-assertions = true
+overflow-checks = true
+
+
