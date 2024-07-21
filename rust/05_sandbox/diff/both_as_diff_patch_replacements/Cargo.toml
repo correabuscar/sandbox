@@ -10,5 +10,6 @@ edition = "2021"
 #diffy = { version="0.4.0", path="/home/user/1tmp/diffy/" }
 # same as ^ but on github:
 diffy = { version="0.4.0", git="https://github.com/correabuscar/diffy", branch="unambiguous" }
-getopts = { version="0.2.21", git="https://github.com/correabuscar/getopts", branch="patch-1" }
+getopts = { version="0.2.21", git="https://github.com/correabuscar/getopts", branch="used_by_me" }
+#getopts = { version="0.2.21", path="/home/user/1tmp/getopts/" }
 

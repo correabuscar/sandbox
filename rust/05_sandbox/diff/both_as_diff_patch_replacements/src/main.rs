@@ -994,15 +994,52 @@ fn main() -> ExitCode {
                 show_all_args(exe_name, the_args, true);
                 panic!("negative context length given");
             }
-            prdebug!("Free: {} {:?}", matches.free.len(), matches.free);
-            //FIXME: delegate if all cases except when -up and context is specified.
-            if overridden_output_type_is != "u" {
+            prdebug!("Free args({}): '{:?}'", matches.free.len(), matches.free);
+            //doneFIXME: delegate in all cases except when -up and context is specified.
+            //eprintln!("{:#?}", matches);
+            // Collect options corresponding to non-empty subarrays in vals
+//            let mut non_empty_opts: Vec<_> = matches.vals.iter()
+//                .zip(matches.opts.iter())
+//                .filter(|(val, _)| !val.is_empty())
+//                .map(|(_, &ref opt)| opt)
+//                .collect();
+//
+//            // Lists of names to remove
+//            // XXX: only these args are supported by this rust version of 'diff', any others and we'll delegate the whole operation to gnu diff
+            let long_names_to_remove = ["label"];
+            let short_names_to_remove = ['p', 'q', 'u'];
+//
+//            // Remove all elements where the name is in the list of names to remove
+//            non_empty_opts.retain(|opt| {
+//                match &opt.name {
+//                    getopts::Name::Long(name) => {
+//                        let retain=!long_names_to_remove.contains(&name.as_str());
+//                        if retain {
+//                            //if the long name isn't in the list to remove, check the short name
+//                            opt.aliases.iter().any(|each| {
+//                                match &each.name {
+//                                    getopts::Name::Short(name) => !short_names_to_remove.contains(&name),
+//                                    getopts::Name::Long(name) => unreachable!("for '{}'", name),
+//                                }
+//                            })
+//                        } else {
+//                            retain
+//                        }
+//                    },
+//                    _ => unreachable!(),
+//                }
+//            });
+
+            let unsupported=matches.whats_left(&short_names_to_remove, &long_names_to_remove);
+            let how_many_unsupported=unsupported.len();
+            if overridden_output_type_is != "u" || how_many_unsupported > 0 {
                 show_all_args(exe_name, the_args, true);
                 //panic!(
                 //    "Unsupported output type via rust, okTODO: maybe delegate to real '{}' ?",
                 //    exe_name
                 //);
-                eprintln!("Unsupported output type via rust, delegating to real '{}':", exe_name);
+                eprintln!("Remaining unsupported args for the rust version: {:?}", unsupported);
+                eprintln!("Unsupported ('{}')args or output type via rust, delegating to real '{}':", how_many_unsupported, exe_name);
                 let exit_code = exec_diff(the_args);
                 return ExitCode::from(exit_code as u8);
             } else {

@@ -21,7 +21,7 @@ dependencies = [
 [[package]]
 name = "getopts"
 version = "0.2.21"
-source = "git+https://github.com/correabuscar/getopts?branch=patch-1#f10460995abe04c692b3c3036e1e280d99349e93"
+source = "git+https://github.com/correabuscar/getopts?branch=used_by_me#c422eccc718534b310ef36456583d86ebb32b9f3"
 dependencies = [
  "unicode-width",
 ]
