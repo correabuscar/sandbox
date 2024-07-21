@@ -1007,7 +1007,8 @@ fn main() -> ExitCode {
 
             let unsupported = matches.whats_left(&short_names_to_remove, &long_names_to_remove);
             let how_many_unsupported = unsupported.len();
-            if overridden_output_type_is != "u" || how_many_unsupported > 0 {
+            //if overridden_output_type_is != "u" || how_many_unsupported > 0 {
+            if how_many_unsupported > 0 || (! quiet && overridden_output_type_is != "u") {
                 show_all_args(exe_name, the_args, true);
                 //panic!(
                 //    "Unsupported output type via rust, okTODO: maybe delegate to real '{}' ?",
@@ -1015,8 +1016,8 @@ fn main() -> ExitCode {
                 //);
                 eprintln!("Remaining unsupported args for the rust version: {:?}", unsupported);
                 eprint!(
-                    "Unsupported ('{}')args or output type('{}') via rust",
-                    how_many_unsupported, overridden_output_type_is
+                    "Unsupported ('{}')args or output type('{}') while quiet(? '{}') via this rust version of diff",
+                    how_many_unsupported, overridden_output_type_is, quiet
                 );
                 if unambiguous_requested {
                     eprintln!(", failing due to unambiguous being requested.");
@@ -1026,7 +1027,12 @@ fn main() -> ExitCode {
                 let exit_code = exec_diff(the_args);
                 return ExitCode::from(exit_code as u8);
             } else {
-                //ok
+                //ok, all args are supported, or is either quiet mode or, not quiet and overridden output type is 'u'
+                assert_eq!(how_many_unsupported, 0);
+                assert!(quiet || (!quiet && overridden_output_type_is == "u"));
+                if !unambiguous_requested && quiet {
+                    assert_eq!(false, unambiguous);
+                }
                 show_all_args(exe_name, the_args, false);
             }
 
