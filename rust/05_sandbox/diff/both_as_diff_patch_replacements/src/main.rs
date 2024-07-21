@@ -858,12 +858,14 @@ fn main() -> ExitCode {
             let mut unambiguous = !quiet; //default assumed, for unambiguous
             let pos_of_ambi: isize = matches.opt_positions("ambiguous").last().map_or(-1, |v| *v as isize);
             let pos_of_unambi: isize = matches.opt_positions("unambiguous").last().map_or(-1, |v| *v as isize);
+            let mut unambiguous_requested=false;
             if pos_of_ambi > pos_of_unambi {
                 //--ambiguous was specified last, or only!
                 unambiguous = false;
             } else if pos_of_unambi > pos_of_ambi {
                 //--unambiguous was specified last, or only it!
                 unambiguous = true;
+                unambiguous_requested=true;
             } else {
                 //both unspecified
                 assert_eq!(pos_of_ambi, -1);
@@ -1012,10 +1014,15 @@ fn main() -> ExitCode {
                 //    exe_name
                 //);
                 eprintln!("Remaining unsupported args for the rust version: {:?}", unsupported);
-                eprintln!(
-                    "Unsupported ('{}')args or output type('{}') via rust, delegating to real '{}':",
-                    how_many_unsupported, overridden_output_type_is, exe_name
+                eprint!(
+                    "Unsupported ('{}')args or output type('{}') via rust",
+                    how_many_unsupported, overridden_output_type_is
                 );
+                if unambiguous_requested {
+                    eprintln!(", failing due to unambiguous being requested.");
+                    return ExitCode::from(2);
+                }
+                eprintln!(", delegating to real '{}' next.", exe_name);
                 let exit_code = exec_diff(the_args);
                 return ExitCode::from(exit_code as u8);
             } else {
