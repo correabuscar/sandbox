@@ -3,7 +3,7 @@
 
 //use diffy::create_patch_bytes;
 //use diffy::PatchFormatter;
-use diffy::{apply, Patch};
+use diffy::{apply_bytes, Patch, Unambiguous};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -68,6 +68,12 @@ fn print_usage_diff(exe: &str, opts: Options) {
     let brief = format!("Usage: {} [OPTION]... <file1> <file2>", exe);
     print!("{}", opts.usage(&brief));
     exec_diff(["--help"]);
+}
+
+fn print_usage_patch(exe: &str, opts: Options) {
+    let brief = format!("Usage: {} [options]... [originalfile [patchfile]]", exe);
+    print!("{}", opts.usage(&brief));
+    exec_patch(["--help"]);
 }
 
 const TEST_CUSTOM_EXIT_CODE: i32 = 82;
@@ -351,7 +357,10 @@ fn main() -> ExitCode {
         */
     }
     init_debug();
-    prdebug!("debug={}", DEBUG.load(Ordering::Relaxed));
+    {
+        let debug:bool=DEBUG.load(Ordering::Relaxed);
+        prdebug!("debug={}", debug);
+    }
     let _f = Foo(false); // to see if dropped on panic!
     // Set a custom panic hook
     //    let default_hook = std::panic::take_hook();
@@ -421,6 +430,7 @@ fn main() -> ExitCode {
 
     let mut opts = Options::new();
     match exe_name {
+        // ------------------------------------------------
         DIFF_EXE_BASENAME => {
             //opts.opt("u", "unified", "output NUM (default 3) lines of unified contex", "", HasArg::No,
             // Occur::Multi);
@@ -847,7 +857,7 @@ fn main() -> ExitCode {
                 }
             };
             if matches.opt_present("v") {
-                eprintln!("The rust version of '{}', delegating to gnu diff:", exe_name); //TODO: get our version shown here
+                eprintln!("The rust version of '{0}', delegating to gnu {0}:", exe_name); //TODO: get our version shown here
                 let exit_code = exec_diff(the_args); //this does only show the version, not matter the args! except if --help is present then it shows --help if it's first!
                 //XXX: so adding a -v to a diff command of any kind, return exit code 0, thus can bypass and diff
                 // comparison, if say -v was part of the filename and not properly escaped that would be taken as an
@@ -901,10 +911,10 @@ fn main() -> ExitCode {
             let labels = matches.opt_strs("label");
             let label1 = if labels.len() >= 1 { &labels[0] } else { &file1_name };
             let label2 = if labels.len() == 2 { &labels[1] } else { &file2_name };
-            if matches.opt_present("label") {
-                //FIXME: later, labels will be used actually!
-                prdebug!("Ignoring labels '{}' '{}'", label1, label2);
-            }
+            //if matches.opt_present("label") {
+            //    //doneFIXME: later, labels will be used actually!
+            //    prdebug!("Ignoring labels '{}' '{}'", label1, label2);
+            //}
             if matches.opt_present("p") {
                 prdebug!("Ignoring --show-c-function aka -p");
             }
@@ -1045,7 +1055,7 @@ fn main() -> ExitCode {
             let file1_buf: Vec<u8> = read_buffer_from_file(&file1_name);
             let file2_buf: Vec<u8> = read_buffer_from_file(&file2_name);
 
-            //TODO: maybe just have diffy get us the correct context length for unambiguity and delegate the
+            //nvmTODO: maybe just have diffy get us the correct context length for unambiguity and delegate the
             // patch making to original gnu 'diff' command with that context length(aka lines of context)! But
             // the problem is that's difficult to find out where to insert the new --unified=CONTEXTLENGTH_NUM
             // in the original args due to possibly '--' or args coming after the 2 file names; or, just use
@@ -1057,8 +1067,17 @@ fn main() -> ExitCode {
             // rust too. let r#do:diffy::DiffOptions=diffy::DiffOptions::new().
             // set_unambiguous(unambiguous); // messed up Rust
             let mut r#do: diffy::DiffOptions = diffy::DiffOptions::new();
+            r#do.quiet=quiet;
             r#do.set_context_len(context_length as usize);
-            r#do.set_unambiguous(unambiguous);
+            r#do.set_unambiguous(
+                //TODO: so far, using --unambiguous means only forward but not also the reverse patches will be ensured to be unambiguous, but if the reverse one would also be unambiguous it would mean the forward patch might have higher than required context lines due to the forward patch having added new spots, potentially! Maybe we want to allow caller/user to choose if reversed patch too needs to be unambiguous or not!
+                if unambiguous {
+                    //diffy::Unambiguous::BothForwardAndReversedPatches
+                    diffy::Unambiguous::OnlyForwardPatch
+                } else {
+                    Unambiguous::None
+                }
+            );
             let patch = r#do.create_patch_bytes_with_labels(&file1_buf, &file2_buf, &label1.as_bytes(), &label2.as_bytes());
             if !quiet {
                 let stdout = std::io::stdout(); // Get the handle to the standard output
@@ -1094,43 +1113,177 @@ fn main() -> ExitCode {
                 return ExitCode::SUCCESS;
             }
         } //diff
+        // ------------------------------------------------
         PATCH_EXE_BASENAME => {
-            let args: Vec<String> = env::args().collect();
-            if args.len() > 5 || args.len() < 4 {
-                eprintln!(
-                    "Usage: {} <original_file> <patch_file> <output_file> true/false",
-                    PATCH_EXE_BASENAME
-                );
-                eprintln!("true/false is for unambiguous");
-                exec_patch(["--help"]);
-                return ExitCode::from(2);
+            opts.opt("", "unambiguous", "output a unified patch whose hunks can only be applied in one place even if applied independently, but also if applied normally", "", HasArg::No, Occur::Multi);
+            opts.opt("", "ambiguous", "this is the old normal way: output a patch(not necessarifly unified) whose hunks can possibly be applied in more than 1 spot", "", HasArg::No, Occur::Multi);
+            opts.opt(
+                "u",
+                "unified",
+                "",
+                "",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "c",
+                "context",
+                "",
+                "",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "v",
+                "version",
+                "Print out 'patch'’s revision header and patch level, and exit.",
+                "",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "s",
+                "quiet",
+                "Work silently, unless an error occurs",
+                "",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "s",
+                "silent",
+                "Work silently, unless an error occurs.",
+                "",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "i",
+                "input",
+                "Read the patch from patchfile.  If patchfile is -, read from standard input, the default.",
+                "patchfile",
+                HasArg::Yes,
+                Occur::Multi, // the last one overrides, prev. ones ignored!
+            );
+            opts.opt(
+                "o",
+                "output",
+                "Send output to outfile instead of patching files in place.",
+                "outfile",
+                HasArg::Yes,
+                Occur::Multi, // the last one overrides, prev. ones ignored!
+            );
+            opts.optflag("", "help", "print this help text");
+            let the_args = &args[1..];
+            let matches = match opts.parse(the_args) {
+                Ok(m) => m,
+                Err(f) => {
+                    print_usage_patch(exe_name, opts);
+                    show_all_args(exe_name, the_args, true);
+                    panic!("{}", f.to_string());
+                }
+            };
+            if matches.opt_present("v") {
+                eprintln!("The rust version of '{0}', delegating to gnu {0}:", exe_name); //TODO: get our version shown here
+                let exit_code = exec_diff(the_args); //this does only show the version, not matter the args! except if --help is present then it shows --help if it's first!
+                //XXX: so adding a -v to a diff command of any kind, return exit code 0, thus can bypass and diff
+                // comparison, if say -v was part of the filename and not properly escaped that would be taken as an
+                // arg, or something else that can insert a -v
+                return ExitCode::from(exit_code as u8);
             }
-            #[allow(unused_variables)]
-            let unambiguous: bool;
-            #[allow(unused_assignments)]
-            if args.len() == 5 {
-                unambiguous = args[4]
-                    .parse()
-                    .expect("Failed to parse arg number 5 into bool: true/false");
-            } else {
+            let quiet = matches.opt_present("s");
+            let mut unambiguous = true; //default assumed, for unambiguous
+            let pos_of_ambi: isize = matches.opt_positions("ambiguous").last().map_or(-1, |v| *v as isize);
+            let pos_of_unambi: isize = matches.opt_positions("unambiguous").last().map_or(-1, |v| *v as isize);
+            let mut unambiguous_requested=false;
+            if pos_of_ambi > pos_of_unambi {
+                //--ambiguous was specified last, or only!
                 unambiguous = false;
+            } else if pos_of_unambi > pos_of_ambi {
+                //--unambiguous was specified last, or only it!
+                unambiguous = true;
+                unambiguous_requested=true;
+            } else {
+                //both unspecified
+                assert_eq!(pos_of_ambi, -1);
+                assert_eq!(pos_of_unambi, -1);
+            }
+            //TODO: find out if --help or -v is first, and whichever it is, that's the one that's in effect!
+            // first, not last!
+            if matches.opt_present("help") {
+                print_usage_patch(exe_name, opts);
+                //assert_eq!(ExitCode::SUCCESS, 0);//binary operation `==` cannot be applied to type `ExitCode`
+                //assert_eq!(ExitCode::SUCCESS, ExitCode::from(0));//same
+                return ExitCode::SUCCESS;
+            }
+            let hm = matches.free.len();
+            let original_file_name:Option<String>;
+            let patch_file_name:String;
+            if hm > 2 {
+                print_usage_patch(exe_name, opts);
+                show_all_args(exe_name, the_args, true);
+                panic!("{}", "too many free args!");
+                //return ExitCode::from(2);
+            } else if hm == 2 {
+                patch_file_name=matches.free[1].clone();
+                if matches.opt_present("i") {
+                    panic!("Has both '-i {}' and patch file name '{}' as free arg, as the patch file name to be used as input patch! We panic to disallow confusion.", matches.opt_strs("i").last().unwrap_or(&"<couldnt_get_it>".to_string()), patch_file_name);
+                }
+                original_file_name=Some(matches.free[0].clone());
+            } else if hm == 1 {
+                original_file_name=Some(matches.free[0].clone());
+                patch_file_name="-".to_string();
+            } else {
+                assert_eq!(hm, 0);
+                original_file_name=None;
+                patch_file_name="-".to_string();
             }
 
-            let original_file = fs::read(&args[1]).expect("Failed to read original file");
-            let patch_file = fs::read(&args[2]).expect(&format!("Failed to read patch file: '{}'", &args[2]));
+            panic_if_file_does_not_exist(&patch_file_name);
+            let patch_file_buf: Vec<u8> = read_buffer_from_file(&patch_file_name);
 
-            let original_str = str::from_utf8(&original_file).expect("Failed to convert original file to string");
-            let patch_str = str::from_utf8(&patch_file).expect("Failed to convert patch file to string");
+            let orig_buf: Vec<u8> = if let Some(orig)=original_file_name {
+                panic_if_file_does_not_exist(&orig);
+                read_buffer_from_file(&orig)
+            }else{
+                todo!("TODO");//TODO
+            };
 
-            let patch = Patch::from_str(patch_str).expect("Failed to parse patch file");
-            let patched_str = apply(original_str, &patch, unambiguous).unwrap_or_else(|e| {
+            let output_file_name:Option<String> = match matches.opt_strs("output").last() {
+                Some(cl) => {
+                    //FIXME: this should be Path or OsString or something, definitely not limited to UTF8
+                    let res = cl.parse::<String>();
+                    match res {
+                        Ok(name) => Some(name),
+                        Err(e) => {
+                            panic!("Failed to parse output file name '{}' as String, error: '{}'", cl, e);
+                        }
+                    } //match
+                }
+                None => {
+                    // --output was not specified, so patching files in place
+                    None
+                },
+            };
+            prdebug!("Output file name: {:?}", output_file_name);
+
+
+            let patch=Patch::from_bytes(&patch_file_buf).expect(&format!("Failed to parse patch file '{}' as a unified patch!", patch_file_name));
+
+            //FIXME: so the patch can have multiple filenames in it to patch, we must detect if more than 1 is in the patch and fail if --output was given, else, apply hunks to each of those files.
+            let patched_bytes=apply_bytes(&orig_buf, &patch, unambiguous).unwrap_or_else(|e| {
                 std::rt::EXIT_CODE_ON_PANIC.store(1, std::sync::atomic::Ordering::Relaxed);
-                panic!("Failed to apply patch, '{}'", e);
+                panic!("Failed to apply patch, error: '{}'", e);
             });
 
-            fs::write(&args[3], patched_str.as_bytes()).expect("Failed to write output file");
+            if let Some(out_fn)=output_file_name {
+                fs::write(&out_fn, patched_bytes).expect(&format!("Failed to write the patched output file '{}'", out_fn));
+            } else {
+                std::io::Write::write_all(&mut std::io::stdout(), &patched_bytes).expect("Failed to write the patched output to stdout!");
+            }
             return ExitCode::SUCCESS;
         } //patch
+        // ------------------------------------------------
         "test_drops_and_exit_code_on_panic" => {
             let _change_it = Foo(true); //will change exit code on drop()
             panic!(
@@ -1138,8 +1291,10 @@ fn main() -> ExitCode {
                 TEST_CUSTOM_EXIT_CODE
             );
         }
+        // ------------------------------------------------
         anything_else => {
             panic!("unrecognized self name '{}'", anything_else);
         }
+        // ------------------------------------------------
     } //match
 }

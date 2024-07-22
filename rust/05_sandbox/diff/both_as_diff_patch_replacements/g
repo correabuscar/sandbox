@@ -3,6 +3,7 @@
 set -e
 #export RUST_BACKTRACE=1
 export RUST_BACKTRACE=0
+export DEBUG=1
 #unset RUST_BACKTRACE
 #cargo clean #needed else won't detect same rustc version changes because it doesn't look at exe timestamp
 cargo build
@@ -75,13 +76,21 @@ fi
 popd
 pushd "../patch"
 
-"$patch" workspace.rs.original /tmp/le.patch workspace.rs.FRESHLY_PATCHED
-"$patch" workspace.rs.FRESHLY_PATCHED /tmp/le.patch workspace.rs.FRESHLY_PATCHED_AGAIN; ec="$?"
+#TODO: try with `-o output` and see if `> output`  has same output file in both cases! and for --unambiguous too!
+
+"$patch" --ambiguous workspace.rs.original /tmp/le.patch > workspace.rs.FRESHLY_PATCHED; ec="$?"
+if test "$ec" != "0"; then
+  tput setaf 1 >&2
+  echo "The generated patch should not have failed to apply on the original source! exit code '$ec'." >&2
+  tput sgr0 >&2
+  exit "$ec"
+fi
+"$patch" --ambiguous workspace.rs.FRESHLY_PATCHED /tmp/le.patch > /tmp/workspace.rs.FRESHLY_PATCHED_AGAIN; ec="$?"
 if test "$ec" == 0; then
   tput setaf 1 >&2
   echo "That's a fail, it shouldn't have applied again! The patch itself is ambiguous!" >&2
   tput sgr0 >&2
-  "$patch" workspace.rs.FRESHLY_PATCHED_AGAIN /tmp/le.patch workspace.rs.FRESHLY_PATCHED_AGAIN2; ec="$?"
+  "$patch" --ambiguous workspace.rs.FRESHLY_PATCHED_AGAIN /tmp/le.patch > /tmp/workspace.rs.FRESHLY_PATCHED_AGAIN2; ec="$?"
   if test "$ec" == 0; then
     tput setaf 1 >&2
     echo "That's a fail, it shouldn't have applied again! The patch itself is ambiguous!" >&2
@@ -100,14 +109,24 @@ if test "$ec" == 0; then
 
   #cargo run workspace.rs.FRESHLY_PATCHED_AGAIN2 le.patch workspace.rs.FRESHLY_PATCHED_AGAIN3
   #^ that one finally fails!
-else
+elif test "$ec" == 1; then
   tput setaf 2 >&2
   echo "That's correct! Patch failed to apply again in a wrong place!" >&2
   echo "Now let's try again but this time with an ambiguous patch and an unambiguous apply!" >&2
+elif test "$ec" == 2; then
+  tput setaf 1 >&2
+  echo "patching failed due to encountering trouble aka exit code '$ec'." >&2
+  tput sgr0
+  exit "$ec"
+else
+  tput setaf 1 >&2
+  echo "Unexpected exit code '$ec' from 'patch' executable, this is bad coding!" >&2
+  tput sgr0
+  exit "$ec"
 fi
 tput sgr0
 
-"$patch" workspace.rs.original bad.patch workspace.rs.FRESHLY_PATCHED true ; ec="$?"
+"$patch" --unambiguous workspace.rs.original bad.patch > /tmp/workspace.rs.FRESHLY_PATCHED ; ec="$?"
 if test "$ec" == 1; then
   tput setaf 2 >&2
   echo "That's correct, applying an ambiguous patch unambiguously, failed as it should!" >&2
