@@ -313,8 +313,15 @@ where
 //}
 
 /// assumes filename '-' is stdin, else it's the exact given filename
-fn read_buffer_from_file(file_name: &str) -> Vec<u8> {
-    if file_name == "-" {
+//fn read_buffer_from_file(file_name: &str) -> Vec<u8> {
+fn read_buffer_from_file<P: AsRef<Path>>(file_name: P) -> Vec<u8> {
+    let file_name = file_name.as_ref();
+
+    // Convert "-" to OsStr for comparison
+    let dash = std::ffi::OsStr::new("-");
+    //let dash = Path::new("-");//std::ffi::OsStr::new("-");
+    //if file_name == "-" {
+    if file_name == dash {
         let mut buffer = Vec::new();
         use std::io::Read;
         std::io::stdin()
@@ -325,7 +332,7 @@ fn read_buffer_from_file(file_name: &str) -> Vec<u8> {
         fs::read(file_name).unwrap_or_else(|e| {
             panic!(
                 "Failed to read file1 '{}' (pwd='{}'), error: '{}'",
-                &file_name,
+                file_name.display(),
                 env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()),
                 e
             )
@@ -334,12 +341,21 @@ fn read_buffer_from_file(file_name: &str) -> Vec<u8> {
 }
 
 /// unless it's "-" which means stdout(or stdin)
-fn panic_if_file_does_not_exist(file_name: &str) {
-    if file_name != "-" {
-        if !Path::new(&file_name).exists() {
+//fn panic_if_file_does_not_exist(file_name: &str) {
+fn panic_if_file_does_not_exist<P: AsRef<Path>>(file_name: P) {
+    let file_name = file_name.as_ref();
+
+    // Convert "-" to OsStr for comparison
+    //let dash = Path::new("-");//std::ffi::OsStr::new("-");
+    let dash = std::ffi::OsStr::new("-");
+
+    //if file_name != "-" {
+    if file_name != dash {
+        //if !Path::new(&file_name).exists() {
+        if !file_name.exists() {
             panic!(
                 "File '{}' doesn't exist?! (pwd='{}')",
-                &file_name,
+                file_name.display(),
                 env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()),
             )
         }
@@ -905,7 +921,7 @@ fn main() -> ExitCode {
                 panic!("{}", extra);
                 //return ExitCode::from(2);
             }
-            let file1_name = matches.free[0].clone();
+            let file1_name:String = matches.free[0].clone();
             let file2_name = matches.free[1].clone();
             if matches.opt_count("label") > 2 {
                 show_all_args(exe_name, the_args, true);
@@ -1220,7 +1236,7 @@ fn main() -> ExitCode {
                 return ExitCode::SUCCESS;
             }
             let hm = matches.free.len();
-            let original_file_name:Option<String>;
+            let original_file_name:Option<PathBuf>;
             let patch_file_name:String;
             if hm > 2 {
                 print_usage_patch(exe_name, opts);
@@ -1232,9 +1248,10 @@ fn main() -> ExitCode {
                 if matches.opt_present("i") {
                     panic!("Has both '-i {}' and patch file name '{}' as free arg, as the patch file name to be used as input patch! We panic to disallow confusion.", matches.opt_strs("i").last().unwrap_or(&"<couldnt_get_it>".to_string()), patch_file_name);
                 }
-                original_file_name=Some(matches.free[0].clone());
+                original_file_name=Some(PathBuf::from(matches.free[0].clone()));
             } else if hm == 1 {
-                original_file_name=Some(matches.free[0].clone());
+                //original_file_name=Some(matches.free[0].clone());
+                original_file_name=Some(PathBuf::from(matches.free[0].clone()));
                 patch_file_name="-".to_string();
             } else {
                 assert_eq!(hm, 0);
@@ -1313,7 +1330,7 @@ fn main() -> ExitCode {
                     }
                 }
             }
-            assert_eq!(filenames_orig.len(), filenames_mod.len(), "the --- and +++ lines aren't the same");
+            assert_eq!(filenames_orig.len(), filenames_mod.len(), "The amount of --- and +++ lines isn't the same.");
             for each in &filenames_orig {
                 eprintln!("Orig: '{}'", each.display());
             }
@@ -1321,19 +1338,23 @@ fn main() -> ExitCode {
                 eprintln!("Mod : '{}'", each.display());
             }
 
-            let maybe_orig_buf: Option<Vec<u8>> = if let Some(orig)=original_file_name {
-                let how_many=filenames_orig.len();
+            let how_many=filenames_orig.len();
+            let orig_fname: PathBuf = if let Some(orig)=original_file_name {
                 if how_many > 1 {
-                    panic!("The original filename to patch '{}' was specified, but the patch has '{}' different filenames to patch inside it!", orig, how_many);
+                    panic!("The original filename to patch '{}' was specified, but the patch has '{}' different filenames to patch inside it!", orig.display(), how_many);
                 }
-                panic_if_file_does_not_exist(&orig);
-                //use_filenames_from_within_the_patch=false;
-                Some(read_buffer_from_file(&orig))
-            }else{
+                orig
+            } else {
                 //todo!("TODO");//TODO
                 //use_filenames_from_within_the_patch=true;
-                None
+                if how_many<1 {
+                    panic!("Patch file '{}' doesn't have at least 1 file name to patch! and one wasn't specified on cmdline!", patch_file_name);
+                }
+                //None
+                filenames_orig[0].to_path_buf()
             };
+            panic_if_file_does_not_exist(&orig_fname);
+            let orig_buf=read_buffer_from_file(&orig_fname);
 
             let output_file_name:Option<String> = match matches.opt_strs("output").last() {
                 Some(cl) => {
@@ -1367,22 +1388,19 @@ fn main() -> ExitCode {
             let patch=Patch::from_bytes(&patch_file_buf).expect(&format!("Failed to parse patch file '{}' as a unified patch!", patch_file_name));
 
             //FIXME: so the patch can have multiple filenames in it to patch, we must detect if more than 1 is in the patch and fail if --output was given, else, apply hunks to each of those files.
-            if let Some(orig_buf)=maybe_orig_buf {
-                let patched_bytes=apply_bytes(&orig_buf, &patch, unambiguous).unwrap_or_else(|e| {
-                    std::rt::EXIT_CODE_ON_PANIC.store(1, std::sync::atomic::Ordering::Relaxed);
-                    panic!("Failed to apply patch, error: '{}'", e);
-                });
+            let patched_bytes=apply_bytes(&orig_buf, &patch, unambiguous).unwrap_or_else(|e| {
+                std::rt::EXIT_CODE_ON_PANIC.store(1, std::sync::atomic::Ordering::Relaxed);
+                panic!("Failed to apply patch, error: '{}'", e);
+            });
 
-                if let Some(out_fn)=output_file_name {
-                    //assert_eq!(use_filenames_from_within_the_patch, false);
-                    fs::write(&out_fn, patched_bytes).expect(&format!("Failed to write the patched output file '{}'", out_fn));
-                } else {
-                    std::io::Write::write_all(&mut std::io::stdout(), &patched_bytes).expect("Failed to write the patched output to stdout!");
-                }
+            if let Some(out_fn)=output_file_name {
+                //assert_eq!(use_filenames_from_within_the_patch, false);
+                fs::write(&out_fn, patched_bytes).expect(&format!("Failed to write the patched output file '{}'", out_fn));
             } else {
-                //assert_eq!(use_filenames_from_within_the_patch, true);
-                // it can still be only 1 filename inside the patch, so --output isn't wrong, in that case!
+                std::io::Write::write_all(&mut std::io::stdout(), &patched_bytes).expect("Failed to write the patched output to stdout!");
             }
+            //assert_eq!(use_filenames_from_within_the_patch, true);
+            // it can still be only 1 filename inside the patch, so --output isn't wrong, in that case!
 
             return ExitCode::SUCCESS;
         } //patch
