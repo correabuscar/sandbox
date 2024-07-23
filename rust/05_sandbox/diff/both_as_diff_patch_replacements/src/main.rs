@@ -4,6 +4,7 @@
 //use diffy::create_patch_bytes;
 //use diffy::PatchFormatter;
 use diffy::{apply_bytes, Patch, Unambiguous};
+use std::ffi::{OsStr, OsString};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -232,7 +233,7 @@ fn get_callers_tree() -> Vec<u8> {
 
 fn show_all_args<S>(exe_name: &str, the_args: &[S], save_to_file: bool)
 where
-    S: AsRef<str> + std::fmt::Debug,
+    S: AsRef<std::ffi::OsStr> + std::fmt::Debug,
 {
     let text = format!(
         "exe name:'{}', passed args({}):{:?}\n",
@@ -427,21 +428,24 @@ fn main() -> ExitCode {
         }
     });
 
-    let args: Vec<String> = env::args().collect();
+    //FIXME: all args are assumed to be valid UTF8 thus passing non-utf8 filenames will fail! AND apparently getopts crate CAN handle OsString not only String args.
+    //let args: Vec<String> = env::args().collect();
+    let args: Vec<std::ffi::OsString> = env::args_os().collect();
 
-    let exe_name_as_called: String = std::env::args().next().unwrap_or_else(|| "unknown".to_string());
-    let realpath_of_exe_name_as_called: String = resolve_realpath(&exe_name_as_called)
+    let exe_name_as_called: std::ffi::OsString = std::env::args_os().next().unwrap_or_else(|| "unknown".into());
+    let realpath_of_exe_name_as_called: OsString = resolve_realpath(&exe_name_as_called)
         .expect("can't realpath")
-        .into_os_string()
-        .into_string()
-        .expect("non utf8");
+        .into_os_string();
+//        .into_string()
+//        .expect("non utf8");
     let exe_name_abs_path = std::env::current_exe().expect("why would this fail");
     assert_eq!(
-        exe_name_abs_path.to_string_lossy(),
+        exe_name_abs_path,//.to_string_lossy(),
         realpath_of_exe_name_as_called,
-        "discrepancy detected, likely the path or exe name aren't UTF-8 ! FIXME: handle this case"
+        "discrepancy detected" //, likely the path or exe name aren't UTF-8 ! notanissueFIXME: handle this case"
     );
-    let exe_name = Path::new(&exe_name_as_called)
+    //FIXME: this should be OsStr
+    let exe_name:&str = Path::new(&exe_name_as_called)
         .file_stem()
         .and_then(|stem| stem.to_str())
         .expect("basename");
