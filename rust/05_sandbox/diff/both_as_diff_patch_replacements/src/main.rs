@@ -333,6 +333,7 @@ fn read_buffer_from_file(file_name: &str) -> Vec<u8> {
     }
 }
 
+/// unless it's "-" which means stdout(or stdin)
 fn panic_if_file_does_not_exist(file_name: &str) {
     if file_name != "-" {
         if !Path::new(&file_name).exists() {
@@ -404,7 +405,9 @@ fn main() -> ExitCode {
             // handler so we're inside a panic already so double panic will be seen before catching it!
             // this will panic if for example the log file in /var/log/ wasn't already: created and chmod a+w on
             // it!
-            show_all_args(exe_name, &args[1..], true);
+            let exit_code=std::rt::EXIT_CODE_ON_PANIC.load(std::sync::atomic::Ordering::Relaxed);
+            let save_args_if=![0,1].contains(&exit_code);
+            show_all_args(exe_name, &args[1..], save_args_if);
         }
     });
 
@@ -1242,47 +1245,148 @@ fn main() -> ExitCode {
             panic_if_file_does_not_exist(&patch_file_name);
             let patch_file_buf: Vec<u8> = read_buffer_from_file(&patch_file_name);
 
-            let orig_buf: Vec<u8> = if let Some(orig)=original_file_name {
+            //let mut use_filenames_from_within_the_patch:bool;
+
+            //let use_filenames_from_within_the_patch:bool=maybe_orig_buf.is_none() && output_file_name.is_none();
+
+
+            // Create an empty vector to store the current line
+            //let mut current_line = Vec::new();
+
+            // Define the prefixes we're looking for as byte arrays
+            let prefix_orig = b"--- ";
+            let prefix_mod = b"+++ ";
+            //let mut filenames_orig:Vec<&[u8]>=Vec::new();
+            //let mut filenames_mod:Vec<&[u8]>=Vec::new();
+            let mut filenames_orig:Vec<&Path>=Vec::new();
+            let mut filenames_mod:Vec<&Path>=Vec::new();
+
+            let mut line_start = 0;
+            // Iterate over the bytes in the data slice
+            //for &byte in patch_file_buf.iter() {
+            for (i, &byte) in patch_file_buf.iter().enumerate() {
+                // Append the current byte to the line buffer, including \n else can't detect unterminated filename.
+                //current_line.push(byte);
+                if byte == b'\n' {
+                    // Slice the current line from the data
+                    let current_line = &patch_file_buf[line_start..=i];
+                    // Check if the current line starts with either prefix
+                    if current_line.starts_with(prefix_orig) {
+                        // Extract the part after the prefix
+                        let filename = &current_line[prefix_orig.len()..];
+                        // Find the position of the first \t or \n
+                        //TODO: can probably avoid iterating here if we kept track of last encountered \t and \n and if above the line_start+prefix_orig.len() then that's it.
+                        if let Some(pos) = filename.iter().position(|&b| b == b'\t' || b == b'\n') {
+                            let valid_filename = &filename[..pos];
+                            use std::os::unix::ffi::OsStrExt; // For Unix-like systems
+                            let os_str=std::ffi::OsStr::from_bytes(valid_filename);
+                            let path=std::path::Path::new(os_str);
+                            filenames_orig.push(path);
+                        }
+                        //TODO: dedup
+                    } else if current_line.starts_with(prefix_mod) {
+                        // Extract the part after the prefix
+                        let filename = &current_line[prefix_mod.len()..];
+                        // Find the position of the first \t or \n
+                        if let Some(pos) = filename.iter().position(|&b| b == b'\t' || b == b'\n') {
+                            let valid_filename = &filename[..pos];
+                            //filenames_mod.push(valid_filename);
+                            use std::os::unix::ffi::OsStrExt; // For Unix-like systems
+                            let os_str=std::ffi::OsStr::from_bytes(valid_filename);
+                            let path=std::path::Path::new(os_str);
+                            filenames_mod.push(path);
+                        }
+                    }
+                    // Clear the current line buffer
+                    //current_line.clear();
+                    // Update the start of the next line
+                    line_start = i + 1;
+                }
+            }
+
+            {
+                let current_line = &patch_file_buf[line_start..patch_file_buf.len()];
+                // Check the last line if the data doesn't end with a newline
+                if !current_line.is_empty() {
+                    if current_line.starts_with(prefix_orig) || current_line.starts_with(prefix_mod) {
+                        panic!("Patch is broken, the last line is a +++ or --- one without a \\n, eg. unterminated filename, besides where's the hunk then?!");
+                    }
+                }
+            }
+            assert_eq!(filenames_orig.len(), filenames_mod.len(), "the --- and +++ lines aren't the same");
+            for each in &filenames_orig {
+                eprintln!("Orig: '{}'", each.display());
+            }
+            for each in &filenames_mod {
+                eprintln!("Mod : '{}'", each.display());
+            }
+
+            let maybe_orig_buf: Option<Vec<u8>> = if let Some(orig)=original_file_name {
+                let how_many=filenames_orig.len();
+                if how_many > 1 {
+                    panic!("The original filename to patch '{}' was specified, but the patch has '{}' different filenames to patch inside it!", orig, how_many);
+                }
                 panic_if_file_does_not_exist(&orig);
-                read_buffer_from_file(&orig)
+                //use_filenames_from_within_the_patch=false;
+                Some(read_buffer_from_file(&orig))
             }else{
-                todo!("TODO");//TODO
+                //todo!("TODO");//TODO
+                //use_filenames_from_within_the_patch=true;
+                None
             };
 
             let output_file_name:Option<String> = match matches.opt_strs("output").last() {
                 Some(cl) => {
+                    let how_many=filenames_orig.len();
+                    if how_many > 1 {
+                        panic!("--output was specified but the patch has '{}' different filenames to patch inside it!", how_many);
+                    }
                     //FIXME: this should be Path or OsString or something, definitely not limited to UTF8
                     let res = cl.parse::<String>();
+                    //use_filenames_from_within_the_patch=false;
                     match res {
-                        Ok(name) => Some(name),
+                        Ok(name) => {
+                            if name == "-" {
+                                None
+                            } else {
+                                Some(name)
+                            }
+                        },
                         Err(e) => {
                             panic!("Failed to parse output file name '{}' as String, error: '{}'", cl, e);
                         }
                     } //match
                 }
                 None => {
-                    // --output was not specified, so patching files in place
+                    // --output was not specified, so patching files in place, or well, not exactly
                     None
                 },
             };
             prdebug!("Output file name: {:?}", output_file_name);
 
-
             let patch=Patch::from_bytes(&patch_file_buf).expect(&format!("Failed to parse patch file '{}' as a unified patch!", patch_file_name));
 
             //FIXME: so the patch can have multiple filenames in it to patch, we must detect if more than 1 is in the patch and fail if --output was given, else, apply hunks to each of those files.
-            let patched_bytes=apply_bytes(&orig_buf, &patch, unambiguous).unwrap_or_else(|e| {
-                std::rt::EXIT_CODE_ON_PANIC.store(1, std::sync::atomic::Ordering::Relaxed);
-                panic!("Failed to apply patch, error: '{}'", e);
-            });
+            if let Some(orig_buf)=maybe_orig_buf {
+                let patched_bytes=apply_bytes(&orig_buf, &patch, unambiguous).unwrap_or_else(|e| {
+                    std::rt::EXIT_CODE_ON_PANIC.store(1, std::sync::atomic::Ordering::Relaxed);
+                    panic!("Failed to apply patch, error: '{}'", e);
+                });
 
-            if let Some(out_fn)=output_file_name {
-                fs::write(&out_fn, patched_bytes).expect(&format!("Failed to write the patched output file '{}'", out_fn));
+                if let Some(out_fn)=output_file_name {
+                    //assert_eq!(use_filenames_from_within_the_patch, false);
+                    fs::write(&out_fn, patched_bytes).expect(&format!("Failed to write the patched output file '{}'", out_fn));
+                } else {
+                    std::io::Write::write_all(&mut std::io::stdout(), &patched_bytes).expect("Failed to write the patched output to stdout!");
+                }
             } else {
-                std::io::Write::write_all(&mut std::io::stdout(), &patched_bytes).expect("Failed to write the patched output to stdout!");
+                //assert_eq!(use_filenames_from_within_the_patch, true);
+                // it can still be only 1 filename inside the patch, so --output isn't wrong, in that case!
             }
+
             return ExitCode::SUCCESS;
         } //patch
+        //TODO: see how filenames with spaces(or tabs, etc.) are handled for both 'diff' and 'patch'! Looks like diffy expects filenames to end with \t or \n, thus spaces could be part of the name, within the .patch file, see if true for gnu diff and git diff too?
         // ------------------------------------------------
         "test_drops_and_exit_code_on_panic" => {
             let _change_it = Foo(true); //will change exit code on drop()
