@@ -408,7 +408,8 @@ fn main() -> ExitCode {
         //std::process::exit(2);
         //XXX: letting this fall thru allows it to exit with the exit code we set in
         // std::rt::EXIT_CODE_ON_PANIC
-        let args: Vec<String> = env::args().collect();
+        //let args: Vec<String> = env::args().collect();
+        let args: Vec<std::ffi::OsString> = env::args_os().collect();
 
         let exe_name_as_called = &args[0];
         let exe_name = Path::new(&exe_name_as_called)
@@ -428,7 +429,6 @@ fn main() -> ExitCode {
         }
     });
 
-    //FIXME: all args are assumed to be valid UTF8 thus passing non-utf8 filenames will fail! AND apparently getopts crate CAN handle OsString not only String args.
     //let args: Vec<String> = env::args().collect();
     let args: Vec<std::ffi::OsString> = env::args_os().collect();
 
@@ -870,13 +870,14 @@ fn main() -> ExitCode {
             //nvmfounditTODO: unclear what '-h' or -H is in gnu 'diff' but it's not ignored or considered
             // 'invalid option', like -Q is for example.
             opts.optflag("", "help", "print this help text");
-            let the_args = &args[1..];
+            let the_args:&[OsString] = &args[1..];
             let matches = match opts.parse(the_args) {
                 Ok(m) => m,
                 Err(f) => {
                     print_usage_diff(exe_name, opts);
                     show_all_args(exe_name, the_args, true);
-                    panic!("{}", f.to_string());
+                    //panic!("{}", f.to_string());
+                    panic!("{}", f);
                 }
             };
             if matches.opt_present("v") {
@@ -1198,6 +1199,7 @@ fn main() -> ExitCode {
             );
             opts.optflag("", "help", "print this help text");
             let the_args = &args[1..];
+            //FIXME: all args are assumed to be valid UTF8 thus passing non-utf8 filenames will fail! AND apparently getopts crate CAN handle OsString not only String args. The problem is that getopts crate forces them to become str thus utf8 inside parse() else it fails with Fail::UnrecognizedOption
             let matches = match opts.parse(the_args) {
                 Ok(m) => m,
                 Err(f) => {
