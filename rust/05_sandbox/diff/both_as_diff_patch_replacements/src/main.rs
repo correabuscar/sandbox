@@ -1198,6 +1198,14 @@ fn main() -> ExitCode {
                 HasArg::Yes,
                 Occur::Multi, // the last one overrides, prev. ones ignored!
             );
+            opts.opt(
+                "",
+                "check",
+                "checks if patch file is consistent without applying it or checking that files referenced within it exist.",
+                "",
+                HasArg::No,
+                Occur::Multi,
+            );
             opts.optflag("", "help", "print this help text");
             let the_args = &args[1..];
             //FIXME: all args are assumed to be valid UTF8 thus passing non-utf8 filenames will fail! AND apparently getopts crate CAN handle OsString not only String args. The problem is that getopts crate forces them to become str thus utf8 inside parse() else it fails with Fail::UnrecognizedOption
@@ -1367,6 +1375,13 @@ fn main() -> ExitCode {
                 let _patch=Patch::from_bytes(&slice).expect(&format!("Failed to parse patch file '{}' the section for orig.file '{}' as a unified patch!", patch_file_name, each.display()));
             }
             prdebug!("prechecks done");
+            if matches.opt_present("check") {
+                if !quiet {
+                    eprintln!("Patch '{}' checked ok.", patch_file_name);
+                }
+                prdebug!("exiting ok, due to --check");
+                return ExitCode::SUCCESS;
+            }
 
             let how_many=filenames_orig.len();
             let orig_fname: PathBuf = if let Some(orig)=original_file_name {
