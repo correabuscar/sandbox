@@ -1348,8 +1348,10 @@ fn main() -> ExitCode {
                 }
             }
             assert_eq!(filenames_orig.len(), filenames_mod.len(), "The amount of --- and +++ lines isn't the same.");
+            prdebug!("doing some prechecks(without modifying any files)");
             for (i,each) in filenames_orig.iter().enumerate() {
                 prdebug!("Orig: '{}'", each.display());
+                prdebug!("Mod : '{}'", filenames_mod[i].display());
                 //panic_if_file_does_not_exist(&each); // not here, because 'original' is used as fname
 
                 let index_start=patch_buf_range_start[i];
@@ -1364,9 +1366,7 @@ fn main() -> ExitCode {
                 }
                 let _patch=Patch::from_bytes(&slice).expect(&format!("Failed to parse patch file '{}' the section for orig.file '{}' as a unified patch!", patch_file_name, each.display()));
             }
-            for each in &filenames_mod {
-                prdebug!("Mod : '{}'", each.display());
-            }
+            prdebug!("prechecks done");
 
             let how_many=filenames_orig.len();
             let orig_fname: PathBuf = if let Some(orig)=original_file_name {
