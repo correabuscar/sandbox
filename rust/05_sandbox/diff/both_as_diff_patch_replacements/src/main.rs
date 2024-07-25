@@ -1244,7 +1244,7 @@ fn main() -> ExitCode {
             }
             let hm = matches.free.len();
             let original_file_name:Option<PathBuf>;
-            let patch_file_name:String;
+            let mut patch_file_name:String;
             if hm > 2 {
                 print_usage_patch(exe_name, opts);
                 show_all_args(exe_name, the_args, true);
@@ -1265,6 +1265,9 @@ fn main() -> ExitCode {
                 original_file_name=None;
                 patch_file_name="-".to_string();
             }
+            if matches.opt_present("i") {
+                patch_file_name=matches.opt_strs("i").last().unwrap_or_else(|| panic!("Failed to get the patch filename from the -i arg.")).clone();
+            }
 
             panic_if_file_does_not_exist(&patch_file_name);
             let patch_file_buf: Vec<u8> = read_buffer_from_file(&patch_file_name);
@@ -1278,7 +1281,7 @@ fn main() -> ExitCode {
             //let mut current_line = Vec::new();
 
             // Define the prefixes we're looking for as byte arrays
-            let prefix_orig = b"--- ";
+            let prefix_orig:&[u8] = b"--- ";
             let prefix_mod = b"+++ ";
             //let mut filenames_orig:Vec<&[u8]>=Vec::new();
             //let mut filenames_mod:Vec<&[u8]>=Vec::new();
@@ -1288,6 +1291,19 @@ fn main() -> ExitCode {
             let mut line_start = 0;
             // Iterate over the bytes in the data slice
             //for &byte in patch_file_buf.iter() {
+            fn dedup_fn<'a>(prefix:&[u8], filenames_vec:&mut Vec<&'a Path>, current_line:&'a [u8]) {
+                // Extract the part after the prefix
+                let filename = &current_line[prefix.len()..];
+                // Find the position of the first \t or \n
+                //TODO: can probably avoid iterating here if we kept track of last encountered \t and \n and if above the line_start+prefix_orig.len() then that's it.
+                if let Some(pos) = filename.iter().position(|&b| b == b'\t' || b == b'\n') {
+                    let valid_filename = &filename[..pos];
+                    use std::os::unix::ffi::OsStrExt; // For Unix-like systems
+                    let os_str=std::ffi::OsStr::from_bytes(valid_filename);
+                    let path=std::path::Path::new(os_str);
+                    filenames_vec.push(path);
+                }
+            }
             for (i, &byte) in patch_file_buf.iter().enumerate() {
                 // Append the current byte to the line buffer, including \n else can't detect unterminated filename.
                 //current_line.push(byte);
@@ -1296,30 +1312,10 @@ fn main() -> ExitCode {
                     let current_line = &patch_file_buf[line_start..=i];
                     // Check if the current line starts with either prefix
                     if current_line.starts_with(prefix_orig) {
-                        // Extract the part after the prefix
-                        let filename = &current_line[prefix_orig.len()..];
-                        // Find the position of the first \t or \n
                         //TODO: can probably avoid iterating here if we kept track of last encountered \t and \n and if above the line_start+prefix_orig.len() then that's it.
-                        if let Some(pos) = filename.iter().position(|&b| b == b'\t' || b == b'\n') {
-                            let valid_filename = &filename[..pos];
-                            use std::os::unix::ffi::OsStrExt; // For Unix-like systems
-                            let os_str=std::ffi::OsStr::from_bytes(valid_filename);
-                            let path=std::path::Path::new(os_str);
-                            filenames_orig.push(path);
-                        }
-                        //TODO: dedup
+                        dedup_fn(prefix_orig, &mut filenames_orig, current_line);
                     } else if current_line.starts_with(prefix_mod) {
-                        // Extract the part after the prefix
-                        let filename = &current_line[prefix_mod.len()..];
-                        // Find the position of the first \t or \n
-                        if let Some(pos) = filename.iter().position(|&b| b == b'\t' || b == b'\n') {
-                            let valid_filename = &filename[..pos];
-                            //filenames_mod.push(valid_filename);
-                            use std::os::unix::ffi::OsStrExt; // For Unix-like systems
-                            let os_str=std::ffi::OsStr::from_bytes(valid_filename);
-                            let path=std::path::Path::new(os_str);
-                            filenames_mod.push(path);
-                        }
+                        dedup_fn(prefix_mod, &mut filenames_mod, current_line);
                     }
                     // Clear the current line buffer
                     //current_line.clear();
