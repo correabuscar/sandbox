@@ -1356,8 +1356,6 @@ fn main() -> ExitCode {
                 //None
                 filenames_orig[0].to_path_buf()
             };
-            panic_if_file_does_not_exist(&orig_fname);
-            let orig_buf=read_buffer_from_file(&orig_fname);
 
             let output_file_name:Option<String> = match matches.opt_strs("output").last() {
                 Some(cl) => {
@@ -1395,20 +1393,21 @@ fn main() -> ExitCode {
                 todo!("support more than 1 filename inside the .patch file!");
             } else {
                 assert_eq!(how_many, 1,"0 filenames in .patch file? how! should've failed earlier!");
-            }
-            let patched_bytes=apply_bytes(&orig_buf, &patch, unambiguous).unwrap_or_else(|e| {
-                std::rt::EXIT_CODE_ON_PANIC.store(1, std::sync::atomic::Ordering::Relaxed);
-                panic!("Failed to apply patch, error: '{}'", e);
-            });
+                panic_if_file_does_not_exist(&orig_fname);
+                let orig_buf=read_buffer_from_file(&orig_fname);
+                let patched_bytes=apply_bytes(&orig_buf, &patch, unambiguous).unwrap_or_else(|e| {
+                    std::rt::EXIT_CODE_ON_PANIC.store(1, std::sync::atomic::Ordering::Relaxed);
+                    panic!("Failed to apply patch, error: '{}'", e);
+                });
 
-            if let Some(out_fn)=output_file_name {
-                //assert_eq!(use_filenames_from_within_the_patch, false);
-                fs::write(&out_fn, patched_bytes).expect(&format!("Failed to write the patched output file '{}'", out_fn));
-            } else {
-                std::io::Write::write_all(&mut std::io::stdout(), &patched_bytes).expect("Failed to write the patched output to stdout!");
+                // it can still be only 1 filename inside the patch, so --output isn't wrong, in that case!
+                if let Some(out_fn)=output_file_name {
+                    //assert_eq!(use_filenames_from_within_the_patch, false);
+                    fs::write(&out_fn, patched_bytes).expect(&format!("Failed to write the patched output file '{}'", out_fn));
+                } else {
+                    std::io::Write::write_all(&mut std::io::stdout(), &patched_bytes).expect("Failed to write the patched output to stdout!");
+                }
             }
-            //assert_eq!(use_filenames_from_within_the_patch, true);
-            // it can still be only 1 filename inside the patch, so --output isn't wrong, in that case!
 
             return ExitCode::SUCCESS;
         } //patch
