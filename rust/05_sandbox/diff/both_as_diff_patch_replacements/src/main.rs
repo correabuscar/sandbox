@@ -871,6 +871,7 @@ fn main() -> ExitCode {
             // 'invalid option', like -Q is for example.
             opts.optflag("", "help", "print this help text");
             let the_args:&[OsString] = &args[1..];
+            //FIXME: parse() here transforms all args into utf8 or fails thus panic is hit!
             let matches = match opts.parse(the_args) {
                 Ok(m) => m,
                 Err(f) => {
@@ -1205,7 +1206,7 @@ fn main() -> ExitCode {
                 Err(f) => {
                     print_usage_patch(exe_name, opts);
                     show_all_args(exe_name, the_args, true);
-                    panic!("{}", f.to_string());
+                    panic!("{}", f);
                 }
             };
             if matches.opt_present("v") {
@@ -1338,10 +1339,10 @@ fn main() -> ExitCode {
             }
             assert_eq!(filenames_orig.len(), filenames_mod.len(), "The amount of --- and +++ lines isn't the same.");
             for each in &filenames_orig {
-                eprintln!("Orig: '{}'", each.display());
+                prdebug!("Orig: '{}'", each.display());
             }
             for each in &filenames_mod {
-                eprintln!("Mod : '{}'", each.display());
+                prdebug!("Mod : '{}'", each.display());
             }
 
             let how_many=filenames_orig.len();
@@ -1393,7 +1394,12 @@ fn main() -> ExitCode {
 
             let patch=Patch::from_bytes(&patch_file_buf).expect(&format!("Failed to parse patch file '{}' as a unified patch!", patch_file_name));
 
-            //FIXME: so the patch can have multiple filenames in it to patch, we must detect if more than 1 is in the patch and fail if --output was given, else, apply hunks to each of those files.
+            if how_many > 1 {
+                //FIXME: so the .patch can have multiple filenames inside it to patch, thusly we must detect if more than 1 is in the patch and fail if --output was given, else, apply hunks to each of those files.
+                todo!("support more than 1 filename inside the .patch file!");
+            } else {
+                assert_eq!(how_many, 1,"0 filenames in .patch file? how! should've failed earlier!");
+            }
             let patched_bytes=apply_bytes(&orig_buf, &patch, unambiguous).unwrap_or_else(|e| {
                 std::rt::EXIT_CODE_ON_PANIC.store(1, std::sync::atomic::Ordering::Relaxed);
                 panic!("Failed to apply patch, error: '{}'", e);
@@ -1421,7 +1427,7 @@ fn main() -> ExitCode {
         }
         // ------------------------------------------------
         anything_else => {
-            panic!("unrecognized self name '{}'", anything_else);
+            panic!("unrecognized self name '{}', it's supposed to have symlinks point to it.", anything_else);
         }
         // ------------------------------------------------
     } //match

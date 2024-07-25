@@ -10,3 +10,7 @@ superseeds but uses the files from:
 ../patch/
 
 (so don't rename those dirs)
+
+
+this is pretty much untested, ./g does some bare minimum testing.
+
