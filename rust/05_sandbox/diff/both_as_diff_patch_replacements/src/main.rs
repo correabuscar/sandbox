@@ -1287,6 +1287,8 @@ fn main() -> ExitCode {
             //let mut filenames_mod:Vec<&[u8]>=Vec::new();
             let mut filenames_orig:Vec<&Path>=Vec::new();
             let mut filenames_mod:Vec<&Path>=Vec::new();
+            let mut patch_buf_range_start:Vec<usize>= Vec::new();
+            let mut patch_buf_range_stop:Vec<usize>= Vec::new();
 
             let mut line_start = 0;
             // Iterate over the bytes in the data slice
@@ -1304,6 +1306,7 @@ fn main() -> ExitCode {
                     filenames_vec.push(path);
                 }
             }
+            let mut done_first:bool=false;
             for (i, &byte) in patch_file_buf.iter().enumerate() {
                 // Append the current byte to the line buffer, including \n else can't detect unterminated filename.
                 //current_line.push(byte);
@@ -1314,6 +1317,13 @@ fn main() -> ExitCode {
                     if current_line.starts_with(prefix_orig) {
                         //TODO: can probably avoid iterating here if we kept track of last encountered \t and \n and if above the line_start+prefix_orig.len() then that's it.
                         dedup_fn(prefix_orig, &mut filenames_orig, current_line);
+                        patch_buf_range_start.push(line_start);
+                        if done_first {
+                            assert!(line_start > 0);
+                            patch_buf_range_stop.push(line_start-1);
+                        } else {
+                            done_first=true;
+                        }
                     } else if current_line.starts_with(prefix_mod) {
                         dedup_fn(prefix_mod, &mut filenames_mod, current_line);
                     }
@@ -1321,7 +1331,11 @@ fn main() -> ExitCode {
                     //current_line.clear();
                     // Update the start of the next line
                     line_start = i + 1;
-                }
+                }//if eol
+            }//for
+            if done_first {
+                assert!(line_start > 0);
+                patch_buf_range_stop.push(line_start-1);
             }
 
             {
@@ -1334,8 +1348,21 @@ fn main() -> ExitCode {
                 }
             }
             assert_eq!(filenames_orig.len(), filenames_mod.len(), "The amount of --- and +++ lines isn't the same.");
-            for each in &filenames_orig {
+            for (i,each) in filenames_orig.iter().enumerate() {
                 prdebug!("Orig: '{}'", each.display());
+                //panic_if_file_does_not_exist(&each); // not here, because 'original' is used as fname
+
+                let index_start=patch_buf_range_start[i];
+                let index_stop=patch_buf_range_stop[i];
+                prdebug!("patch_buf: ");
+                let slice=&patch_file_buf[index_start..=index_stop];
+                if DEBUG.load(Ordering::Relaxed) {
+                    let stderr = std::io::stderr();
+                    let mut handle = stderr.lock();
+                    //handle.write_all(slice).expect("Failed to write to stderr!");
+                    std::io::Write::write_all(&mut handle, &slice).expect("Failed to write to stderr!");
+                }
+                let _patch=Patch::from_bytes(&slice).expect(&format!("Failed to parse patch file '{}' the section for orig.file '{}' as a unified patch!", patch_file_name, each.display()));
             }
             for each in &filenames_mod {
                 prdebug!("Mod : '{}'", each.display());
@@ -1359,7 +1386,7 @@ fn main() -> ExitCode {
 
             let output_file_name:Option<String> = match matches.opt_strs("output").last() {
                 Some(cl) => {
-                    let how_many=filenames_orig.len();
+                    //let how_many=filenames_orig.len();
                     if how_many > 1 {
                         panic!("--output was specified but the patch has '{}' different filenames to patch inside it!", how_many);
                     }
@@ -1386,13 +1413,17 @@ fn main() -> ExitCode {
             };
             prdebug!("Output file name: {:?}", output_file_name);
 
-            let patch=Patch::from_bytes(&patch_file_buf).expect(&format!("Failed to parse patch file '{}' as a unified patch!", patch_file_name));
-
             if how_many > 1 {
                 //FIXME: so the .patch can have multiple filenames inside it to patch, thusly we must detect if more than 1 is in the patch and fail if --output was given, else, apply hunks to each of those files.
+                for each_orig in filenames_orig {
+                    panic_if_file_does_not_exist(&each_orig);
+                }
+                //let patch=Patch::from_bytes(&patch_file_buf).expect(&format!("Failed to parse patch file '{}' as a unified patch!", patch_file_name));
                 todo!("support more than 1 filename inside the .patch file!");
             } else {
                 assert_eq!(how_many, 1,"0 filenames in .patch file? how! should've failed earlier!");
+                let patch=Patch::from_bytes(&patch_file_buf).expect(&format!("Failed to parse patch file '{}' as a unified patch!", patch_file_name));
+
                 panic_if_file_does_not_exist(&orig_fname);
                 let orig_buf=read_buffer_from_file(&orig_fname);
                 let patched_bytes=apply_bytes(&orig_buf, &patch, unambiguous).unwrap_or_else(|e| {
