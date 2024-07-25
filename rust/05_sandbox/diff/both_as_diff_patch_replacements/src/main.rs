@@ -1356,6 +1356,7 @@ fn main() -> ExitCode {
                 }
             }
             assert_eq!(filenames_orig.len(), filenames_mod.len(), "The amount of --- and +++ lines isn't the same.");
+
             prdebug!("doing some prechecks(without modifying any files)");
             for (i,each) in filenames_orig.iter().enumerate() {
                 prdebug!("Orig: '{}'", each.display());
