@@ -1322,6 +1322,7 @@ fn main() -> ExitCode {
                     // Slice the current line from the data
                     let current_line = &patch_file_buf[line_start..=i];
                     // Check if the current line starts with either prefix
+                    //TODO: need to detect dangling hook here too, but this means dup-ing code here and inside 'diffy' crate!
                     if current_line.starts_with(prefix_orig) {
                         //TODO: can probably avoid iterating here if we kept track of last encountered \t and \n and if above the line_start+prefix_orig.len() then that's it.
                         dedup_fn(prefix_orig, &mut filenames_orig, current_line);
@@ -1335,8 +1336,6 @@ fn main() -> ExitCode {
                     } else if current_line.starts_with(prefix_mod) {
                         dedup_fn(prefix_mod, &mut filenames_mod, current_line);
                     }
-                    // Clear the current line buffer
-                    //current_line.clear();
                     // Update the start of the next line
                     line_start = i + 1;
                 }//if eol
