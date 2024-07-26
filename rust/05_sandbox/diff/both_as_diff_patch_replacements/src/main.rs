@@ -4,7 +4,7 @@
 //use diffy::create_patch_bytes;
 //use diffy::PatchFormatter;
 use diffy::{apply_bytes, Patch, Unambiguous};
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsString;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -342,8 +342,8 @@ fn read_buffer_from_file<P: AsRef<Path>>(file_name: P) -> Vec<u8> {
 }
 
 /// unless it's "-" which means stdout(or stdin)
-//fn panic_if_file_does_not_exist(file_name: &str) {
-fn panic_if_file_does_not_exist<P: AsRef<Path>>(file_name: P) {
+//fn panic_if_file_does_not_exist_allow_dash(file_name: &str) {
+fn panic_if_file_does_not_exist_allow_dash<P: AsRef<Path>>(file_name: P) {
     let file_name = file_name.as_ref();
 
     // Convert "-" to OsStr for comparison
@@ -360,6 +360,18 @@ fn panic_if_file_does_not_exist<P: AsRef<Path>>(file_name: P) {
                 env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()),
             )
         }
+    }
+}
+
+fn panic_if_file_does_not_exist<P: AsRef<Path>>(file_name: P) {
+    let file_name = file_name.as_ref();
+
+    if !file_name.exists() {
+        panic!(
+            "File '{}' doesn't exist?! (pwd='{}')",
+            file_name.display(),
+            env::current_dir().map_or("N/A".to_string(), |v| v.display().to_string()),
+        )
     }
 }
 
@@ -1075,8 +1087,8 @@ fn main() -> ExitCode {
             // (pwd='{}'), error: '{}'", &file1_name, std::env::current_dir().map_or("N/A".to_string(), |v|
             // v.display().to_string()), e)); test before reading because first arg may be '-' which
             // means it will pause and wait for stdin (in worst case), even tho second file doesn't exist!
-            panic_if_file_does_not_exist(&file1_name);
-            panic_if_file_does_not_exist(&file2_name);
+            panic_if_file_does_not_exist_allow_dash(&file1_name);
+            panic_if_file_does_not_exist_allow_dash(&file2_name);
             let file1_buf: Vec<u8> = read_buffer_from_file(&file1_name);
             let file2_buf: Vec<u8> = read_buffer_from_file(&file2_name);
 
@@ -1146,6 +1158,22 @@ fn main() -> ExitCode {
                 "u",
                 "unified",
                 "",
+                "",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "R", //TODO: support this in rust
+                "reverse",
+                "Assume that this patch was created with the old and new files swapped.",
+                "",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
+                "N", //TODO: support this in rust
+                "forward",
+                "Ignore patches that appear to be reversed or already applied.",
                 "",
                 HasArg::No,
                 Occur::Multi,
@@ -1277,7 +1305,7 @@ fn main() -> ExitCode {
                 patch_file_name=matches.opt_strs("i").last().unwrap_or_else(|| panic!("Failed to get the patch filename from the -i arg.")).clone();
             }
 
-            panic_if_file_does_not_exist(&patch_file_name);
+            panic_if_file_does_not_exist_allow_dash(&patch_file_name);
             let patch_file_buf: Vec<u8> = read_buffer_from_file(&patch_file_name);
 
             //let mut use_filenames_from_within_the_patch:bool;
@@ -1361,12 +1389,12 @@ fn main() -> ExitCode {
             for (i,each) in filenames_orig.iter().enumerate() {
                 prdebug!("Orig: '{}'", each.display());
                 prdebug!("Mod : '{}'", filenames_mod[i].display());
-                //panic_if_file_does_not_exist(&each); // not here, because 'original' is used as fname and it won't exist, and yet cmdline can specify a diff. original fname to use, so no point failing here
+                //panic_if_file_does_not_exist_allow_dash(&each); // not here, because 'original' is used as fname and it won't exist, and yet cmdline can specify a diff. original fname to use, so no point failing here
 
                 let index_start:usize=patch_buf_range_start[i];
                 let index_stop=patch_buf_range_stop[i];
                 prdebug!("Index, start='{}', stop='{}'", index_start, index_stop);
-                //panic_if_file_does_not_exist(&each); // not here, because 'original' is used as fname
+                //panic_if_file_does_not_exist_allow_dash(&each); // not here, because 'original' is used as fname
                 prdebug!("patch_buf: ");
                 let slice=&patch_file_buf[index_start..=index_stop];
                 if DEBUG.load(Ordering::Relaxed) {
@@ -1393,8 +1421,6 @@ fn main() -> ExitCode {
                 }
                 orig
             } else {
-                //todo!("TODO");//TODO
-                //use_filenames_from_within_the_patch=true;
                 if how_many<1 {
                     panic!("Patch file '{}' doesn't have at least 1 file name to patch! and one wasn't specified on cmdline!", patch_file_name);
                 }
@@ -1432,17 +1458,44 @@ fn main() -> ExitCode {
             prdebug!("Output file name: {:?}", output_file_name);
 
             if how_many > 1 {
-                //FIXME: so the .patch can have multiple filenames inside it to patch, thusly we must detect if more than 1 is in the patch and fail if --output was given, else, apply hunks to each of those files.
-                for each_orig in filenames_orig {
-                    panic_if_file_does_not_exist(&each_orig);
-                }
+                //doneFIXME: so the .patch can have multiple filenames inside it to patch, thusly we must detect if more than 1 is in the patch and fail if --output was given(done earlier), else, apply hunks to each of those files.
+                //for each_orig in filenames_orig {
+                //}
                 //let patch=Patch::from_bytes(&patch_file_buf).expect(&format!("Failed to parse patch file '{}' as a unified patch!", patch_file_name));
-                todo!("support more than 1 filename inside the .patch file!");
+                //todo!("support more than 1 filename inside the .patch file!");
+
+                let mut should_write=false;
+                //ok first test if patch applies on ALL filenames, if so, (re)apply them!
+                for _j in 1..=2 {
+                    for (i,each) in filenames_orig.iter().enumerate() {
+                        panic_if_file_does_not_exist(&each);
+                        let index_start:usize=patch_buf_range_start[i];
+                        let index_stop=patch_buf_range_stop[i];
+                        let slice=&patch_file_buf[index_start..=index_stop];
+                        let patch=Patch::from_bytes(&slice).expect(&format!("Failed to parse patch file '{}' the section for orig.file '{}' as a unified patch! This shouldn't have happened here but earlier, unless code logic changed!", patch_file_name, each.display()));
+                        let orig_buf=read_buffer_from_file(&each);
+                        let patched_bytes=apply_bytes(&orig_buf, &patch, unambiguous).unwrap_or_else(|e| {
+                            std::rt::EXIT_CODE_ON_PANIC.store(1, std::sync::atomic::Ordering::Relaxed);
+                            panic!("Failed to apply patch '{}' on filename '{}', error: '{}'", patch_file_name, each.display(), e);
+                        });
+                        if should_write {
+                            //TODO: should probably write this to a new file, then delete orig and rename that file to orig? else risk losing orig, eg. in case of out of space.
+                            fs::write(&each, patched_bytes).expect(&format!("Failed to write the patched output file '{}', this likely means the original file mentioned here was lost, unless it was a permissions issue rather than an out of disk space issue.", each.display()));
+                        }
+                    }//for
+                    if should_write {
+                        break;
+                    } else {
+                        //only write the patched files out if all patched files would've patched correctly! instead of patch all u can until first failure.
+                        should_write=true;
+                    }
+                }//for outer
+                assert_eq!(true, should_write);
             } else {
                 assert_eq!(how_many, 1,"0 filenames in .patch file? how! should've failed earlier!");
                 let patch=Patch::from_bytes(&patch_file_buf).expect(&format!("Failed to parse patch file '{}' as a unified patch!", patch_file_name));
 
-                panic_if_file_does_not_exist(&orig_fname);
+                panic_if_file_does_not_exist_allow_dash(&orig_fname);
                 let orig_buf=read_buffer_from_file(&orig_fname);
                 let patched_bytes=apply_bytes(&orig_buf, &patch, unambiguous).unwrap_or_else(|e| {
                     std::rt::EXIT_CODE_ON_PANIC.store(1, std::sync::atomic::Ordering::Relaxed);

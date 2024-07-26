@@ -14,3 +14,6 @@ superseeds but uses the files from:
 
 this is pretty much untested, ./g does some bare minimum testing.
 
+
+this is all such a mess of unhandled cases, no wonder I'm so slow to implement it due to knowing this.
+
