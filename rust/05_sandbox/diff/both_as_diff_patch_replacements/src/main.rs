@@ -1322,15 +1322,16 @@ fn main() -> ExitCode {
                     // Slice the current line from the data
                     let current_line = &patch_file_buf[line_start..=i];
                     // Check if the current line starts with either prefix
-                    //TODO: need to detect dangling hook here too, but this means dup-ing code here and inside 'diffy' crate!
+                    //doneTODO: need to detect dangling hook here too, but this means dup-ing code here and inside 'diffy' crate! just treated the first filename/hunk from offset 0, and let diffy detect dangling hook (needs modification)
                     if current_line.starts_with(prefix_orig) {
                         //TODO: can probably avoid iterating here if we kept track of last encountered \t and \n and if above the line_start+prefix_orig.len() then that's it.
                         dedup_fn(prefix_orig, &mut filenames_orig, current_line);
-                        patch_buf_range_start.push(line_start);
                         if done_first {
+                            patch_buf_range_start.push(line_start);
                             assert!(line_start > 0);
                             patch_buf_range_stop.push(line_start-1);
                         } else {
+                            patch_buf_range_start.push(0); // treat first filename and its first hunk from the beginning of the patch, so that later on the Patch::new() can detect if there were any dangling hunks even before first filename was specified via `--- filename`
                             done_first=true;
                         }
                     } else if current_line.starts_with(prefix_mod) {
@@ -1360,10 +1361,12 @@ fn main() -> ExitCode {
             for (i,each) in filenames_orig.iter().enumerate() {
                 prdebug!("Orig: '{}'", each.display());
                 prdebug!("Mod : '{}'", filenames_mod[i].display());
-                //panic_if_file_does_not_exist(&each); // not here, because 'original' is used as fname
+                //panic_if_file_does_not_exist(&each); // not here, because 'original' is used as fname and it won't exist, and yet cmdline can specify a diff. original fname to use, so no point failing here
 
-                let index_start=patch_buf_range_start[i];
+                let index_start:usize=patch_buf_range_start[i];
                 let index_stop=patch_buf_range_stop[i];
+                prdebug!("Index, start='{}', stop='{}'", index_start, index_stop);
+                //panic_if_file_does_not_exist(&each); // not here, because 'original' is used as fname
                 prdebug!("patch_buf: ");
                 let slice=&patch_file_buf[index_start..=index_stop];
                 if DEBUG.load(Ordering::Relaxed) {
