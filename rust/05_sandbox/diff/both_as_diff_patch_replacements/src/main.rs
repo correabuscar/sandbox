@@ -375,6 +375,22 @@ fn panic_if_file_does_not_exist<P: AsRef<Path>>(file_name: P) {
     }
 }
 
+fn is_binary(buffer:&[u8]) -> bool {
+    const THRESHOLD:f64 = 0.3; // 30% non-printable characters threshold
+    let mut non_printable_count = 0;
+    for &byte in buffer {
+        // Check if the byte is a printable ASCII character or common whitespace
+        if !byte.is_ascii_graphic() && !byte.is_ascii_whitespace() {
+            non_printable_count += 1;
+        }
+    }
+    // Calculate the ratio of non-printable characters
+    let ratio = non_printable_count as f64 / buffer.len() as f64;
+
+    // Determine if the file is binary based on the ratio
+    ratio >= THRESHOLD
+}
+
 fn main() -> ExitCode {
     // Set the RUST_BACKTRACE environment variable to enable backtrace
     if std::env::var("RUST_BACKTRACE").is_err() {
@@ -781,7 +797,7 @@ fn main() -> ExitCode {
                 Occur::Multi,
             );
             opts.opt(
-                //TODO: handle this in rust too, check how does rust currently handle binary only files!
+                //doneTODO: handle this in rust too, check how does rust currently handle binary only files!
                 "a",
                 "text",
                 "treat all files as text",
@@ -1049,8 +1065,8 @@ fn main() -> ExitCode {
             // Lists of names to remove
             // XXX: only these args are supported by this rust version of 'diff', any others and
             // we'll delegate the whole operation to gnu diff
-            let long_names_to_remove = ["label", "ambiguous", "unambiguous"];
-            let short_names_to_remove = ['p', 'q', 'u'];
+            let long_names_to_remove = ["label", "ambiguous", "unambiguous", "text"];
+            let short_names_to_remove = ['p', 'q', 'u', 'a'];
 
             let unsupported = matches.whats_left(&short_names_to_remove, &long_names_to_remove);
             let how_many_unsupported = unsupported.len();
@@ -1091,7 +1107,29 @@ fn main() -> ExitCode {
             panic_if_file_does_not_exist_allow_dash(&file2_name);
             let file1_buf: Vec<u8> = read_buffer_from_file(&file1_name);
             let file2_buf: Vec<u8> = read_buffer_from_file(&file2_name);
-            //FIXME: detect if the file(s) is binary and if so, don't diff, unless -a aka --text is given!
+            //doneFIXME: detect if the file(s) is binary and if so, don't diff, unless -a aka --text is given!
+            if !matches.opt_present("text") {
+                // forcing as text via --text isn't required, so if binary exit early.
+                if is_binary(&file1_buf) || is_binary(&file2_buf) {
+                    //one of both of them are binary, compare them as binary
+                    let different=if file1_buf.len() != file2_buf.len() {
+                        true
+                    } else if file1_buf != file2_buf {
+                        true
+                    } else {
+                        false
+                    };
+                    if different {
+                        if !quiet {
+                            //FIXME: the output of this is wrong in case of using 'git diff', but this can only be fixed in script /swcode/bin.prepend/diff 
+                            println!("Binary files {} and {} differ", file1_name, file2_name);
+                        }
+                        return ExitCode::from(1);
+                    } else {
+                        return ExitCode::SUCCESS;
+                    }
+                }
+            }
 
             //nvmTODO: maybe just have diffy get us the correct context length for unambiguity and delegate the
             // patch making to original gnu 'diff' command with that context length(aka lines of context)! But
