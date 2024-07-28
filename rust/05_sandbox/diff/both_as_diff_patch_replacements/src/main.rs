@@ -896,7 +896,7 @@ fn main() -> ExitCode {
             if matches.opt_present("v") {
                 eprintln!("The rust version of '{0}', delegating to gnu {0}:", exe_name); //TODO: get our version shown here
                 let exit_code = exec_diff(the_args); //this does only show the version, not matter the args! except if --help is present then it shows --help if it's first!
-                //XXX: so adding a -v to a diff command of any kind, return exit code 0, thus can bypass and diff
+                //XXX: so adding a -v to a diff command of any kind, returns exit code 0, thus can bypass any diff
                 // comparison, if say -v was part of the filename and not properly escaped that would be taken as an
                 // arg, or something else that can insert a -v
                 return ExitCode::from(exit_code as u8);
@@ -1091,6 +1091,7 @@ fn main() -> ExitCode {
             panic_if_file_does_not_exist_allow_dash(&file2_name);
             let file1_buf: Vec<u8> = read_buffer_from_file(&file1_name);
             let file2_buf: Vec<u8> = read_buffer_from_file(&file2_name);
+            //FIXME: detect if the file(s) is binary and if so, don't diff, unless -a aka --text is given!
 
             //nvmTODO: maybe just have diffy get us the correct context length for unambiguity and delegate the
             // patch making to original gnu 'diff' command with that context length(aka lines of context)! But
@@ -1248,8 +1249,8 @@ fn main() -> ExitCode {
             if matches.opt_present("v") {
                 eprintln!("The rust version of '{0}', delegating to gnu {0}:", exe_name); //TODO: get our version shown here
                 let exit_code = exec_diff(the_args); //this does only show the version, not matter the args! except if --help is present then it shows --help if it's first!
-                //XXX: so adding a -v to a diff command of any kind, return exit code 0, thus can bypass and diff
-                // comparison, if say -v was part of the filename and not properly escaped that would be taken as an
+                //XXX: so adding a -v to a `patch` command of any kind, returns exit code 0, thus can bypass any legit `patch` invocation
+                // if say -v was part of the filename and not properly escaped that would be taken as an
                 // arg, or something else that can insert a -v
                 return ExitCode::from(exit_code as u8);
             }
@@ -1427,6 +1428,7 @@ fn main() -> ExitCode {
                 //None
                 filenames_orig[0].to_path_buf()
             };
+            //FIXME: ? patch -i pat.patch will try to apply patch to orig filename (from within the .patch) if it exists else it tries the modified filename, in this order. It seems too confusing to allow this behaviour, so for now, allowing only the orig fname to have the patch applied to!
 
             let output_file_name:Option<String> = match matches.opt_strs("output").last() {
                 Some(cl) => {
@@ -1456,6 +1458,7 @@ fn main() -> ExitCode {
                 },
             };
             prdebug!("Output file name: {:?}", output_file_name);
+            //XXX: could in theory support --fuzz but that only adds to the possibility of applying the hunk(s) in the wrong place which would fail to patch because that would detect at least 1 more spot to apply that hunk in with that --fuzz value, so this might work in the end with having --fuzz because we have --unambiguous, however for now, not adding --fuzz ability on purpose, redo your patch even tho it's a lot more work that it should be, safety in ensuring the hunk gets applied to proper place is more important.
 
             if how_many > 1 {
                 //doneFIXME: so the .patch can have multiple filenames inside it to patch, thusly we must detect if more than 1 is in the patch and fail if --output was given(done earlier), else, apply hunks to each of those files.
