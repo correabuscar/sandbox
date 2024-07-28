@@ -235,8 +235,10 @@ fn show_all_args<S>(exe_name: &str, the_args: &[S], save_to_file: bool)
 where
     S: AsRef<std::ffi::OsStr> + std::fmt::Debug,
 {
+    let now: chrono::DateTime<chrono::Local> = chrono::Local::now();
     let text = format!(
-        "exe name:'{}', passed args({}):{:?}\n",
+        "on {}, exe name:'{}', passed args({}):{:?}\n",
+        now.format("%Y-%m-%d %H:%M:%S"),
         exe_name,
         the_args.len(),
         the_args
@@ -1065,6 +1067,7 @@ fn main() -> ExitCode {
             // Lists of names to remove
             // XXX: only these args are supported by this rust version of 'diff', any others and
             // we'll delegate the whole operation to gnu diff
+            // TODO: need to handle "--" arg, else it's logging the whole diff command as having unhandled args, apparently; maybe it was some temp/fluke thing, since I can't repoduce it.
             let long_names_to_remove = ["label", "ambiguous", "unambiguous", "text"];
             let short_names_to_remove = ['p', 'q', 'u', 'a'];
 
