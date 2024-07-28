@@ -1299,14 +1299,14 @@ fn main() -> ExitCode {
             let mut unambiguous = true; //default assumed, for unambiguous
             let pos_of_ambi: isize = matches.opt_positions("ambiguous").last().map_or(-1, |v| *v as isize);
             let pos_of_unambi: isize = matches.opt_positions("unambiguous").last().map_or(-1, |v| *v as isize);
-            let mut unambiguous_requested=false;
+            //let mut unambiguous_requested=false;//XXX: don't need this because we're never delegating to gnu 'patch' !
             if pos_of_ambi > pos_of_unambi {
                 //--ambiguous was specified last, or only!
                 unambiguous = false;
             } else if pos_of_unambi > pos_of_ambi {
                 //--unambiguous was specified last, or only it!
                 unambiguous = true;
-                unambiguous_requested=true;
+                //unambiguous_requested=true;
             } else {
                 //both unspecified
                 assert_eq!(pos_of_ambi, -1);
