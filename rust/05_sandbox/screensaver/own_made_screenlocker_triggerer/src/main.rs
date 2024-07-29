@@ -57,7 +57,7 @@ fn main() {
                 }
             }
             if how_many == 0 {
-                panic!("No paths in PATH={:?}", env_value)
+                panic!("No paths in PATH={:?}", env_value);// output includes ""
             }
         } else {
             panic!("PATH variable not found in environment. Very likely the blank/lock commands will fail then!");
@@ -146,6 +146,9 @@ fn main() {
                     eprintln!("Sleeping for {:?} while locked, the minimum time to blank if were just un-idled!", blank_duration);
                     //already locked, so wait at least this long until a potential re-blank would be needed
                     thread::sleep(blank_duration);
+                    // bad workaround attempt:
+                    //eprintln!("Actually no, sleeping only {:?} because we might be locked but unidle thus unblanked and thus in need of re-blanking!", BLANK_THIS_MUCH_TIME_BEFORE_LOCKING);
+                    //thread::sleep(BLANK_THIS_MUCH_TIME_BEFORE_LOCKING);
                 //} else {
                 } else if is_blanked {
                     //FIXME: if locking failed but blanking succeeded(before), we get here and wait this long until lock retry!

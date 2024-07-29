@@ -7,6 +7,14 @@ edition = "2021"
 exclude = ["home_dir", "g", "e"]
 
 [profile.dev]
+opt-level=0
+debug=2
+debug-assertions=true
+overflow-checks = true
+lto = false
+panic= "unwind"
+
+[profile.release]
 opt-level=3
 debug=2
 debug-assertions=true
