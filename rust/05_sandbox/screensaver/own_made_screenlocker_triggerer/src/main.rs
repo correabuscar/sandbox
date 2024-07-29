@@ -34,8 +34,8 @@ fn main() {
             return;
         }
 
-        //let lock_duration = Duration::from_secs(5 * 60); // 5 minutes
-        let lock_duration = Duration::from_secs(1 * 60); // FIXME: 1 minutes, for tests!
+        let lock_duration = Duration::from_secs(5 * 60); // 5 minutes
+        //let lock_duration = Duration::from_secs(1 * 60); // FIXME: 1 minutes, for tests!
         //let lock_duration = Duration::from_secs(23); // FIXME: temp tests!
         //const BLANK_THIS_MANY_SECONDS_BEFORE_LOCKING:u64=10;
         const RETRY_TIME_ON_FAIL : Duration=Duration::from_secs(5); // retry to blank or lock if either or both failed to run, after this much delay.
@@ -46,13 +46,21 @@ fn main() {
         assert!(blank_duration <= lock_duration);
         //TODO: handle when they're the same value, better.
 
-        if let Some(paths) = std::env::var_os("PATH") {
-            let paths = std::env::split_paths(&paths);
+        if let Some(env_value) = std::env::var_os("PATH") {
+            let paths = std::env::split_paths(&env_value);
+            let mut how_many:usize=0;
             for path in paths {
+                // PATH=" " is ok because there can be a dir with name " " aka 1 space.
                 println!("Path: {:?}", path);
+                if ! path.as_os_str().is_empty() {
+                    how_many+=1;
+                }
+            }
+            if how_many == 0 {
+                panic!("No paths in PATH={:?}", env_value)
             }
         } else {
-            println!("PATH variable not found in environment.");
+            panic!("PATH variable not found in environment. Very likely the blank/lock commands will fail then!");
         }
 
         //needed to prevent re-blanking and re-locking while already blanked/locked
