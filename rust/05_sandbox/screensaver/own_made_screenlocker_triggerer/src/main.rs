@@ -34,8 +34,9 @@ fn main() {
             return;
         }
 
-        let lock_duration = Duration::from_secs(5 * 60); // 5 minutes
-        //let lock_duration = Duration::from_secs(23); // temp tests
+        //let lock_duration = Duration::from_secs(5 * 60); // 5 minutes
+        let lock_duration = Duration::from_secs(1 * 60); // FIXME: 1 minutes, for tests!
+        //let lock_duration = Duration::from_secs(23); // FIXME: temp tests!
         //const BLANK_THIS_MANY_SECONDS_BEFORE_LOCKING:u64=10;
         const RETRY_TIME_ON_FAIL : Duration=Duration::from_secs(5); // retry to blank or lock if either or both failed to run, after this much delay.
         const BLANK_THIS_MUCH_TIME_BEFORE_LOCKING : Duration=Duration::from_secs(10);
@@ -97,7 +98,9 @@ fn main() {
             if !is_locked && idle_duration >= lock_duration {
                 let s=format!("No activity detected for '{}' minutes '{}' seconds. Locking the screen...", lock_duration.as_secs()/60, lock_duration.as_secs() % 60);
                 logger(&s);
-                // this currently locks and hangs until unlocked, then exits, because it's using 'alock'
+                // NOPE:this currently locks and hangs until unlocked, then exits, because it's using 'alock'; ie. this call to status() is blocking while the screen is locked. Wait a minute, this doesn't block! why did I think it did?! yep i made it not block a while back! but what if it did block?! does alock blank it if i unidle and not unlock it? it does NOT!
+                // FIXME: if i move mouse or otherwise not unlock, the screen remains on!, maybe run this in a separate thread? and keep track of whether or not it exited, if not don't run it again but assume it's still locked!
+                // FIXME: can't assume this hangs/blocks or that it doesn't! and since it uses `alock` cmd in my case, internally (eg. script), then mayb also have to `pgrep alock` to check if it's still alive, to detect if it's still locked.
                 match Command::new("xdg-screensaver").arg("lock").status() {
                     Ok(exit_status) => {
                         is_locked=exit_status.success();
@@ -131,6 +134,7 @@ fn main() {
                 //if blanked or locked, we would need to wait at least this amount until next blank
                 //if idle_duration > lock_duration {
                 if is_locked {
+                    //FIXME: well, but it can be locked but awoken so no longer blanked, yet still locked! maybe monitor blanking in a different thread? based on idle time! but we still need to know if it's locked and after how many seconds to blank WHILE locked, if it's unblanked!
                     eprintln!("Sleeping for {:?} while locked, the minimum time to blank if were just un-idled!", blank_duration);
                     //already locked, so wait at least this long until a potential re-blank would be needed
                     thread::sleep(blank_duration);
