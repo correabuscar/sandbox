@@ -1158,6 +1158,7 @@ fn main() -> ExitCode {
                 }
             );
             let patch = r#do.create_patch_bytes_with_labels(&file1_buf, &file2_buf, &label1.as_bytes(), &label2.as_bytes());
+            //FIXME: don't output headers if patch is empty, unsure if this happens only for 'diff' script or for 'git diff' via that script, investigate!
             if !quiet {
                 let stdout = std::io::stdout(); // Get the handle to the standard output
                 let mut handle = stdout.lock(); // Lock the handle for writing
@@ -1207,7 +1208,7 @@ fn main() -> ExitCode {
             opts.opt(
                 "R", //TODO: support this in rust
                 "reverse",
-                "Assume that this patch was created with the old and new files swapped.",
+                "Assume that this patch was created with the old and new files swapped. ... attempts to swap each hunk around before applying it.",
                 "",
                 HasArg::No,
                 Occur::Multi,
@@ -1371,7 +1372,7 @@ fn main() -> ExitCode {
             let mut line_start = 0;
             // Iterate over the bytes in the data slice
             //for &byte in patch_file_buf.iter() {
-            fn dedup_fn<'a>(prefix:&[u8], filenames_vec:&mut Vec<&'a Path>, current_line:&'a [u8]) {
+            fn dedup_fn<'a>(prefix:&[u8], filenames_vec:&mut Vec<&'a Path>, current_line:&'a [u8]) -> bool {
                 // Extract the part after the prefix
                 let filename = &current_line[prefix.len()..];
                 // Find the position of the first \t or \n
@@ -1380,22 +1381,33 @@ fn main() -> ExitCode {
                     let valid_filename = &filename[..pos];
                     use std::os::unix::ffi::OsStrExt; // For Unix-like systems
                     let os_str=std::ffi::OsStr::from_bytes(valid_filename);
+                    if os_str.is_empty() {
+                        return false;
+                    }
                     let path=std::path::Path::new(os_str);
                     filenames_vec.push(path);
+                    return true;
                 }
+                unreachable!("shouldn't be that no new line was at the end of this '{:?}' line: '{:?}', ie. code logic is inconsistent", prefix, current_line);
             }
             let mut done_first:bool=false;
+            let mut line_no:usize=1;
+            //let patch_file_buf_len=patch_file_buf.len();
             for (i, &byte) in patch_file_buf.iter().enumerate() {
                 // Append the current byte to the line buffer, including \n else can't detect unterminated filename.
                 //current_line.push(byte);
-                if byte == b'\n' {
+                //XXX: surprisingly vim and nvim both add a \n at the end of file, even if there was none before.
+                if byte == b'\n' {// || i +1 == patch_file_buf_len {
                     // Slice the current line from the data
                     let current_line = &patch_file_buf[line_start..=i];
+                    //eprintln!("!!! cur line: '{:?}'", current_line);
                     // Check if the current line starts with either prefix
                     //doneTODO: need to detect dangling hook here too, but this means dup-ing code here and inside 'diffy' crate! just treated the first filename/hunk from offset 0, and let diffy detect dangling hook (needs modification)
                     if current_line.starts_with(prefix_orig) {
                         //TODO: can probably avoid iterating here if we kept track of last encountered \t and \n and if above the line_start+prefix_orig.len() then that's it.
-                        dedup_fn(prefix_orig, &mut filenames_orig, current_line);
+                        if ! dedup_fn(prefix_orig, &mut filenames_orig, current_line) {
+                            panic!("Empty filename in .patch file '{}', on line '{}': '{}'", patch_file_name, line_no, String::from_utf8_lossy(current_line));
+                        }
                         if done_first {
                             patch_buf_range_start.push(line_start);
                             assert!(line_start > 0);
@@ -1405,10 +1417,13 @@ fn main() -> ExitCode {
                             done_first=true;
                         }
                     } else if current_line.starts_with(prefix_mod) {
-                        dedup_fn(prefix_mod, &mut filenames_mod, current_line);
+                        if ! dedup_fn(prefix_mod, &mut filenames_mod, current_line) {
+                            panic!("Empty filename in .patch file '{}', on line '{}': '{}'", patch_file_name, line_no, String::from_utf8_lossy(current_line));
+                        }
                     }
                     // Update the start of the next line
                     line_start = i + 1;
+                    line_no+=1;
                 }//if eol
             }//for
             if done_first {
@@ -1418,6 +1433,7 @@ fn main() -> ExitCode {
 
             {
                 let current_line = &patch_file_buf[line_start..patch_file_buf.len()];
+                //eprintln!("!!!!!!!! '{:?}'", current_line);
                 // Check the last line if the data doesn't end with a newline
                 if !current_line.is_empty() {
                     if current_line.starts_with(prefix_orig) || current_line.starts_with(prefix_mod) {
@@ -1426,26 +1442,37 @@ fn main() -> ExitCode {
                 }
             }
             assert_eq!(filenames_orig.len(), filenames_mod.len(), "The amount of --- and +++ lines isn't the same.");
+            let reverse:bool=matches.opt_present("reverse");
 
             prdebug!("doing some prechecks(without modifying any files)");
             for (i,each) in filenames_orig.iter().enumerate() {
-                prdebug!("Orig: '{}'", each.display());
-                prdebug!("Mod : '{}'", filenames_mod[i].display());
                 //panic_if_file_does_not_exist_allow_dash(&each); // not here, because 'original' is used as fname and it won't exist, and yet cmdline can specify a diff. original fname to use, so no point failing here
 
                 let index_start:usize=patch_buf_range_start[i];
                 let index_stop=patch_buf_range_stop[i];
-                prdebug!("Index, start='{}', stop='{}'", index_start, index_stop);
                 //panic_if_file_does_not_exist_allow_dash(&each); // not here, because 'original' is used as fname
-                prdebug!("patch_buf: ");
                 let slice=&patch_file_buf[index_start..=index_stop];
+                let patch=Patch::from_bytes(&slice).expect(&format!("Failed to parse patch file '{}' the section for orig.file '{}' as a unified patch!", patch_file_name, each.display()));
+                //ugly hack? shadowing var else can't be done because it's borrowed and doesn't take &mut
+                let patch=if reverse {
+                    //this swaps orig and modif filenames too!
+                    patch.reverse()
+                } else { patch };
+                let orig=patch.original().expect(&format!("how could there have been no filename in the '{}' .patch file ?", patch_file_name));
+                let modif=patch.modified();
+                prdebug!("Orig: '{:?}', was: '{}'", orig, each.display());
+                prdebug!("Mod : '{:?}', was: '{}'", modif, filenames_mod[i].display());
+                prdebug!("Index, start='{}', stop='{}'", index_start, index_stop);
                 if DEBUG.load(Ordering::Relaxed) {
+                    prdebug!("patch_buf: ");
                     let stderr = std::io::stderr();
                     let mut handle = stderr.lock();
                     //handle.write_all(slice).expect("Failed to write to stderr!");
                     std::io::Write::write_all(&mut handle, &slice).expect("Failed to write to stderr!");
                 }
-                let _patch=Patch::from_bytes(&slice).expect(&format!("Failed to parse patch file '{}' the section for orig.file '{}' as a unified patch!", patch_file_name, each.display()));
+                if patch.hunks().len() == 0 {
+                    panic!("Patch '{}' has no hunks!", patch_file_name);
+                }
             }
             prdebug!("prechecks done");
             if matches.opt_present("check") {
@@ -1467,7 +1494,11 @@ fn main() -> ExitCode {
                     panic!("Patch file '{}' doesn't have at least 1 file name to patch! and one wasn't specified on cmdline!", patch_file_name);
                 }
                 //None
-                filenames_orig[0].to_path_buf()
+                if !reverse {
+                    filenames_orig[0].to_path_buf()
+                } else {
+                    filenames_mod[0].to_path_buf()
+                }
             };
             //FIXME: ? patch -i pat.patch will try to apply patch to orig filename (from within the .patch) if it exists else it tries the modified filename, in this order. It seems too confusing to allow this behaviour, so for now, allowing only the orig fname to have the patch applied to!
 
@@ -1510,13 +1541,21 @@ fn main() -> ExitCode {
 
                 let mut should_write=false;
                 //ok first test if patch applies on ALL filenames, if so, (re)apply them!
+                let filenames_list=if !reverse {
+                    filenames_orig
+                } else {
+                    filenames_mod
+                };
                 for _j in 1..=2 {
-                    for (i,each) in filenames_orig.iter().enumerate() {
+                    for (i,each) in filenames_list.iter().enumerate() {
                         panic_if_file_does_not_exist(&each);
                         let index_start:usize=patch_buf_range_start[i];
                         let index_stop=patch_buf_range_stop[i];
                         let slice=&patch_file_buf[index_start..=index_stop];
-                        let patch=Patch::from_bytes(&slice).expect(&format!("Failed to parse patch file '{}' the section for orig.file '{}' as a unified patch! This shouldn't have happened here but earlier, unless code logic changed!", patch_file_name, each.display()));
+                        let patch=Patch::from_bytes(&slice).expect(&format!("Failed to parse patch file '{}' the section for orig.file '{}' as a unified patch! Reverse is '{}'. This shouldn't have happened here but earlier, unless code logic changed!", patch_file_name, each.display(), reverse));
+                        let patch = if reverse {
+                            patch.reverse()
+                        } else { patch };
                         let orig_buf=read_buffer_from_file(&each);
                         let patched_bytes=apply_bytes(&orig_buf, &patch, unambiguous).unwrap_or_else(|e| {
                             std::rt::EXIT_CODE_ON_PANIC.store(1, std::sync::atomic::Ordering::Relaxed);
@@ -1538,6 +1577,9 @@ fn main() -> ExitCode {
             } else {
                 assert_eq!(how_many, 1,"0 filenames in .patch file? how! should've failed earlier!");
                 let patch=Patch::from_bytes(&patch_file_buf).expect(&format!("Failed to parse patch file '{}' as a unified patch!", patch_file_name));
+                let patch = if reverse {
+                    patch.reverse()//orig_fname should already be reversed
+                } else { patch };
 
                 panic_if_file_does_not_exist_allow_dash(&orig_fname);
                 let orig_buf=read_buffer_from_file(&orig_fname);
