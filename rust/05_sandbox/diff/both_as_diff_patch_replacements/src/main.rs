@@ -1158,7 +1158,7 @@ fn main() -> ExitCode {
                 }
             );
             let patch = r#do.create_patch_bytes_with_labels(&file1_buf, &file2_buf, &label1.as_bytes(), &label2.as_bytes());
-            //FIXME: don't output headers if patch is empty, unsure if this happens only for 'diff' script or for 'git diff' via that script, investigate!
+            //doneFIXME: don't output headers if patch is empty, unsure if this happens only for 'diff' script or for 'git diff' via that script, investigate! it was inside 'diffy'
             if !quiet {
                 let stdout = std::io::stdout(); // Get the handle to the standard output
                 let mut handle = stdout.lock(); // Lock the handle for writing
