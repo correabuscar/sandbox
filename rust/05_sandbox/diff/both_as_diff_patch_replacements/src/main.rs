@@ -498,6 +498,14 @@ fn main() -> ExitCode {
                 Occur::Multi,
             );
             opts.opt(
+                "",
+                "-no-directory",
+                "undocumented, used by diff3 when it calls diff, and yep that's 3 dashes",
+                "",
+                HasArg::No,
+                Occur::Multi,
+            );
+            opts.opt(
                 "U",
                 "unified",
                 "output NUM (default 3) lines of unified contex",
@@ -1047,6 +1055,7 @@ fn main() -> ExitCode {
                         Ok(lines) => lines,
                         Err(e) => {
                             //FIXME: this is lame hack to allow -up because getopts can't allow it, it expects -uNUM
+                            //Doesn't even get here when: -Nu file1 file2
                             if !["p"].contains(&cl.as_str()) {
                                 panic!("Context length '{}' isn't an i32 number, error: '{}'", cl, e);
                             }

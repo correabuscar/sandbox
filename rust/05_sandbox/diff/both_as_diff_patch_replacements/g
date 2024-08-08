@@ -131,8 +131,6 @@ if test "$ec" == 1; then
   tput setaf 2 >&2
   echo "That's correct, applying an ambiguous patch unambiguously, failed as it should!" >&2
   tput sgr0
-  echo "All done."
-  exit 0
 else
   tput setaf 1 >&2
   if test "$ec" == 0; then
@@ -144,3 +142,17 @@ else
   exit "$ec"
 fi
 
+empty_lines="$(grep -c '^$' -- /tmp/le.patch)"
+if test "$empty_lines" -gt "0"; then
+  tput setaf 1 >&2
+  echo "Patch contains empty lines, which likely means empty context lines which should be prefixed by a space" >&2
+  tput sgr0
+  exit 1
+else
+  tput setaf 2 >&2
+  echo "Patch correctly contains space-prefixed empty lines!" >&2
+  tput sgr0
+fi
+
+echo "All done."
+exit 0

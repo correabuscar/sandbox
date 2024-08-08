@@ -73,7 +73,7 @@ checksum = "06ea2b9bc92be3c2baa9334a323ebca2d6f074ff852cd1d7b11064035cd3868f"
 [[package]]
 name = "diffy"
 version = "0.4.0"
-source = "git+https://github.com/correabuscar/diffy?branch=unambiguous#443eab75ec7537ba0f7df5f1627068d174b9289b"
+source = "git+https://github.com/correabuscar/diffy?branch=unambiguous#511989a0d478a8afc234d4c11d924f2fe0d957b7"
 dependencies = [
  "nu-ansi-term",
 ]
