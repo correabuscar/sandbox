@@ -108,7 +108,7 @@ fn main() {
                 logger(&s);
                 // NOPE:this currently locks and hangs until unlocked, then exits, because it's using 'alock'; ie. this call to status() is blocking while the screen is locked. Wait a minute, this doesn't block! why did I think it did?! yep i made it not block a while back! but what if it did block?! does alock blank it if i unidle and not unlock it? it does NOT!
                 // FIXME: if i move mouse or otherwise not unlock, the screen remains on!, maybe run this in a separate thread? and keep track of whether or not it exited, if not don't run it again but assume it's still locked!
-                // FIXME: can't assume this hangs/blocks or that it doesn't! and since it uses `alock` cmd in my case, internally (eg. script), then mayb also have to `pgrep alock` to check if it's still alive, to detect if it's still locked.
+                // FIXME: can't assume this hangs/blocks or that it doesn't! and since it uses `alock` cmd in my case, internally (eg. script), then maybe also have to `pgrep alock` to check if it's still alive, to detect if it's still locked.
                 match Command::new("xdg-screensaver").arg("lock").status() {
                     Ok(exit_status) => {
                         is_locked=exit_status.success();
