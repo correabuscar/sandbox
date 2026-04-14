@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 reed-solomon = "0.2"
 codepage-437 = "0.1"
-rand = "0.8.4"
+rand = "0.9.3"
